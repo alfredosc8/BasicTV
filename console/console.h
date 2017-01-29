@@ -80,6 +80,7 @@ private:
 	/*  *\/ */
 	/* // API */
 	DEF_CMD(id_api_get_type_cache); // first reg: type
+	DEF_CMD(id_api_get_all);
 	/* DEF_CMD(id_api_destroy); // first reg: id */
 	/* DEF_CMD(id_api_request); // first reg: id */
 	/* // linked list operations */

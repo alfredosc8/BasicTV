@@ -3,13 +3,13 @@
 static std::string gen_table(std::vector<std::vector<std::string> > entries){
 	std::string retval;
 	std::vector<uint16_t> row_length;
-	for(uint64_t x = 0;x < entries.size();x++){
-		for(uint64_t y = 0;y < entries[x].size();y++){
-			while(row_length.size() <= y){
+	for(uint64_t y = 0;y < entries.size();y++){
+		for(uint64_t x = 0;x < entries[y].size();x++){
+			while(row_length.size() <= x){
 				row_length.push_back(0);
 			}
-			if(entries[x][y].size() > row_length[y]){
-				row_length[y] = entries[x][y].size();
+			if(entries[y][x].size() > row_length[x]){
+				row_length[x] = entries[y][x].size();
 			}
 		}
 	}
@@ -25,7 +25,7 @@ static std::string gen_table(std::vector<std::vector<std::string> > entries){
 	for(uint64_t y = 0;y < entries.size();y++){
 		std::string row;
 		for(uint64_t x = 0;x <= end;x++){
-			row += " | " + fix_to_length(entries[y][x], row_length[y]);
+			row += " | " + fix_to_length(entries[y][x], row_length[x]);
 		}
 		row += " | ";
 		retval += row + "\n";

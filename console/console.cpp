@@ -18,10 +18,11 @@ id_t_ console_t::get_socket_id(){
 
 void console_t::print_socket(std::string str){
 	net_socket_t *socket =
-		PTR_DATA(socket_id,
-			 net_socket_t);
+		PTR_DATA_FAST(socket_id,
+			      net_socket_t);
 	if(socket == nullptr){
-		print("socket is a nullptr", P_ERR);
+		// socket no longer exists
+		print("socket is a nullptr, should have cleaned up refs", P_NOTE);
 	}
 	try{
 		socket->send(str);
@@ -66,6 +67,7 @@ void console_t::execute(std::vector<std::string> cmd_vector){
 		LIST_CMD(exit);
 		// ID API
 		LIST_CMD(id_api_get_type_cache);
+		LIST_CMD(id_api_get_all);
 		// TV
 		LIST_CMD(tv_window_list_active_streams);
 		LIST_CMD(tv_window_clear_active_streams);
@@ -94,12 +96,13 @@ void console_t::execute(std::vector<std::string> cmd_vector){
 
 DEC_CMD(exit){
 	net_socket_t *socket =
-		PTR_DATA(socket_id,
-			 net_socket_t);
+		PTR_DATA_FAST(socket_id,
+			      net_socket_t);
 	if(socket == nullptr){
 		print("socket is a nullptr", P_WARN);
 	}
 	socket->disconnect();
+	socket_id = ID_BLANK_ID;
 	id_api::destroy(socket->id.get_id());
 }
 
@@ -169,8 +172,8 @@ void console_init(){
 
 static void console_accept_connections(){
 	net_socket_t *socket =
-		PTR_DATA(console_socket_id,
-			 net_socket_t);
+		PTR_DATA_FAST(console_socket_id,
+			      net_socket_t);
 	if(socket == nullptr){
 		print("socket is a nullptr", P_ERR);
 	}
@@ -192,7 +195,7 @@ static void console_accept_connections(){
 
 static bool console_is_alive(console_t *console){
 	net_socket_t *socket =
-		PTR_DATA(console->get_socket_id(),
+		PTR_DATA_FAST(console->get_socket_id(),
 			 net_socket_t);
 	if(socket == nullptr){
 		return false;
@@ -223,6 +226,13 @@ void console_loop(){
 void console_close(){
 }
 
+static std::string null_if_blank_id(id_t_ id){
+	if(id == ID_BLANK_ID){
+		return "NULL";
+	}
+	return convert::array::id::to_hex(id);
+}
+
 std::vector<std::vector<std::string> > console_generate_generic_id_table(std::vector<id_t_> id_vector){
 	std::vector<std::vector<std::string> > retval;
 	retval.push_back({"ID", "Type", "Prev Linked List", "Next Linked List", "Mod. Inc."});
@@ -230,15 +240,15 @@ std::vector<std::vector<std::string> > console_generate_generic_id_table(std::ve
 		std::vector<std::string> tmp_vector;
 		tmp_vector.push_back(convert::array::id::to_hex(id_vector[i]));
 		data_id_t *id_ptr =
-			PTR_ID(id_vector[i], );
+			PTR_ID_FAST(id_vector[i], );
 		if(id_ptr != nullptr){
 			tmp_vector.push_back(
 				id_ptr->get_type());
 			tmp_vector.push_back(
-				convert::array::id::to_hex(
-					id_ptr->get_prev_linked_list()));
+				null_if_blank_id(
+					id_ptr->get_next_linked_list()));
 			tmp_vector.push_back(
-				convert::array::id::to_hex(
+				null_if_blank_id(
 					id_ptr->get_next_linked_list()));
 			tmp_vector.push_back(
 				std::to_string(id_ptr->get_mod_inc()));

@@ -35,7 +35,6 @@ static data_id_t *id_find(id_t_ id){
 		}
 	}
 	print("Couldn't find ID", P_NOTE);
-	std::raise(SIGINT);
 	return nullptr;
 }
 
