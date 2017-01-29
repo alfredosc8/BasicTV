@@ -42,9 +42,12 @@ void console_t::execute(std::vector<std::string> cmd_vector){
 		LIST_CMD(reg_set_table);
 		LIST_CMD(reg_copy);
 		LIST_CMD(reg_clear);
+		LIST_CMD(reg_left_shift);
+		LIST_CMD(reg_right_shift);
 		LIST_CMD(print_output_table);
 		LIST_CMD(print_reg);
 		LIST_CMD(exit);
+		LIST_CMD(id_api_get_type_cache);
 		// TV
 		LIST_CMD(tv_window_list_active_streams);
 		LIST_CMD(tv_window_clear_active_streams);

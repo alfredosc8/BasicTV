@@ -22,3 +22,26 @@ DEC_CMD(reg_clear){
 	const uint8_t entry = std::stoi(cmd_vector.at(0));
 	registers.at(entry) = "";
 }
+
+DEC_CMD(reg_left_shift){
+	const uint8_t magnitude = std::stoi(cmd_vector.at(0));
+	std::array<std::string, CONSOLE_REGISTER_SIZE> old = registers;
+	for(uint64_t i = CONSOLE_REGISTER_SIZE-magnitude-i;i < CONSOLE_REGISTER_SIZE;i++){
+		registers.at(i) = "";
+	}
+	for(uint64_t i = magnitude;i < CONSOLE_REGISTER_SIZE;i++){
+		registers.at(i-magnitude) = old.at(i);
+	}
+}
+
+DEC_CMD(reg_right_shift){
+	const uint8_t magnitude = std::stoi(cmd_vector.at(0));
+	std::array<std::string, CONSOLE_REGISTER_SIZE> old = registers;
+	for(uint64_t i = 0;i < magnitude;i++){
+		registers.at(i) = "";
+	}
+	for(uint64_t i = 0;i < CONSOLE_REGISTER_SIZE-magnitude;i++){
+		registers.at(i+magnitude) = old.at(i);
+	}
+}
+

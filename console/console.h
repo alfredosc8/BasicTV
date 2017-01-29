@@ -15,6 +15,8 @@
   calling it. This is done for every level.
 */
 
+#define CONSOLE_REGISTER_SIZE 64
+
 #define LIST_CMD(x) if(cmd_vector.at(0) == #x){if(cmd_vector.size() > 1){x(std::vector<std::string>(cmd_vector.begin()+1, cmd_vector.end()));}else{x(std::vector<std::string>{});}ran = true;}
 #define DEF_CMD(x) void x(std::vector<std::string> cmd_vector)
 #define DEC_CMD(x) void console_t::x(std::vector<std::string> cmd_vector)
@@ -41,7 +43,7 @@ private:
 	id_t_ socket_id = ID_BLANK_ID;
 	std::vector<uint8_t> working_input; // buffer
 	std::vector<std::vector<std::string> > output_table;
-	std::array<std::string, 4> registers;
+	std::array<std::string, 64> registers;
 
 	DEF_CMD(exit);
 	DEF_CMD(output_table_clear);
@@ -64,7 +66,8 @@ private:
 	DEF_CMD(reg_set_table); // first: reg number, second: output table X, third: output table Y
 	DEF_CMD(reg_copy); // first: from, second: to
 	DEF_CMD(reg_clear); // no param
-
+	DEF_CMD(reg_left_shift);
+	DEF_CMD(reg_right_shift);
 	/* /\* */
 	/*   ID interface */
 
@@ -73,7 +76,7 @@ private:
 	/*   Defined in console_id_api.cpp */
 	/*  *\/ */
 	/* // API */
-	/* DEF_CMD(id_api_get_type_cache); // first reg: type */
+	DEF_CMD(id_api_get_type_cache); // first reg: type
 	/* DEF_CMD(id_api_destroy); // first reg: id */
 	/* DEF_CMD(id_api_request); // first reg: id */
 	/* // linked list operations */
