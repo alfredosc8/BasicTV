@@ -36,17 +36,35 @@ DEC_CMD(output_table_clear){
 
 void console_t::execute(std::vector<std::string> cmd_vector){
 	bool ran = false;
+	bool shift = false;
 	try{
+		if(cmd_vector.at(0).substr(0, 3) != "reg" && cmd_vector.size() > 1){
+			shift = true;
+			reg_right_shift({"8"});
+			for(uint64_t i = 1;i < cmd_vector.size();i++){
+				if(cmd_vector[i] != "SKIP"){
+					registers[i-1] = cmd_vector[i];
+				}else{
+					registers[i-1] = registers[i-1+8];
+					print_socket("skipping register " + std::to_string(i-1) + "\n");
+				}
+			}
+		}
+		// registers and output table management, no printing
 		LIST_CMD(output_table_clear);
 		LIST_CMD(reg_set_const);
 		LIST_CMD(reg_set_table);
 		LIST_CMD(reg_copy);
+		LIST_CMD(reg_swap);
 		LIST_CMD(reg_clear);
 		LIST_CMD(reg_left_shift);
 		LIST_CMD(reg_right_shift);
+		// printing operations, prints output to the screen
 		LIST_CMD(print_output_table);
 		LIST_CMD(print_reg);
+		LIST_CMD(print_reg_with_type);
 		LIST_CMD(exit);
+		// ID API
 		LIST_CMD(id_api_get_type_cache);
 		// TV
 		LIST_CMD(tv_window_list_active_streams);
@@ -64,7 +82,11 @@ void console_t::execute(std::vector<std::string> cmd_vector){
 		print_socket("command failed:" + (std::string)e.what() + "\n");
 		return;
 	}
-	if(ran == false){
+	if(shift){
+		reg_left_shift({"8"});
+	}
+	// set by LIST_CMD
+	if(!ran){
 		print_socket("invalid command\n");
 	}
 	print_socket("command succeeded\n");
@@ -78,6 +100,7 @@ DEC_CMD(exit){
 		print("socket is a nullptr", P_WARN);
 	}
 	socket->disconnect();
+	id_api::destroy(socket->id.get_id());
 }
 
 void console_t::run(){

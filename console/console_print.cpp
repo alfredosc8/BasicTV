@@ -13,10 +13,19 @@ static std::string gen_table(std::vector<std::vector<std::string> > entries){
 			}
 		}
 	}
-	for(uint64_t x = 0;x < entries.size();x++){
+	uint64_t end = 0;
+	for(int64_t y = 0;y < entries.size();y++){
+		for(int64_t x = 0;x < entries[y].size();x++){
+			if(entries[y][x] != "" && x > end){
+				end = x;
+			}
+		}
+	}
+	P_V(end, P_SPAM);
+	for(uint64_t y = 0;y < entries.size();y++){
 		std::string row;
-		for(uint64_t y = 0;y < entries[x].size();y++){
-			row += " | " + fix_to_length(entries[x][y], row_length[y]);
+		for(uint64_t x = 0;x <= end;x++){
+			row += " | " + fix_to_length(entries[y][x], row_length[y]);
 		}
 		row += " | ";
 		retval += row + "\n";
@@ -37,4 +46,28 @@ DEC_CMD(print_reg){
 		{std::vector<std::string>(
 				registers.begin(),
 				registers.end())}));
+}
+
+DEC_CMD(print_reg_with_type){
+	std::vector<std::string> parody;
+	for(uint64_t i = 0;i < registers.size();i++){
+		std::string data = "";
+		try{
+			id_t_ tmp_id =
+				convert::array::id::from_hex(
+					registers[i]);
+			data_id_t *id_ptr =
+				PTR_ID(tmp_id, );
+			if(id_ptr != nullptr){
+				data += "(" + id_ptr->get_type() + ")";
+			}
+		}catch(...){}
+		parody.push_back(data);
+	}
+	print_socket(
+		gen_table(
+		{std::vector<std::string>(
+				registers.begin(),
+				registers.end()),
+		 parody}));
 }

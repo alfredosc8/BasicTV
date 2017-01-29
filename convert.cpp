@@ -186,7 +186,7 @@ static uint8_t to_byte_char(int8_t hex){
 	case 'f':
 		return 15;
 	}
-	print("invalid hex character", P_ERR);
+	print("invalid hex character " + std::string(1, hex), P_ERR);
 	return 0;
 }
 

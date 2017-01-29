@@ -18,6 +18,18 @@ DEC_CMD(reg_copy){
 	registers.at(first_entry) = registers.at(second_entry);
 }
 
+DEC_CMD(reg_swap){
+	const uint8_t first_entry =
+		std::stoi(cmd_vector.at(0));
+	const uint8_t second_entry =
+		std::stoi(cmd_vector.at(1));
+	const std::string tmp =
+		registers.at(first_entry);
+	registers.at(first_entry) = registers.at(second_entry);
+	registers.at(second_entry) = tmp;
+	
+}
+
 DEC_CMD(reg_clear){
 	const uint8_t entry = std::stoi(cmd_vector.at(0));
 	registers.at(entry) = "";
@@ -26,7 +38,7 @@ DEC_CMD(reg_clear){
 DEC_CMD(reg_left_shift){
 	const uint8_t magnitude = std::stoi(cmd_vector.at(0));
 	std::array<std::string, CONSOLE_REGISTER_SIZE> old = registers;
-	for(uint64_t i = CONSOLE_REGISTER_SIZE-magnitude-i;i < CONSOLE_REGISTER_SIZE;i++){
+	for(uint64_t i = CONSOLE_REGISTER_SIZE-magnitude-1;i < CONSOLE_REGISTER_SIZE;i++){
 		registers.at(i) = "";
 	}
 	for(uint64_t i = magnitude;i < CONSOLE_REGISTER_SIZE;i++){
@@ -44,4 +56,3 @@ DEC_CMD(reg_right_shift){
 		registers.at(i+magnitude) = old.at(i);
 	}
 }
-

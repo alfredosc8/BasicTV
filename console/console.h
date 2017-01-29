@@ -53,7 +53,7 @@ private:
 	 */
 	DEF_CMD(print_output_table);
 	DEF_CMD(print_reg);
-	
+	DEF_CMD(print_reg_with_type);
 	/*
 	  Register operators: Set the IDs in the registers
 
@@ -65,9 +65,12 @@ private:
 	DEF_CMD(reg_set_const); // first: reg number, second: const
 	DEF_CMD(reg_set_table); // first: reg number, second: output table X, third: output table Y
 	DEF_CMD(reg_copy); // first: from, second: to
+	DEF_CMD(reg_swap);
+	DEF_CMD(reg_get_type);
 	DEF_CMD(reg_clear); // no param
 	DEF_CMD(reg_left_shift);
 	DEF_CMD(reg_right_shift);
+	DEF_CMD(reg_print_type);
 	/* /\* */
 	/*   ID interface */
 
