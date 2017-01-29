@@ -59,7 +59,7 @@ DEC_CMD(print_reg_with_type){
 			data_id_t *id_ptr =
 				PTR_ID(tmp_id, );
 			if(id_ptr != nullptr){
-				data += "(" + id_ptr->get_type() + ")";
+				data += id_ptr->get_type();
 			}
 		}catch(...){}
 		parody.push_back(data);
