@@ -106,6 +106,7 @@ private:
 	DEF_CMD(tv_window_set_timestamp_offset);
 	DEF_CMD(tv_window_set_channel_id);
 	DEF_CMD(tv_channel_create);
+	DEF_CMD(tv_channel_get_stream_list);
 	DEF_CMD(tv_audio_load_wav);
 	void print_socket(std::string);
 	void execute(std::vector<std::string> cmd_vector);

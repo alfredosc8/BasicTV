@@ -5,6 +5,10 @@
 #include "../tv/tv_window.h"
 #include "../util.h"
 
+/*
+  tv_window_t handlers
+ */
+
 DEC_CMD(tv_window_set_channel_id){
 	id_t_ tv_window_id =
 		convert::array::id::from_hex(
@@ -79,12 +83,28 @@ DEC_CMD(tv_window_set_timestamp_offset){
 	window->set_timestamp_offset(time);
 }
 
+/*
+  tv_channel_t handlers
+ */
+
 DEC_CMD(tv_channel_create){
 	tv_channel_t *channel =
 		new tv_channel_t;
 	output_table =
 		console_generate_generic_id_table(
 			std::vector<id_t_>({channel->id.get_id()}));
+}
+
+DEC_CMD(tv_channel_get_stream_list){
+	tv_channel_t *channel =
+		PTR_DATA(convert::array::id::from_hex(registers[0]),
+			 tv_channel_t);
+	if(channel == nullptr){
+		print("channel is a nullptr", P_ERR);
+	}
+	output_table =
+		console_generate_generic_id_table(
+			channel->get_stream_list());
 }
 
 DEC_CMD(tv_audio_load_wav){

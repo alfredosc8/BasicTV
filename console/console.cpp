@@ -55,6 +55,7 @@ void console_t::execute(std::vector<std::string> cmd_vector){
 		LIST_CMD(tv_window_set_timestamp_offset);
 		LIST_CMD(tv_window_set_channel_id);
 		LIST_CMD(tv_channel_create);
+		LIST_CMD(tv_channel_get_stream_list);
 		LIST_CMD(tv_audio_load_wav);
 	}catch(std::exception &e){
 		print_socket("command failed:" + (std::string)e.what() + "\n");
@@ -107,7 +108,7 @@ void console_t::run(){
 						&(input_full[i])));
 				input_full.erase(
 					input_full.begin(),
-					input_full.begin()+i);
+					input_full.begin()+i+1);
 				i = 0;
 				if(cmd_vector.size() > 0){
 					P_V_S(cmd_vector[cmd_vector.size()-1], P_SPAM);
