@@ -134,9 +134,9 @@ static uint32_t tv_audio_sdl_format_from_depth(uint8_t bit_depth){
   Loads up a chosen .wav file (sine wave) into one second chunks, writes that
   information into a tv_frame_audio_t entry (along with proper timing info), and
   links them all together with a linked list function (through std::vector<id_t_>)
- */
+*/
 
-static void tv_audio_test_load_sine_wave(){
+void tv_audio_load_wav(id_t_ channel_id, uint64_t start_time_micro_s, std::string file){
 	Mix_Chunk *chunk =
 		Mix_LoadWAV("test.wav");
 	if(chunk == nullptr){
@@ -148,8 +148,6 @@ static void tv_audio_test_load_sine_wave(){
 	  be good on that front
 	 */
 	// five seconds ought to be enough
-	const uint64_t start_time_micro_s =
-		get_time_microseconds()+(5*1000*1000);
 	const uint64_t frame_duration_micro_s =
 		1000*1000;
 	P_V(output_sampling_rate, P_SPAM);
@@ -193,14 +191,13 @@ static void tv_audio_test_load_sine_wave(){
 			audio->id.get_id());
 	}
 	id_api::linked_list::link_vector(audio_frame_vector);
-	tv_window_t *window =
-		new tv_window_t;
 	tv_channel_t *channel =
-		new tv_channel_t;
-	window->set_channel_id(
-		channel->id.get_id());
+		PTR_DATA(channel_id,
+			 tv_channel_t);
+	if(channel == nullptr){
+		print("channel is a nullptr", P_ERR);
+	}
 	channel->add_stream_id(audio_frame_vector[0]);
-	window->add_active_stream_id(audio_frame_vector[0]);
 	Mix_FreeChunk(chunk);
 	chunk = nullptr;
 }
@@ -237,7 +234,6 @@ void tv_audio_init(){
 		P_V(output_chunk_size, P_WARN);
 		print("cannot open audio:" + (std::string)(Mix_GetError()), P_ERR);
 	}
-	//tv_audio_test_load_sine_wave();
 }
 
 /*

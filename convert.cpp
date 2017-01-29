@@ -13,15 +13,18 @@
 
 void convert::nbo::to(uint8_t *data, uint64_t size){
 #ifdef IS_LITTLE_ENDIAN
-	switch(size){
-	case 2:
-		*data = NBO_16(*data);
-		return;
-	case 4:
-		*data = NBO_32(*data);
-		return;
-	case 8:
-		*data = NBO_64(*data);
+	// switch(size){
+	// case 2:
+	// 	*data = NBO_16(*data);
+	// 	return;
+	// case 4:
+	// 	*data = NBO_32(*data);
+	// 	return;
+	// case 8:
+	// 	*data = NBO_64(*data);
+	// 	return;
+	// }
+	if(size == 1){
 		return;
 	}
 	for(uint64_t i = 0;i < size/2;i++){
@@ -139,9 +142,13 @@ std::tuple<uint64_t, uint64_t, uint64_t, uint8_t> convert::color::bpc(std::tuple
 	return color;
 }
 
+const static int8_t hex_map[] = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
+
 static std::string byte_to_hex(uint8_t byte){
-	return (std::string)(to_hex(byte&4)) +
-		(std::string)(to_hex(byte >> 4));
+	std::string retval;
+	retval += std::string(1, hex_map[(byte&0xF0)>>4]);
+	retval += std::string(1, hex_map[(byte&0x0F)]);
+	return retval;
 }
 
 static uint8_t to_byte_char(int8_t hex){
@@ -186,7 +193,10 @@ static uint8_t to_byte_char(int8_t hex){
 // TODO: make cross endian
 
 static uint8_t hex_to_byte(std::string hex){
-	return to_byte_char(hex[0]) | (to_byte_char(hex[1]));
+	uint8_t retval = (to_byte_char(hex[0]) << 4) | to_byte_char(hex[1]);
+	P_V_S(hex, P_SPAM);
+	P_V((int)retval, P_SPAM);
+	return (to_byte_char(hex[0]) << 4) | (to_byte_char(hex[1]));
 }
 
 /*
@@ -195,6 +205,9 @@ static uint8_t hex_to_byte(std::string hex){
 
 std::vector<uint8_t> convert::number::from_hex(std::string hex){
 	std::vector<uint8_t> retval;
+	while(hex[0] == ' '){
+		hex = hex.substr(1, hex.size());
+	}
 	for(uint64_t i = 0;i < (hex.size()/2);i++){
 		retval.push_back(
 			hex_to_byte(
@@ -221,8 +234,11 @@ std::string convert::array::id::to_hex(id_t_ id_){
 	uint64_t uuid_num =
 		get_id_uuid(id_);
 	std::vector<uint8_t> uuid_vector(
-		&uuid_num,
-		&uuid_num+8);
+		(uint8_t*)&uuid_num,
+		((uint8_t*)&uuid_num)+8);
+	if(uuid_vector.size() != 8){
+		print("invalid size for UUID", P_ERR);
+	}
 	std::string retval =
 		convert::number::to_hex(
 			uuid_vector) +
@@ -237,22 +253,24 @@ std::string convert::array::id::to_hex(id_t_ id_){
 id_t_ convert::array::id::from_hex(std::string id_){
 	id_t_ retval = ID_BLANK_ID;
 	uint64_t pos_of_hyphen = id_.find_first_of("-");
+	std::string uuid_substr =
+		id_.substr(0, pos_of_hyphen);
+	P_V_S(uuid_substr, P_NOTE);
 	std::vector<uint8_t> uuid_raw =
-		convert::number::from_hex(
-			id_.substr(
-				0, pos_of_hyphen));
+		convert::number::from_hex(uuid_substr);
 	if(uuid_raw.size() != 8){
 		print("invalid size for UUID", P_ERR);
 	}
-	uint64_t uuid = 0;
-	memcpy(&uuid, uuid_raw.data(), 8);
 	set_id_uuid(
 		&retval,
-		uuid);
+		*((uint64_t*)(&(uuid_raw[0]))));
+	std::string hash_substr =
+		id_.substr(
+			pos_of_hyphen+1,
+			id_.size());
 	std::vector<uint8_t> hash =
 		convert::number::from_hex(
-			id_.substr(
-				pos_of_hyphen, id_.size()));
+			hash_substr);
 	if(hash.size() != 32){
 		print("invalid size for hash", P_ERR);
 	}

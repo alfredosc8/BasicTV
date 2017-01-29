@@ -15,7 +15,7 @@
   calling it. This is done for every level.
 */
 
-#define LIST_CMD(x) if(cmd_vector.at(0) == #x){if(cmd_vector.size() > 1){x(std::vector<std::string>(cmd_vector.begin()+1, cmd_vector.end()));}else{x(std::vector<std::string>{});}}
+#define LIST_CMD(x) if(cmd_vector.at(0) == #x){if(cmd_vector.size() > 1){x(std::vector<std::string>(cmd_vector.begin()+1, cmd_vector.end()));}else{x(std::vector<std::string>{});}ran = true;}
 #define DEF_CMD(x) void x(std::vector<std::string> cmd_vector)
 #define DEC_CMD(x) void console_t::x(std::vector<std::string> cmd_vector)
 
@@ -44,6 +44,7 @@ private:
 	std::array<std::string, 4> registers;
 
 	DEF_CMD(exit);
+	DEF_CMD(output_table_clear);
 	
 	/*
 	  Print operations
@@ -96,10 +97,16 @@ private:
 	/* DEF_CMD(tv_list_clear_all_active_streams); // no reg */
 	/* DEF_CMD(tv_list_del_active_streams); // first reg: id to del */
 	
-	/* DEF_CMD(tv_list_active_streams); // first reg: tv_channel_t id */
-	/* DEF_CMD(tv_list_clear_active_stream); // first reg: tv_channel_t id */
-	/* DEF_CMD(tv_list_add_active_stream); // first reg: chan id, second reg: stream id */
-	/* DEF_CMD(tv_list_del_active_stream); // first reg: chan id, second reg: stream id */
+	DEF_CMD(tv_window_list_active_streams); // first reg: tv_window_t id
+	DEF_CMD(tv_window_clear_active_streams); // first reg: tv_window_t id
+	DEF_CMD(tv_window_add_active_stream); // first reg: chan id, second reg: stream id
+	DEF_CMD(tv_window_del_active_stream); // first reg: chan id, second reg: stream id/
+	DEF_CMD(tv_window_create);
+	DEF_CMD(tv_window_set_to_time);
+	DEF_CMD(tv_window_set_timestamp_offset);
+	DEF_CMD(tv_window_set_channel_id);
+	DEF_CMD(tv_channel_create);
+	DEF_CMD(tv_audio_load_wav);
 	void print_socket(std::string);
 	void execute(std::vector<std::string> cmd_vector);
 public:
@@ -110,6 +117,25 @@ public:
 	id_t_ get_socket_id();
 	void run();
 };
+
+// easier to guarantee typenames
+
+#define ADD_COLUMN_TO_TABLE(vector, id_column, getter, converter, type) \
+	vector[0].push_back(#getter);					\
+	for(uint64_t i = 0;i < vector.size();i++){			\
+		id_t_ tmp_id =						\
+			convert::array::id::from_hex(			\
+				vector[i][id_column]);			\
+		type *tmp_ptr =						\
+			PTR_DATA(tmp_id, type);				\
+		if(tmp_ptr != nullptr){					\
+			vector[i].push_back(converter(tmp_ptr->getter())); \
+		}else{							\
+			vector[i].push_back("NULL");			\
+		}							\
+	}								\
+	
+extern std::vector<std::vector<std::string> > console_generate_generic_id_table(std::vector<id_t_> id_vector);
 
 extern void console_init();
 extern void console_loop();

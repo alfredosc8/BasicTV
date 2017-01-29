@@ -347,7 +347,7 @@ static void test_id_transport(){
 static void test_nbo_transport(){
 	// 2, 4, and 8 are optimized, 7 isn't
 	std::vector<uint8_t> test =
-		{'T', 'E', 'S', 'T', 'I', 'N'};
+		{'T', 'E', 'S', 'T', 'I', 'N', 'G'};
 	std::vector<uint8_t> test_2 = test;
 	test_2 =
 		convert::nbo::from(
@@ -431,6 +431,7 @@ int main(int argc_, char **argv_){
 	argc = argc_;
 	argv = argv_;
 	init();
+	//test_id_hex();
 	//test_rsa_encryption();
 	//test_break_id_transport();
 	//test_id_transport();

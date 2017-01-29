@@ -30,20 +30,38 @@ void console_t::print_socket(std::string str){
 	}
 }
 
+DEC_CMD(output_table_clear){
+	output_table.clear();
+}
+
 void console_t::execute(std::vector<std::string> cmd_vector){
-	P_V(cmd_vector.size(), P_DEBUG);
-	for(uint64_t i = 0;i < cmd_vector.size();i++){
-		P_V_S(cmd_vector[i], P_DEBUG);
-	}
+	bool ran = false;
 	try{
+		LIST_CMD(output_table_clear);
 		LIST_CMD(reg_set_const);
 		LIST_CMD(reg_set_table);
 		LIST_CMD(reg_copy);
 		LIST_CMD(reg_clear);
+		LIST_CMD(print_output_table);
+		LIST_CMD(print_reg);
 		LIST_CMD(exit);
-	}catch(...){
-		print_socket("command failed\n");
+		// TV
+		LIST_CMD(tv_window_list_active_streams);
+		LIST_CMD(tv_window_clear_active_streams);
+		LIST_CMD(tv_window_add_active_stream);
+		LIST_CMD(tv_window_del_active_stream);
+		LIST_CMD(tv_window_create);
+		LIST_CMD(tv_window_set_to_time);
+		LIST_CMD(tv_window_set_timestamp_offset);
+		LIST_CMD(tv_window_set_channel_id);
+		LIST_CMD(tv_channel_create);
+		LIST_CMD(tv_audio_load_wav);
+	}catch(std::exception &e){
+		print_socket("command failed:" + (std::string)e.what() + "\n");
 		return;
+	}
+	if(ran == false){
+		print_socket("invalid command\n");
 	}
 	print_socket("command succeeded\n");
 }
@@ -176,4 +194,32 @@ void console_loop(){
 }
 
 void console_close(){
+}
+
+std::vector<std::vector<std::string> > console_generate_generic_id_table(std::vector<id_t_> id_vector){
+	std::vector<std::vector<std::string> > retval;
+	retval.push_back({"ID", "Type", "Prev Linked List", "Next Linked List", "Mod. Inc."});
+	for(uint64_t i = 0;i < id_vector.size();i++){
+		std::vector<std::string> tmp_vector;
+		tmp_vector.push_back(convert::array::id::to_hex(id_vector[i]));
+		data_id_t *id_ptr =
+			PTR_ID(id_vector[i], );
+		if(id_ptr != nullptr){
+			tmp_vector.push_back(
+				id_ptr->get_type());
+			tmp_vector.push_back(
+				convert::array::id::to_hex(
+					id_ptr->get_prev_linked_list()));
+			tmp_vector.push_back(
+				convert::array::id::to_hex(
+					id_ptr->get_next_linked_list()));
+			tmp_vector.push_back(
+				std::to_string(id_ptr->get_mod_inc()));
+		}else{
+			tmp_vector.insert(
+				tmp_vector.end(), 4, "NULL");
+		}
+		retval.push_back(tmp_vector);
+	}
+	return retval;
 }
