@@ -25,6 +25,13 @@
 
 static void net_proto_send_requests(net_proto_request_t *request, uint64_t retry_interval_micro_s){
 	request->update_probs();
+	uint64_t socket_count = 4;
+	try{
+		socket_count =
+			std::stoi(
+				settings::get_setting(
+					"net_proto_request_whitelist_socket_count"));
+	}catch(...){}
 	std::vector<id_t_> all_request_ids =
 		request->get_ids();
 	for(uint64_t i = 0;i < all_request_ids.size();i++){
@@ -34,7 +41,7 @@ static void net_proto_send_requests(net_proto_request_t *request, uint64_t retry
 			request->get_prob_socket_ids_ordered(
 				req_id);
 		uint64_t new_sockets = 0;
-		for(uint64_t c = 0;c < socket_ids_ordered.size() && new_sockets < 4;c++){
+		for(uint64_t c = 0;c < socket_ids_ordered.size() && new_sockets < socket_count;c++){
 			const id_t_ socket_id =
 				socket_ids_ordered[c];
 			if(request->should_send_to_socket(
@@ -53,7 +60,12 @@ static void net_proto_send_requests(net_proto_request_t *request, uint64_t retry
 static void net_proto_request_logic(net_proto_request_t *request,
 				    uint64_t retry_interval_micro_s){
 	if(request->get_flags() & NET_REQUEST_BLACKLIST){
-		// shouldn't be based on IDs
+		if(convert::array::type::from(
+			   request->get_type()) == ""){
+			print("can't request a blacklist without a type", P_NOTE);
+			return;
+			// checking isn't needed, the vector would be empty
+		}
 		std::vector<id_t_> all_net_proto_sockets =
 			id_api::cache::get(
 				"net_proto_socket_t");
@@ -61,6 +73,13 @@ static void net_proto_request_logic(net_proto_request_t *request,
 			all_net_proto_sockets.begin(),
 			all_net_proto_sockets.end());
 		// not defined whatsoever
+		uint64_t socket_query_count = 3;
+		try{
+			socket_query_count =
+				std::stoi(
+					settings::get_setting(
+						"net_proto_request_blacklist_socket_count"));
+		}catch(...){}
 		try{
 			// TODO: define this as a setting
 			for(uint64_t i = 0;i < 3;i++){
