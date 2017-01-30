@@ -80,6 +80,13 @@ void console_t::execute(std::vector<std::string> cmd_vector){
 		LIST_CMD(tv_channel_create);
 		LIST_CMD(tv_channel_get_stream_list);
 		LIST_CMD(tv_audio_load_wav);
+
+		// "tester" functions for the TV
+		// these are equal to different unit tests for audio and video
+		// only here to give other people feedback
+		LIST_CMD(tv_test_audio);
+		LIST_CMD(tv_test_menu);
+		LIST_CMD(tv_test_card); // "test" card here is the XOR of the X and Y
 	}catch(std::exception &e){
 		print_socket("command failed:" + (std::string)e.what() + "\n");
 		return;

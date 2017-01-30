@@ -237,6 +237,7 @@ std::string convert::array::id::to_hex(id_t_ id_){
 		(uint8_t*)&uuid_num,
 		((uint8_t*)&uuid_num)+8);
 	if(uuid_vector.size() != 8){
+		P_V(uuid_vector.size(), P_SPAM);
 		print("invalid size for UUID", P_ERR);
 	}
 	std::string retval =

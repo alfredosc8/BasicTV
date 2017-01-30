@@ -109,12 +109,72 @@ DEC_CMD(tv_channel_get_stream_list){
 
 DEC_CMD(tv_audio_load_wav){
 	id_t_ channel_id =
-		convert::array::id::from_hex(registers[0]);
+		convert::array::id::from_hex(registers.at(0));
 	uint64_t start_time_micro_s =
-		std::stoull(registers[1]);
-	std::string file = registers[2];
+		std::stoull(registers.at(1));
+	std::string file = registers.at(2);
 	::tv_audio_load_wav(
 		channel_id,
 		start_time_micro_s,
 		file);			
+}
+
+/*
+  These test commands are self contained systems, so they create
+  and use their own variables. The program should be smart enough
+  to correctly handle multiple channels and windows by this point
+  (and if it doesn't that should be fixed).
+
+  The two parameters this takes is the offset (in microseconds) that the
+  broadcast will start at, and the path to the file (absolute or from
+  the directory of BasicTV, not the directory of where the telnet client
+  is being ran, obviously)
+ */
+
+DEC_CMD(tv_test_audio){
+	const uint64_t start_time_micro_s =
+		get_time_microseconds()+std::stoull(registers.at(0));
+	const std::string file =
+		cmd_vector.at(1);
+	tv_window_t *window = nullptr;
+	std::vector<id_t_> all_windows =
+		id_api::cache::get(
+			"tv_window_t");
+	if(all_windows.size() > 0){
+		window =
+			PTR_DATA(all_windows.at(0),
+				 tv_window_t);
+		if(window == nullptr){
+			print_socket("false flag raised by cache get, creating new window\n");
+			window = new tv_window_t;
+		}
+		print_socket("using pre-existing window with the ID " + convert::array::id::to_hex(all_windows.at(0)) + "\n");
+	}else{
+		window = new tv_window_t;
+	}
+	tv_channel_t *channel =
+		new tv_channel_t;
+	window->set_channel_id(channel->id.get_id());
+	::tv_audio_load_wav(
+		channel->id.get_id(),
+		start_time_micro_s,
+		file);
+	const std::vector<id_t_> stream_list =
+		channel->get_stream_list();
+	if(stream_list.size() == 0){
+		print_socket("couldn't load WAV information into channel");
+	}else if(stream_list.size() > 1){
+		print_socket("more streams than anticipated\n");
+	}else{
+		window->add_active_stream_id(
+			stream_list.at(0));
+	}
+}
+
+DEC_CMD(tv_test_menu){
+	print_socket("not implemented yet\n");
+}
+
+DEC_CMD(tv_test_card){
+	print_socket("not implemented yet\n");
 }

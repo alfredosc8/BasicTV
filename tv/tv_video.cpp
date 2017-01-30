@@ -296,7 +296,7 @@ static void tv_render_all(){
 		tv_window_t *window = nullptr;
 		tv_channel_t *channel = nullptr;
 		tv_frame_video_t *frame_video = nullptr;
-		//tv_frame_audio_t *frame_audio = nullptr; // currently unused
+		// TODO: restructure this
 		window = PTR_DATA(all_windows[i], tv_window_t);
 		CONTINUE_IF_NULL(window);
 		channel = PTR_DATA(window->get_channel_id(), tv_channel_t);
@@ -319,8 +319,6 @@ static void tv_render_all(){
 	}
 	if(unlikely(SDL_UpdateWindowSurface(sdl_window) < 0)){
 		print((std::string)"cannot update sdl_window:"+SDL_GetError(), P_CRIT);
-	}else{
-		print("updated sdl_window without errors", P_SPAM);
 	}
 }
 
@@ -419,7 +417,7 @@ void tv_video_init(){
 		NULL,
 		SDL_MapRGB(SDL_GetWindowSurface(sdl_window)->format, 0, 0, 0));
 	SDL_UpdateWindowSurface(sdl_window);
-	tv_init_test_test_card(x_res, y_res);
+	//tv_init_test_test_card(x_res, y_res);
 	//tv_init_test_menu();
 	//tv_init_test_webcam();
 }

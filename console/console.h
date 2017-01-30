@@ -115,6 +115,11 @@ private:
 	DEF_CMD(tv_channel_create);
 	DEF_CMD(tv_channel_get_stream_list);
 	DEF_CMD(tv_audio_load_wav);
+
+	// tester functions
+	DEF_CMD(tv_test_audio);
+	DEF_CMD(tv_test_menu);
+	DEF_CMD(tv_test_card);
 	void print_socket(std::string);
 	void execute(std::vector<std::string> cmd_vector);
 public:
