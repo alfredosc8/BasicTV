@@ -73,16 +73,16 @@ static void net_proto_request_logic(net_proto_request_t *request,
 			all_net_proto_sockets.begin(),
 			all_net_proto_sockets.end());
 		// not defined whatsoever
-		uint64_t socket_query_count = 3;
+		uint64_t socket_count = 3;
 		try{
-			socket_query_count =
+			socket_count =
 				std::stoi(
 					settings::get_setting(
 						"net_proto_request_blacklist_socket_count"));
 		}catch(...){}
 		try{
 			// TODO: define this as a setting
-			for(uint64_t i = 0;i < 3;i++){
+			for(uint64_t i = 0;i < socket_count;i++){
 				net_proto_socket_t *tmp_proto_socket =
 					PTR_DATA(all_net_proto_sockets[i],
 						 net_proto_socket_t);
