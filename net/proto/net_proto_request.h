@@ -75,6 +75,10 @@ private:
 	  This is measured in 1/65535ths, so 1 is 100 percent chance
 	 */
 	std::vector<std::pair<id_t_, std::vector<std::pair<id_t_, uint16_t> > > > prob_of_id;
+	/*
+	  List of all of the IDs and the sockets they have been sent on
+	 */
+	std::vector<std::pair<id_t_, std::vector<std::pair<id_t_, uint64_t> > > > id_socket_vector;
 	uint64_t last_query_timestamp_micro_s = 0;
 public:
 	data_id_t id;
@@ -92,6 +96,9 @@ public:
 	bool is_local();
 	uint64_t get_last_query_timestamp_micro_s();
 	void update_probs();	
+	std::vector<id_t_> get_prob_socket_ids_ordered(id_t_ req_id);
+	bool should_send_to_socket(id_t_ req_id, id_t_ proto_socket_id, uint64_t retry_interval_micro_s);
+	void send_to_socket(id_t_ req_id, id_t_ proto_socket_id);
 };
 
 #endif

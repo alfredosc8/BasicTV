@@ -15,7 +15,7 @@
 */
 #define TV_AUDIO_DEFAULT_CHUNK_SIZE 256
 
-extern void tv_audio_load_wav(id_t_ channel_id, uint64_t start_time_micro_s, std::string file);
+extern std::vector<id_t_> tv_audio_load_wav(id_t_ channel_id, uint64_t start_time_micro_s, std::string file);
 extern void tv_audio_init();
 extern void tv_audio_loop();
 extern void tv_audio_close();

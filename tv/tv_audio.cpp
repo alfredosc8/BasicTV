@@ -139,7 +139,12 @@ static uint32_t tv_audio_sdl_format_from_depth(uint8_t bit_depth){
   links them all together with a linked list function (through std::vector<id_t_>)
 */
 
-void tv_audio_load_wav(id_t_ channel_id, uint64_t start_time_micro_s, std::string file){
+/*
+  Return value is only used by the testing functions (currently) to set all
+  of the data as non exportable
+ */
+
+std::vector<id_t_> tv_audio_load_wav(id_t_ channel_id, uint64_t start_time_micro_s, std::string file){
 	Mix_Chunk *chunk =
 		Mix_LoadWAV(file.c_str());
 	if(chunk == nullptr){
@@ -203,6 +208,7 @@ void tv_audio_load_wav(id_t_ channel_id, uint64_t start_time_micro_s, std::strin
 	channel->add_stream_id(audio_frame_vector[0]);
 	Mix_FreeChunk(chunk);
 	chunk = nullptr;
+	return audio_frame_vector;
 }
 
 void tv_audio_init(){

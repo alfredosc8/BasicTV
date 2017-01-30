@@ -41,13 +41,15 @@ void net_proto_socket_t::send_id(id_t_ id_){
 	  private keys). That doesn't inherently mean nothing is sent though,
 	  and this makes it not fill the request at all.
 
+	  There are currently three checks for malicious information:
+	  1. Constructor has NONET
+	  2. Fulfilling net_proto_request_t checks it with DDoS vectors
+	  3. Right here (only for security)
+	  
 	  TODO: possibly add a class where exporting doesn't make sense and
 	  where exporting is malicious
 	 */
-	const bool malicious =
-		type == "encrypt_priv_key_t" ||
-		type == "net_socket_t";
-	if(malicious){
+	if(type == "encrypt_priv_key_t"){
 		print("malicious request, not filling", P_WARN);
 	}else{
 		net_socket_t *socket =

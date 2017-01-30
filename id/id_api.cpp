@@ -52,6 +52,7 @@ data_id_t *id_api::array::ptr_id(id_t_ id,
 	data_id_t *retval = id_find(id);
 	if(retval == nullptr){
 		if(flags & ID_LOOKUP_FAST){
+			// TODO: actually check the disk
 			return nullptr;
 		}
 		// TODO: get a list of items to not query the network for
@@ -561,4 +562,18 @@ std::array<uint8_t, 32> id_api::metadata::get_type_from_data(std::vector<uint8_t
 	}
 	memcpy(&(retval[0]), &(raw_data[40]), 32);
 	return retval;
+}
+
+std::vector<uint64_t> id_api::bulk_fetch::mod(std::vector<id_t_> vector){
+	std::vector<uint64_t> retval;
+	for(uint64_t i = 0;i < vector.size();i++){
+		data_id_t *id_ptr =
+			PTR_ID_FAST(vector[i], );
+		if(id_ptr != nullptr){
+			retval.push_back(
+				id_ptr->get_mod_inc());
+		}else{
+			retval.push_back(0);
+		}
+	}
 }

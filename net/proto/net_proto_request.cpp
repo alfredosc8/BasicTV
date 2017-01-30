@@ -117,3 +117,95 @@ void net_proto_request_t::update_probs(){
 		// all sockets that share the same fingerprint right here
 	}
 }
+
+bool net_proto_request_t::should_send_to_socket(id_t_ req_id,
+						id_t_ socket_id,
+						uint64_t retry_interval_micro_s){
+	const uint64_t time_micro_s =
+		get_time_microseconds();
+	for(uint64_t i = 0;i < id_socket_vector.size();i++){
+		if(id_socket_vector[i].first != req_id){
+			continue;
+		}
+		for(uint64_t c = 0;c < id_socket_vector[i].second.size();c++){
+			if(id_socket_vector[i].second[c].first == socket_id){
+				// timeout
+				return time_micro_s-id_socket_vector[i].second[c].second > retry_interval_micro_s;
+			}
+		}
+	}
+	return false;
+}
+
+void net_proto_request_t::send_to_socket(id_t_ req_id,
+					 id_t_ proto_socket_id){
+	net_proto_socket_t *proto_socket =
+		PTR_DATA(proto_socket_id,
+			 net_proto_socket_t);
+	if(proto_socket == nullptr){
+		print("socket is a nullptr, can't send", P_WARN);
+	}
+	bool updated = false;
+	for(uint64_t i = 0;i < id_socket_vector.size();i++){
+		if(id_socket_vector[i].first != req_id){
+			continue;
+		}
+		for(uint64_t c = 0;c < id_socket_vector[i].second.size();c++){
+			if(id_socket_vector[i].second[c].first == socket_id){
+				id_socket_vector[i].second[c].second =
+					get_time_microseconds();
+				updated = true;
+				break;
+			}
+		}
+		if(!updated){
+			id_socket_vector[i].second.push_back(
+				std::make_pair(
+					socket_id,
+					get_time_microseconds()));
+			updated = true;
+			break;
+		}
+	}
+	if(!updated){
+		print("sending a request to an ID I have no current record of, weird", P_WARN);
+		id_socket_vector.push_back(
+			std::make_pair(
+				req_id,
+				std::vector<std::pair<id_t_, uint64_t> >(
+				{std::make_pair(
+						socket_id,
+						get_time_microseconds())})));
+		updated = true;
+	}
+	proto_socket->send_id(req_id);
+}
+
+std::vector<id_t_> net_proto_request_t::get_prob_socket_ids_ordered(id_t_ req_id){
+	for(uint64_t i = 0;i < prob_of_id.size();i++){
+		if(prob_of_id[i].first != req_id){
+			continue;
+		}
+		std::vector<std::pair<id_t_, uint16_t> > retval_tmp = prob_of_id[i].second;
+		bool changed = true;
+		while(changed){
+			changed = false;
+			for(uint64_t c = 0;c < retval_tmp.size()-1;c++){
+				if(retval_tmp[i+1].second >
+				   retval_tmp[i].second){
+					auto tmp = retval_tmp[i+1].second;
+					retval_tmp[i+1].second = retval_tmp[i].second;
+					retval_tmp[i].second = tmp;
+					changed = true;
+				}
+			}
+		}
+		std::vector<id_t_> retval;
+		for(uint64_t c = 0;c < retval_tmp.size();c++){
+			retval.push_back(
+				retval_tmp[c].first);
+		}
+		return retval;
+	}
+	return {};
+}

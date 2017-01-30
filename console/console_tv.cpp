@@ -2,6 +2,7 @@
 #include "../tv/tv.h"
 #include "../tv/tv_channel.h"
 #include "../tv/tv_audio.h"
+#include "../tv/tv_frame_audio.h"
 #include "../tv/tv_window.h"
 #include "../util.h"
 
@@ -155,10 +156,21 @@ DEC_CMD(tv_test_audio){
 	tv_channel_t *channel =
 		new tv_channel_t;
 	window->set_channel_id(channel->id.get_id());
-	::tv_audio_load_wav(
-		channel->id.get_id(),
-		start_time_micro_s,
-		file);
+	std::vector<id_t_> all_frame_audios =
+		::tv_audio_load_wav(
+			channel->id.get_id(),
+			start_time_micro_s,
+			file);
+	for(uint64_t i = 0;i < all_frame_audios.size();i++){
+		tv_frame_audio_t *frame_audio =
+			PTR_DATA(all_frame_audios[i],
+				 tv_frame_audio_t);
+		if(unlikely(frame_audio == nullptr)){
+			print_socket("frame audio is a nullptr\n");
+		}else{
+			frame_audio->id.noexp_all_data();
+		}
+	}
 	const std::vector<id_t_> stream_list =
 		channel->get_stream_list();
 	if(stream_list.size() == 0){

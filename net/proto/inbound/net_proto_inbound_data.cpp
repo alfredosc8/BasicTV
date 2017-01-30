@@ -236,9 +236,11 @@ void net_proto_loop_handle_inbound_data(){
  */
 
 // for security reasons
-static std::array<std::string, 2> malicious_to_send =
+static std::array<std::string, 4> malicious_to_send =
 {"encrypt_priv_key_t",
- "net_proxy_t"};
+ "net_proxy_t",
+ "net_socket_t",
+ "net_proto_socket_t"};
 
 // for DoS/DDoS reasons
 static std::array<std::string, 3> malicious_to_bulk_send =
@@ -248,6 +250,14 @@ static std::array<std::string, 3> malicious_to_bulk_send =
 
 // net_con_req_t are in a different file
 // receives net_proto_request_t, sends data out
+
+/*
+  The checks are better off here because we know for sure if the request
+  is bulk (or I can pass a vector to send_id?)
+
+  It's fine like it is for now, since this protection is already redundant
+ */
+
 void net_proto_loop_handle_inbound_requests(){
 	std::vector<id_t_> net_proto_requests =
 		id_api::cache::get("net_proto_request_t");
@@ -296,8 +306,9 @@ void net_proto_loop_handle_inbound_requests(){
 			request->get_mod();
 		// getters assert they are at least equal
 		for(uint64_t i = 0;i < serve_vector.size();i++){
+			//
 			data_id_t *id_tmp =
-				PTR_ID(serve_vector[i], );
+				PTR_ID_FAST(serve_vector[i], );
 			if(id_tmp == nullptr){
 				print("can't service an ID I don't have", P_NOTE);
 			}
@@ -312,4 +323,4 @@ void net_proto_loop_handle_inbound_requests(){
 			}
 		}
 	}
-}
+	}
