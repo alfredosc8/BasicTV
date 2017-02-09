@@ -28,5 +28,7 @@ public:
 };
 #endif
 
+std::string net_get_ip();
+
 #include "net_socket.h"
 #include "proto/net_proto.h"

@@ -196,15 +196,6 @@ static void net_proto_process_buffer_vector(net_proto_socket_t *proto_socket){
 			id_t_ imported_data_id =
 				id_api::array::add_data(buffer_vector[i]);
 			proto_socket->add_id_to_log(imported_data_id);
-			data_id_t *imported_data_ptr =
-				PTR_ID(imported_data_id,
-				       net_proto_request_t);
-			if(imported_data_ptr != nullptr){
-				net_proto_request_t *request =
-					(net_proto_request_t*)imported_data_ptr->get_ptr();
-				request->set_proto_socket_id(
-					proto_socket->id.get_id());
-			}
 		}catch(...){
 			// unable to parse that file
 		}
@@ -252,75 +243,85 @@ static std::array<std::string, 3> malicious_to_bulk_send =
 // receives net_proto_request_t, sends data out
 
 /*
-  The checks are better off here because we know for sure if the request
-  is bulk (or I can pass a vector to send_id?)
-
-  It's fine like it is for now, since this protection is already redundant
+  Move bulk exporting of IDs down to net_proto_socket_t for security reasons
  */
 
-void net_proto_loop_handle_inbound_requests(){
-	std::vector<id_t_> net_proto_requests =
-		id_api::cache::get("net_proto_request_t");
-	for(uint64_t i = 0;i < net_proto_requests.size();i++){
-		net_proto_request_t *request =
-			PTR_DATA(net_proto_requests[i],
-				 net_proto_request_t);
-		if(request == nullptr){
-			continue;
+static std::vector<uint8_t> net_proto_loop_export_id_vector(std::vector<id_t_> ids){
+	std::vector<uint8_t> retval;
+	for(uint64_t i = 0;i < ids.size();i++){
+		data_id_t *tmp_id =
+			PTR_ID(ids[i], );
+		CONTINUE_IF_NULL(tmp_id);
+		const std::vector<uint8_t> export_data =
+			tmp_id->export_data(ID_DATA_NONET);
+		if(export_data.size() != 0){
+			retval.insert(
+				retval.end(),
+				export_data.begin(),
+				export_data.end());
 		}
-		if(request->get_proto_socket_id() == ID_BLANK_ID){
-			continue;
-		}
-		const std::string type =
-			convert::array::type::from(
-				request->get_type());
-		const bool malicious_to_send_ =
-			std::find(
-				malicious_to_send.begin(),
-				malicious_to_send.end(),
-				type);
-		if(malicious_to_send_){
-			print("malicious to send period, not servicing", P_ERR);
-		}
-		const bool malicious_to_bulk_send_ =
-			std::find(
-				malicious_to_bulk_send.begin(),
-				malicious_to_bulk_send.end(),
-				type);
-		const bool bulk_send =
-			(convert::array::type::from(request->get_type()) != "") &&
-			!(request->get_flags() & NET_REQUEST_BLACKLIST);
-		if(bulk_send && malicious_to_bulk_send_){
-			print("detected malicious activity on a bulk send, not servicing", P_ERR);
-		}
-		// TODO: actually create a proper response to this (?)
-		net_proto_socket_t *curr_proto_socket =
-			PTR_DATA(request->get_proto_socket_id(),
+	}
+	return retval;
+}
+
+static void net_proto_handle_inbound_type_request(id_t_ request_id){
+	net_proto_type_request_t *request =
+		PTR_DATA(request_id,
+			 net_proto_type_request_t);
+	PRINT_IF_NULL(request, P_ERR);
+	/*
+	  TODO: Pull net_proto_peer_t ID from request, search all sockets
+	  to find a valid socket the data can be sent on, and send 
+	  everything down the one.
+	  
+	  After I know that works, then start optimizing away by registering
+	  sockets with net_peer_t and using that instead and other smalls
+	 */
+	const id_t_ peer_id = request->get_peer_id();
+	net_proto_socket_t *proto_socket_ptr = nullptr;
+	std::vector<id_t_> proto_socket_vector =
+		id_api::cache::get("net_proto_socket_t");
+	for(uint64_t i = 0;i < proto_socket_vector.size();i++){
+		net_proto_socket_t *proto_socket =
+			PTR_DATA(proto_socket_vector[i],
 				 net_proto_socket_t);
-		if(curr_proto_socket == nullptr){
-			print("can't service to an invalid socket", P_NOTE);
-		}
-		std::vector<id_t_> serve_vector =
-			request->get_ids();
-		std::vector<uint64_t> mod_vector =
-			request->get_mod();
-		// getters assert they are at least equal
-		for(uint64_t i = 0;i < serve_vector.size();i++){
-			//
-			data_id_t *id_tmp =
-				PTR_ID_FAST(serve_vector[i], );
-			if(id_tmp == nullptr){
-				print("can't service an ID I don't have", P_NOTE);
-			}
-			if(id_tmp->get_mod_inc() >= mod_vector[i]){
-				curr_proto_socket->send_id(serve_vector[i]);
-			}else{
-				// can be spammed
-				/*
-				  I CAN'T QUERY A NODE BECAUSE OF THIS
-				 */
-				print("ID I have is out of date?", P_NOTE);
+		CONTINUE_IF_NULL(proto_socket);
+		if(proto_socket->get_peer_id() == peer_id){
+			proto_socket_ptr =
+				PTR_DATA(proto_socket_vector[i],
+					 net_proto_socket_t);
+			if(proto_socket_ptr != nullptr){
+				break;
 			}
 		}
 	}
+	proto_socket_ptr->send_id_vector(
+		request->get_ids());
+}
+
+static void net_proto_loop_handle_all_inbound_type_requests(){
+	std::vector<id_t_> type_request_vector =
+		id_api::cache::get("net_proto_type_request_t");
+	for(uint64_t i = 0;i < type_request_vector.size();i++){
+		net_proto_handle_inbound_type_request(
+			type_request_vector[i]);
 	}
+}
+
+static void net_proto_loop_handle_all_inbound_standard_requests(){
+}
+
+/*
+  Remember the information about the request state is handled inside
+  of the data type, so don't delete it if it still has information
+  I can fill (but can't right now).
+ */
+
+static void net_proto_loop_handle_all_inbound_linked_list_requests(){
+}
+
+void net_proto_loop_handle_inbound_requests(){
+	net_proto_loop_handle_all_inbound_type_requests();
+	net_proto_loop_handle_all_inbound_standard_requests();
+	net_proto_loop_handle_all_inbound_linked_list_requests();
+}

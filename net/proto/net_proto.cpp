@@ -14,7 +14,10 @@
 #include "outbound/net_proto_outbound_data.h"
 #include "net_proto_meta.h"
 
+// socket ID
 static id_t_ incoming_id = ID_BLANK_ID;
+// peer_id
+static id_t_ self_peer_id = ID_BLANK_ID;
 
 void net_proto_loop(){
 	net_socket_t *incoming_socket =
@@ -33,6 +36,21 @@ void net_proto_loop(){
 void net_proto_init(){
 	net_socket_t *incoming = new net_socket_t;
 	incoming_id = incoming->id.get_id();
+	/*
+	  Assume all IDs that should be imported are from earlier code
+	 */
+	self_peer_id = id_api::array::fetch_one_from_hash(
+		convert::array::type::to("net_peer_t"),
+		get_id_hash(production_priv_key_id));
+	if(self_peer_id == ID_BLANK_ID){
+		print("can't find old net_peer_t information, generating new", P_NOTE);
+		self_peer_id = (new net_peer_t)->id.get_id();
+		net_proto::peer::set_self_as_peer(
+			net_get_ip(),
+			settings::get_setting_unsigned_def(
+				"network_port",
+				58486));
+	}
 	// uint16_t tmp_port = 0;
 	// try{
 	// 	tmp_port = (uint16_t)std::stoi(settings::get_setting("network_port"));
@@ -72,3 +90,10 @@ void net_proto_close(){
 	// All data types should destroy any internal data
 }
 
+void net_proto::peer::set_self_as_peer(std::string ip, uint16_t port){
+	net_proto_peer_t *proto_peer =
+		PTR_DATA(self_peer_id,
+			 net_proto_peer_t);
+	PRINT_IF_NULL(proto_peer, P_ERR);
+	proto_peer->set_net_ip(ip, port, NET_IP_VER_4); // ?
+}

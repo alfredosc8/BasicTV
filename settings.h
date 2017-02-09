@@ -11,6 +11,8 @@ namespace settings{
 	void set_setting(std::string a, std::string b);
 	std::string get_setting(std::string);
 	void set_default_setting(std::string setting, std::string value);
+
+	uint64_t get_setting_unsigned_def(std::string setting, uint64_t default_val);
 }
 extern void settings_init();
 #endif

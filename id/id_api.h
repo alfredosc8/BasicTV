@@ -46,6 +46,11 @@ namespace id_api{
 		void add(data_id_t *ptr);
 		void del(id_t_ id); // no type
 		id_t_ add_data(std::vector<uint8_t> data_);
+		// used for quick lookups of my own type (encrypt_priv_key_t,
+		// net_peer_t, etc.)
+		id_t_ fetch_one_from_hash(std::array<uint8_t, TYPE_LENGTH> type,
+					  std::array<uint8_t, 32> sha_hash);
+		// TODO: create a version that throws on more than one
 	}
 	namespace cache{
 		// get_type_vector_ptr should never be used outside of id_api.cpp	

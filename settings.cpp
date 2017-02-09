@@ -116,6 +116,17 @@ void settings::set_default_setting(std::string setting, std::string value){
 	settings_vector.push_back(std::make_pair(setting, value));
 }
 
+uint64_t settings::get_setting_unsigned_def(std::string settings, uint64_t default_val){
+	try{
+		return std::stoull(
+			get_setting(
+				settings));
+	}catch(...){
+		return default_val;
+	}
+}
+
 void settings_init(){
 	settings::set_settings("settings.cfg");
 }
+

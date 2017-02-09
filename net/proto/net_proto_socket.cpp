@@ -7,6 +7,11 @@
 #include "net_proto_socket.h"
 #include "../../id/id_api.h"
 
+/*
+  TODO: make a thread smart linked list creator for each
+  of the IDs non-redundantly (using PTR_ID_FAST)
+ */
+
 void net_proto_socket_t::set_socket_id(id_t_ socket_id_){
 	socket_id = socket_id_;
 	working_buffer.clear();
@@ -18,6 +23,14 @@ void net_proto_socket_t::set_socket_id(id_t_ socket_id_){
 
 id_t_ net_proto_socket_t::get_socket_id(){
 	return socket_id;
+}
+
+void net_proto_socket_t::set_peer_id(id_t_ peer_id_){
+	peer_id = peer_id_;
+}
+
+id_t_ net_proto_socket_t::get_peer_id(){
+	return peer_id;
 }
 
 std::vector<std::vector<uint8_t> > net_proto_socket_t::get_buffer(){
@@ -62,6 +75,12 @@ void net_proto_socket_t::send_id(id_t_ id_){
 		std::vector<uint8_t> exported_data =
 			ptr_id->export_data(ID_DATA_NONET);
 		socket->send(exported_data);
+	}
+}
+
+void net_proto_socket_t::send_id_vector(std::vector<id_t_> id_vector){
+	for(uint64_t i = 0;i < id_vector.size();i++){
+		send_id(id_vector[i]);
 	}
 }
 
@@ -120,6 +139,9 @@ void net_proto_socket_t::update(){
 		print("unrecognized metadata for packet", P_WARN);
 		return;
 	}
+	if(net_final.first.peer_id != ID_BLANK_ID){
+		peer_id = net_final.first.peer_id;
+	}
 	if(net_final.second.size() > 0){
 		// net_final.second size is the raw size from the socket, so it
 		// includes all extra DEV_CTRL_1s, so it can be used directly to
@@ -159,27 +181,4 @@ void net_proto_socket_t::add_id_to_log(id_t_ id_log_){
 
 std::vector<std::pair<uint64_t, id_t_> > net_proto_socket_t::get_id_log(){
 	return id_log;
-}
-
-/*
-  TODO: generalize the statistics function and cap the amount of entries it can
-  have per socket.
- */
-
-uint16_t net_proto_socket_t::get_prob_of_id(id_t_ id_){
-	uint16_t highest_stat = 0;
-	for(uint64_t i = 0;i < id_log.size();i++){
-		const uint64_t distance =
-			id_api::linked_list::distance_fast(
-				id_log[i].second,
-				id_);
-		const uint16_t curr_stat =
-			(1.0/(distance+1))*65535;
-		if(unlikely(curr_stat > highest_stat)){
-			highest_stat = curr_stat;
-		}
-	}
-	// actually interpreted as x/65535
-	P_V(highest_stat, P_SPAM);
-	return highest_stat;
 }

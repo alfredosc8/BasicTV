@@ -110,11 +110,10 @@ data_id_t::~data_id_t(){
 	}catch(...){}
 }
 
-static std::array<uint8_t, 32> zero_hash = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 id_t_ data_id_t::get_id(bool skip){
 	// even with unlikely, this seems pretty slow
-	if(!skip && !id_throw_exception && unlikely(memcmp(&(zero_hash[0]), &(id[8]), 32) == 0)){
+	if(!skip && !id_throw_exception && get_id_hash(id) == ID_BLANK_HASH){
 		encrypt_priv_key_t *priv_key =
 			PTR_DATA(production_priv_key_id,
 				 encrypt_priv_key_t);
@@ -254,6 +253,10 @@ static void id_export_raw(uint8_t *var, uint64_t size, std::vector<uint8_t> *vec
 
 typedef uint16_t transport_i_t;
 typedef uint32_t transport_size_t;
+
+/*
+  flags will be what types to EXCLUDE
+ */
 
 std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
 	// TODO: enforce flags

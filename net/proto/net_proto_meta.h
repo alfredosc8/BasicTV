@@ -1,17 +1,29 @@
 #include "../../id/id.h"
 #ifndef NET_PROTO_META_H
 #define NET_PROTO_META_H
+
+/*
+  This metadata needs to be readable at all times
+
+  TODO: possibly allow for unencrypted traffic through this system
+ */
+
+/*
+  TODO: include net_peer_t information with this update
+ */
+typedef id_t_ net_proto_standard_id_t;
 typedef uint32_t net_proto_standard_size_t;
 typedef uint8_t net_proto_standard_ver_t;
 typedef uint8_t net_proto_standard_macros_t;
 typedef uint32_t net_proto_standard_unused_t;
 
-#define NET_PROTO_STANDARD_DATA_LENGTH (4+1+1+1+1+4)
+#define NET_PROTO_STANDARD_DATA_LENGTH (4+1+1+1+1+4+40)
 
 struct net_proto_standard_data_t{
 private:
 public:
 	net_proto_standard_size_t size = 0;
+	net_proto_standard_id_t peer_id = ID_BLANK_ID;
 	net_proto_standard_ver_t ver_major = 0;
 	net_proto_standard_ver_t ver_minor = 0;
 	net_proto_standard_ver_t ver_patch = 0;

@@ -9,6 +9,7 @@ std::vector<uint8_t> net_proto_write_packet_metadata(
         net_proto_standard_data_t data){
 	std::vector<uint8_t> retval = {NET_PROTO_DEV_CTRL_1};
 	WRITE_DATA_META(data.size);
+	retval.insert(retval.end(), &(data.peer_id[0]), &(data.peer_id[0])+data.peer_id.size());
 	WRITE_DATA_META(data.ver_major);
 	WRITE_DATA_META(data.ver_minor);
 	WRITE_DATA_META(data.ver_patch);
@@ -21,7 +22,7 @@ std::vector<uint8_t> net_proto_write_packet_metadata(
 #define READ_DATA_META(ptr)						\
 	if(ptr != nullptr){						\
 		if(offset + sizeof(*ptr) > data_length){		\
-			print("metadata is too short", P_ERR);	\
+			print("metadata is too short", P_ERR);		\
 		}else{							\
 			memcpy(ptr, &data[0], sizeof(*ptr));		\
 		}							\
@@ -33,6 +34,7 @@ void net_proto_read_packet_metadata(uint8_t *data,
 				    net_proto_standard_data_t *standard_data){
 	uint64_t offset = 1; // NET_PROTO_DEV_CTRL_1
 	READ_DATA_META(&(standard_data->size));
+	READ_DATA_META(&(standard_data->peer_id));
 	READ_DATA_META(&(standard_data->ver_major));
 	READ_DATA_META(&(standard_data->ver_minor));
 	READ_DATA_META(&(standard_data->ver_patch));

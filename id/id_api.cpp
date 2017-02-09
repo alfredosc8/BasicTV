@@ -134,7 +134,9 @@ id_t_ id_api::array::add_data(std::vector<uint8_t> data_){
 	CHECK_TYPE(tv_frame_audio_t);
 	CHECK_TYPE(tv_frame_video_t);
 	CHECK_TYPE(net_proto_peer_t);
-	CHECK_TYPE(net_proto_request_t);
+	CHECK_TYPE(net_proto_id_request_t);
+	CHECK_TYPE(net_proto_type_request_t);
+	CHECK_TYPE(net_proto_linked_list_request_t);
 	CHECK_TYPE(net_proto_con_req_t);
 	CHECK_TYPE(encrypt_pub_key_t);
 	CHECK_TYPE(encrypt_priv_key_t);
@@ -143,6 +145,17 @@ id_t_ id_api::array::add_data(std::vector<uint8_t> data_){
 }
 
 #undef CHECK_TYPE
+
+id_t_ id_api::array::fetch_one_from_hash(std::array<uint8_t, TYPE_LENGTH> type, std::array<uint8_t, 32> sha_hash){
+	std::vector<id_t_> all_of_type =
+		id_api::cache::get(type);
+	for(uint64_t i = 0;i < all_of_type.size();i++){
+		if(get_id_hash(all_of_type[i]) == sha_hash){
+			return all_of_type[i];
+		}
+	}
+	return ID_BLANK_ID;
+}
 
 std::vector<id_t_> id_api::sort::fingerprint(std::vector<id_t_> tmp){
 	// TODO: actually get the finerprints
@@ -402,8 +415,10 @@ void id_api::destroy(id_t_ id){
 
 	// net (proto and standard)
 	DELETE_TYPE_2(net_socket_t);
-	DELETE_TYPE_2(net_peer_t);	
-	DELETE_TYPE_2(net_proto_request_t);
+	DELETE_TYPE_2(net_peer_t);
+	DELETE_TYPE_2(net_proto_type_request_t);
+	DELETE_TYPE_2(net_proto_id_request_t);
+	DELETE_TYPE_2(net_proto_linked_list_request_t);
 	DELETE_TYPE_2(net_proto_con_req_t);
 	DELETE_TYPE_2(net_cache_t); // ?
 
@@ -525,12 +540,12 @@ void id_api::import::load_all_of_type(std::string type, uint8_t flags){
 		}
 	}
 	if(flags & ID_API_IMPORT_FROM_NET){
-		net_proto_request_t *request_ptr =
-			new net_proto_request_t;
-		request_ptr->set_type(
+		net_proto_type_request_t *request_ptr =
+			new net_proto_type_request_t;
+		request_ptr->update_type(
 			convert::array::type::to(
 				type));
-		request_ptr->set_flags(NET_REQUEST_BLACKLIST);
+		// flags are not used anymore, remember?
 		/*
 		  TODO: include relevant information on a blacklist basis to 
 		  decrease spam

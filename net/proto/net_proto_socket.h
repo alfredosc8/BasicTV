@@ -22,6 +22,7 @@
 struct net_proto_socket_t{
 private:
 	id_t_ socket_id = ID_BLANK_ID;
+	id_t_ peer_id = ID_BLANK_ID;
 	std::vector<uint8_t> working_buffer;
 	// finalized buffer, removed DEV_CTRL_1, native endian, etc.
 	std::vector<std::vector<uint8_t> > buffer;
@@ -32,12 +33,14 @@ public:
 	data_id_t id;
 	void set_socket_id(id_t_ socket_id_);
 	id_t_ get_socket_id();
+	void set_peer_id(id_t_ peer_id_);
+	id_t_ get_peer_id();
 	void send_id(id_t_ id_);
+	void send_id_vector(std::vector<id_t_> id_vector);
 	void update();
 	void add_id_to_log(id_t_ id_log_);
 	std::vector<std::pair<uint64_t, id_t_> > get_id_log();
 	std::vector<std::vector<uint8_t> > get_buffer();
-	uint16_t get_prob_of_id(id_t_ id_);
 };
 
 #endif

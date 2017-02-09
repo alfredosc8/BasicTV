@@ -3,6 +3,7 @@
   - [ ] Stabilize net_socket_t code
   - [X] Add support for vectors (std::vector<uint8_t/id_t_>) in data_ptr
   - [ ] Finalize net_con_req_t
+  - [ ] Create an opt-in system for new items in a linked list
 * TODO Multithreading
   - [ ] Include locks on data_id_t
   - [ ] Create thread pools (probably a dedicated API)
