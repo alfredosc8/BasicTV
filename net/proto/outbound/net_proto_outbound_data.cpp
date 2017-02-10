@@ -139,7 +139,7 @@ static std::vector<id_t_> remove_ids_from_vector(std::vector<id_t_> first,
 	return first;
 }
 
-static void net_proto_loop_handle_outbound_type_requests(){
+static void net_proto_fill_type_requests(){
 	std::vector<id_t_> net_proto_type_requests =
 	 	id_api::cache::get("net_proto_type_request_t");
 	for(uint64_t i = 0;i < net_proto_type_requests.size();i++){
@@ -151,26 +151,80 @@ static void net_proto_loop_handle_outbound_type_requests(){
 	 	}
 		const id_t_ peer_id = proto_type_request->get_peer_id();
 	 	if(peer_id != net_proto::peer::get_self_as_peer()){
+			const std::vector<id_t_> raw_id_vector =
+				proto_type_request->get_ids();
+			const std::vector<id_t_> type_vector =
+				id_api::cache::get(
+					proto_type_request->get_type());
 	 		net_proto_send_logic(
 	 			remove_ids_from_vector(
-					id_api::cache::get(
-						proto_type_request->get_type()),
-					proto_type_request->get_ids()),
-	 			proto_type_request->get_peer_id());
+					type_vector,
+					raw_id_vector),
+				peer_id);
 	 	}
 	}
 }
 
-static void net_proto_loop_handle_outbound_id_requests(){
+static void net_proto_fill_id_requests(){
+	std::vector<id_t_> net_proto_id_requests =
+	 	id_api::cache::get("net_proto_id_request_t");
+	for(uint64_t i = 0;i < net_proto_id_requests.size();i++){
+	 	net_proto_id_request_t *proto_id_request =
+	 		PTR_DATA(net_proto_id_requests[i],
+	 			 net_proto_id_request_t);
+	 	if(proto_id_request == nullptr){
+	 		continue;
+	 	}
+		const id_t_ peer_id = proto_id_request->get_peer_id();
+	 	if(peer_id != net_proto::peer::get_self_as_peer()){
+			const std::vector<id_t_> id_vector =
+				proto_id_request->get_ids();
+	 		net_proto_send_logic(
+				id_vector, peer_id);
+	 	}
+	}
 }
 
-static void net_proto_loop_handle_outbound_linked_list_requests(){
+static void net_proto_fill_linked_list_requests(){
+	std::vector<id_t_> net_proto_linked_list_requests =
+	 	id_api::cache::get("net_proto_linked_list_request_t");
+	for(uint64_t i = 0;i < net_proto_linked_list_requests.size();i++){
+	 	net_proto_linked_list_request_t *proto_linked_list_request =
+	 		PTR_DATA(net_proto_linked_list_requests[i],
+	 			 net_proto_linked_list_request_t);
+	 	if(proto_linked_list_request == nullptr){
+	 		continue;
+	 	}
+		const id_t_ peer_id = proto_linked_list_request->get_peer_id();
+	 	if(peer_id != net_proto::peer::get_self_as_peer()){
+			const id_t_ curr_id =
+				proto_linked_list_request->get_curr_id();
+			if(PTR_ID(curr_id, ) != nullptr){
+				proto_linked_list_request->increase_current();
+			}
+	 		net_proto_send_logic({curr_id}, peer_id);
+	 	}
+	}
 }
 
+/*
+  TODO: better implement networking stats before this is written
+ */
+
+static void net_proto_send_type_requests(){
+}
+
+static void net_proto_send_id_requests(){
+}
+
+static void net_proto_send_linked_list_requests(){
+}
 
 void net_proto_loop_handle_outbound_requests(){
-	const uint64_t retry_interval_micro_s =
-		settings::get_setting_unsigned_def(
-			"net_proto_request_retry_interval_micro_s",
-			1000*10);
+	net_proto_fill_type_requests();
+	net_proto_fill_id_requests();
+	net_proto_fill_linked_list_requests();
+	net_proto_send_type_requests();
+	net_proto_send_id_requests();
+	net_proto_send_linked_list_requests();
 }

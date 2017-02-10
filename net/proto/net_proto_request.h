@@ -9,7 +9,18 @@
   TODO: include multiple peers to send that information down
  */
 
-struct net_proto_linked_list_request_t{
+struct net_proto_request_bare_t{
+private:
+	id_t_ peer_id = ID_BLANK_ID;
+public:
+	net_proto_request_bare_t();
+	~net_proto_request_bare_t();
+	void set_peer_id(id_t_);
+	id_t_ get_peer_id();
+	void list_bare_virtual_data(data_id_t *id);
+};
+
+struct net_proto_linked_list_request_t : public net_proto_request_bare_t{
 private:
 	id_t_ start_id = ID_BLANK_ID;
 	uint64_t start_length = 0;
@@ -18,21 +29,20 @@ private:
 	uint64_t curr_length = 0;
 public:
 	data_id_t id;
+	void increase_current();
+	id_t_ get_curr_id();
 	net_proto_linked_list_request_t();
 	~net_proto_linked_list_request_t();
 };
 
-struct net_proto_request_standard_t{
+struct net_proto_request_set_t{
 private:
-	id_t_ peer_id = ID_BLANK_ID;
 	std::vector<id_t_> ids;
 	std::vector<uint64_t> mod_inc;
 public:
-	net_proto_request_standard_t();
-	~net_proto_request_standard_t();
-	void list_virtual_data(data_id_t *id);
-	void set_peer_id(id_t_);
-	id_t_ get_peer_id();
+	net_proto_request_set_t();
+	~net_proto_request_set_t();
+	void list_set_virtual_data(data_id_t *id);
 	// modes of operation are defined by the container
 	void set_ids(std::vector<id_t_>);
 	std::vector<id_t_> get_ids();
@@ -44,7 +54,7 @@ public:
   is not a part of this system
  */
 
-struct net_proto_id_request_t : public net_proto_request_standard_t{
+struct net_proto_id_request_t : public net_proto_request_set_t, public net_proto_request_bare_t{
 private:
 public:
 	data_id_t id;
@@ -56,7 +66,7 @@ public:
   Request based on type. ID vector, in this case, will act as a blacklist
  */
 
-struct net_proto_type_request_t : public net_proto_request_standard_t{
+struct net_proto_type_request_t : public net_proto_request_set_t, public net_proto_request_bare_t{
 private:
 	std::array<uint8_t, 32> type = ID_BLANK_TYPE;
 public:

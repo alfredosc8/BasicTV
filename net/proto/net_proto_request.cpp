@@ -3,24 +3,32 @@
 #include "net_proto_socket.h"
 #include "../../id/id_api.h"
 
-net_proto_request_standard_t::net_proto_request_standard_t(){}
+net_proto_request_bare_t::net_proto_request_bare_t(){}
 
-net_proto_request_standard_t::~net_proto_request_standard_t(){}
+net_proto_request_bare_t::~net_proto_request_bare_t(){}
 
-void net_proto_request_standard_t::list_virtual_data(data_id_t *id){
+void net_proto_request_bare_t::list_bare_virtual_data(data_id_t *id){
+	id->add_data(&peer_id, 1);
+}
+
+id_t_ net_proto_request_bare_t::get_peer_id(){
+	return peer_id;
+}
+
+void net_proto_request_bare_t::set_peer_id(id_t_ peer_id_){
+	peer_id = peer_id_;
+}
+
+net_proto_request_set_t::net_proto_request_set_t(){}
+
+net_proto_request_set_t::~net_proto_request_set_t(){}
+
+void net_proto_request_set_t::list_set_virtual_data(data_id_t *id){
 	id->add_data(&ids, 65536);
 	id->add_data(&mod_inc, 65536);
 }
 
-void net_proto_request_standard_t::set_peer_id(id_t_ peer_id_){
-	peer_id = peer_id_;
-}
-
-id_t_ net_proto_request_standard_t::get_peer_id(){
-	return peer_id;
-}
-
-void net_proto_request_standard_t::set_ids(std::vector<id_t_> ids_){
+void net_proto_request_set_t::set_ids(std::vector<id_t_> ids_){
 	ids = ids_;
 	mod_inc.clear();
 	for(uint64_t i = 0;i < ids_.size();i++){
@@ -35,11 +43,11 @@ void net_proto_request_standard_t::set_ids(std::vector<id_t_> ids_){
 	}
 }
 
-std::vector<id_t_> net_proto_request_standard_t::get_ids(){
+std::vector<id_t_> net_proto_request_set_t::get_ids(){
 	return ids;
 }
 
-std::vector<uint64_t> net_proto_request_standard_t::get_mod_inc(){
+std::vector<uint64_t> net_proto_request_set_t::get_mod_inc(){
 	if(mod_inc.size() != ids.size()){
 		print("mod_inc is a different size than ids, assuming all old", P_ERR);
 		return {}; 
@@ -50,7 +58,8 @@ std::vector<uint64_t> net_proto_request_standard_t::get_mod_inc(){
 // IDs
 
 net_proto_id_request_t::net_proto_id_request_t() : id(this, __FUNCTION__){
-	list_virtual_data(&id);
+	list_set_virtual_data(&id);
+	list_bare_virtual_data(&id);
 }
 
 net_proto_id_request_t::~net_proto_id_request_t(){}
@@ -58,7 +67,8 @@ net_proto_id_request_t::~net_proto_id_request_t(){}
 // Type
 
 net_proto_type_request_t::net_proto_type_request_t() : id(this, __FUNCTION__){
-	id.add_data(&type, 32);
+	list_set_virtual_data(&id);
+	list_bare_virtual_data(&id);
 }
 
 net_proto_type_request_t::~net_proto_type_request_t(){}
@@ -66,6 +76,7 @@ net_proto_type_request_t::~net_proto_type_request_t(){}
 // Linked list subscription
 
 net_proto_linked_list_request_t::net_proto_linked_list_request_t() : id(this, __FUNCTION__){
+	list_bare_virtual_data(&id);
 }
 
 net_proto_linked_list_request_t::~net_proto_linked_list_request_t(){
@@ -77,4 +88,21 @@ void net_proto_type_request_t::update_type(std::array<uint8_t, 32> type_){
 		id_api::cache::get(
 			convert::array::type::from(
 				type_)));
+}
+
+void net_proto_linked_list_request_t::increase_current(){
+	data_id_t *id_ptr =
+		PTR_ID(start_id, );
+	if(id_ptr == nullptr){
+		return; //can't do that...
+	}
+	curr_id = id_ptr->get_next_linked_list();
+	curr_length--;
+}
+
+id_t_ net_proto_linked_list_request_t::get_curr_id(){
+	if(unlikely(curr_id == ID_BLANK_ID)){
+		return start_id;
+	}
+	return curr_id;
 }
