@@ -113,7 +113,19 @@ static void net_proto_send_logic(std::vector<id_t_> id_vector,
 		PTR_DATA(optimal_proto_socket_id,
 			 net_proto_socket_t);
 	if(proto_socket == nullptr){
-		print("connect this to connection call", P_CRIT);
+		net_proto::socket::connect(
+			net_proto_peer_id, 1);
+		optimal_proto_socket_id =
+			net_proto::socket::optimal_proto_socket_of_peer(
+				net_proto_peer_id);
+		proto_socket =
+			PTR_DATA(optimal_proto_socket_id,
+				 net_proto_socket_t);
+		if(proto_socket == nullptr){
+			// would be spammed, delays for connection are
+			// pretty high, especially for holepunching
+			print("can't connect", P_NOTE);
+		}
 	}
 	for(uint64_t i = 0;i < id_vector.size();i++){
 		data_id_t *id_ptr =

@@ -12,6 +12,11 @@
   of the IDs non-redundantly (using PTR_ID_FAST)
  */
 
+net_proto_socket_t::net_proto_socket_t() : id(this, __FUNCTION__){
+}
+
+net_proto_socket_t::~net_proto_socket_t(){}
+
 void net_proto_socket_t::set_socket_id(id_t_ socket_id_){
 	socket_id = socket_id_;
 	working_buffer.clear();
@@ -186,4 +191,33 @@ std::vector<std::pair<uint64_t, id_t_> > net_proto_socket_t::get_id_log(){
 
 uint64_t net_proto_socket_t::get_last_update_micro_s(){
 	return last_update_micro_s;
+}
+
+void net_proto_socket_t::update_connection(){
+	net_proto_peer_t *peer_ptr =
+		PTR_DATA(peer_id,
+			 net_proto_peer_t);
+	if(peer_ptr == nullptr){
+		print("protocol socket is not bound to a peer, cannot connect", P_ERR);
+	}
+	net_socket_t *socket_ptr =
+		PTR_DATA(socket_id,
+			 net_socket_t);
+	if(socket_ptr == nullptr){
+		print("no bound socket, creating new one", P_NOTE);
+		// not actually that bad
+		socket_ptr = new net_socket_t;
+		socket_id = socket_ptr->id.get_id();
+	}
+	const bool current =
+		socket_ptr->get_net_ip_str() == peer_ptr->get_net_ip_str() &&
+		socket_ptr->get_net_port() == peer_ptr->get_net_port();
+	if(!current || socket_ptr->is_alive()){
+		socket_ptr->disconnect();
+		socket_ptr->set_net_ip(
+			peer_ptr->get_net_ip_str(),
+			peer_ptr->get_net_port(),
+			NET_IP_VER_4);
+		socket_ptr->connect();
+	}
 }

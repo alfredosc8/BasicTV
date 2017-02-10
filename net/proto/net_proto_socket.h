@@ -31,6 +31,8 @@ private:
 	std::vector<std::pair<uint64_t, id_t_> > id_log;
 public:
 	data_id_t id;
+	net_proto_socket_t();
+	~net_proto_socket_t();
 	void set_socket_id(id_t_ socket_id_);
 	id_t_ get_socket_id();
 	void set_peer_id(id_t_ peer_id_);
@@ -42,6 +44,7 @@ public:
 	std::vector<std::pair<uint64_t, id_t_> > get_id_log();
 	std::vector<std::vector<uint8_t> > get_buffer();
 	uint64_t get_last_update_micro_s();
+	void update_connection(); // make sure it is connected properly
 };
 
 #endif
