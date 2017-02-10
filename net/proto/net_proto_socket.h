@@ -41,6 +41,7 @@ public:
 	void add_id_to_log(id_t_ id_log_);
 	std::vector<std::pair<uint64_t, id_t_> > get_id_log();
 	std::vector<std::vector<uint8_t> > get_buffer();
+	uint64_t get_last_update_micro_s();
 };
 
 #endif

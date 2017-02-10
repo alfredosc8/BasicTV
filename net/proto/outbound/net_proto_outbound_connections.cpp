@@ -108,7 +108,7 @@ static std::vector<std::pair<id_t_, std::vector<std::pair<id_t_, std::vector<std
   for Tor), then establish another connection on another socket. 
  
   All connections are made assuming a Tor-like setup (no inbound TCP connecions
-  are allowed, holepunching is allowed), and a new net_peer_t is created and
+  are allowed, holepunching is allowed), and a new net_proto_peer_t is created and
   associated with a net_proto_socket_t.
   
   It is assumed throughout this program that two different sockets with matching

@@ -143,6 +143,7 @@ void net_proto_socket_t::update(){
 		peer_id = net_final.first.peer_id;
 	}
 	if(net_final.second.size() > 0){
+		last_update_micro_s = get_time_microseconds();
 		// net_final.second size is the raw size from the socket, so it
 		// includes all extra DEV_CTRL_1s, so it can be used directly to
 		// clean up working_buffer
@@ -181,4 +182,8 @@ void net_proto_socket_t::add_id_to_log(id_t_ id_log_){
 
 std::vector<std::pair<uint64_t, id_t_> > net_proto_socket_t::get_id_log(){
 	return id_log;
+}
+
+uint64_t net_proto_socket_t::get_last_update_micro_s(){
+	return last_update_micro_s;
 }

@@ -275,7 +275,7 @@ static void net_proto_handle_inbound_type_request(id_t_ request_id){
 	  everything down the one.
 	  
 	  After I know that works, then start optimizing away by registering
-	  sockets with net_peer_t and using that instead and other smalls
+	  sockets with net_proto_peer_t and using that instead and other smalls
 	 */
 	const id_t_ peer_id = request->get_peer_id();
 	net_proto_socket_t *proto_socket_ptr = nullptr;

@@ -415,7 +415,7 @@ void id_api::destroy(id_t_ id){
 
 	// net (proto and standard)
 	DELETE_TYPE_2(net_socket_t);
-	DELETE_TYPE_2(net_peer_t);
+	DELETE_TYPE_2(net_proto_peer_t);
 	DELETE_TYPE_2(net_proto_type_request_t);
 	DELETE_TYPE_2(net_proto_id_request_t);
 	DELETE_TYPE_2(net_proto_linked_list_request_t);

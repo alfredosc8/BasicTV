@@ -72,17 +72,15 @@
 
 #define NET_PEER_NAT_ADDRESS_PORT_RESTRICTED (1 >> 6)
 
-struct net_peer_t : public net_ip_t{
+struct net_proto_peer_t : public net_ip_t{
 private:
 	uint8_t flags = 0;
 	std::array<uint8_t, BITCOIN_WALLET_LENGTH> bitcoin_wallet = {{0}};
 public:
 	data_id_t id;
-	net_peer_t();
-	~net_peer_t();
+	net_proto_peer_t();
+	~net_proto_peer_t();
 	void set_bitcoin_wallet(std::array<uint8_t, BITCOIN_WALLET_LENGTH> bitcoin_wallet_);
 	std::array<uint8_t, BITCOIN_WALLET_LENGTH> get_bitcoin_wallet();
 };
-// I should change this really soon
-typedef net_peer_t net_proto_peer_t;
 #endif

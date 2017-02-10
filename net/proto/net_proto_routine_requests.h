@@ -8,7 +8,7 @@
   This handles all information that should be routinely received, which
   includes, but is not limited to:
   net_con_req_t (connection requests for a direct TCP holepunch)
-  net_peer_t (any other node on the network)
+  net_proto_peer_t (any other node on the network)
   tv_channel_t (TV channel)
 
   That's it for now

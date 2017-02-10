@@ -65,6 +65,7 @@ public:
 	~net_proto_type_request_t();
 	void update_type(
 		std::array<uint8_t, 32> type_);
+	std::array<uint8_t, 32> get_type(){return type;}
 };
 
 #endif

@@ -49,7 +49,10 @@ namespace net_proto{
 		  a peer. Hopefully will decrease the response time if we have
 		  enough threads to effectively spread the load.
 		 */
-		void connect(id_t_ peer_id_, uint32_t min);
+		std::vector<id_t_> connect(id_t_ peer_id_, uint32_t min);
+		// TODO: should be a lookup cache system in net_proto_peer_t
+		std::vector<id_t_> all_proto_socket_of_peer(id_t_ peer_id);
+		id_t_ optimal_proto_socket_of_peer(id_t_ peer_id);
 		namespace stats{
 			std::vector<id_t_> sort(std::vector<id_t_> socket_ids,
 						id_t_ request_id);
