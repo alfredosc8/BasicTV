@@ -212,7 +212,7 @@ static void net_proto_fill_linked_list_requests(){
 			const id_t_ curr_id =
 				proto_linked_list_request->get_curr_id();
 			if(PTR_ID(curr_id, ) != nullptr){
-				proto_linked_list_request->increase_current();
+				proto_linked_list_request->increase_id();
 			}
 	 		net_proto_send_logic({curr_id}, peer_id);
 	 	}

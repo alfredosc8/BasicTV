@@ -21,7 +21,6 @@ public:
 	void list_virtual_data(data_id_t *id);
 	void set_max_samples(uint64_t max_samples_);
 	uint64_t get_max_samples();
-	
 };
 
 /*

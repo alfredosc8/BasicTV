@@ -74,19 +74,6 @@ void net_socket_t::send(std::vector<uint8_t> data){
 			data_point.first,
 			data_point.second);
 	}
-	net_proxy_t *proxy =
-		PTR_DATA(proxy_id,
-			 net_proxy_t);
-	if(proxy != nullptr){
-		stat_sample_set_t *proxy_sample_set =
-			PTR_DATA(proxy->get_proxy_stat_sample_set_id(),
-				 stat_sample_set_t);
-		if(proxy_sample_set != nullptr){
-			proxy_sample_set->add_sample(
-				data_point.first,
-				data_point.second);
-		}
-	}
 }
 
 void net_socket_t::send(std::string data){
@@ -208,6 +195,11 @@ void net_socket_t::connect(){
 void net_socket_t::disconnect(){
 	SDLNet_TCP_Close(socket);
 	socket = nullptr;
+}
+
+void net_socket_t::reconnect(){
+	disconnect();
+	connect();
 }
 
 /*

@@ -22,14 +22,12 @@ public:
 
 struct net_proto_linked_list_request_t : public net_proto_request_bare_t{
 private:
-	id_t_ start_id = ID_BLANK_ID;
-	uint64_t start_length = 0;
-	// cache
 	id_t_ curr_id = ID_BLANK_ID;
 	uint64_t curr_length = 0;
 public:
 	data_id_t id;
-	void increase_current();
+	void increase_id();
+	void set_curr_id(id_t_ id_, uint32_t length);
 	id_t_ get_curr_id();
 	net_proto_linked_list_request_t();
 	~net_proto_linked_list_request_t();
@@ -77,5 +75,4 @@ public:
 		std::array<uint8_t, 32> type_);
 	std::array<uint8_t, 32> get_type(){return type;}
 };
-
 #endif

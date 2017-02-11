@@ -48,6 +48,7 @@ public:
 	uint8_t get_status();
 	void connect();
 	void disconnect();
+	void reconnect();
 	
 	// send and recv functions
 	void send(std::vector<uint8_t> data);

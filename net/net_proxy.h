@@ -16,13 +16,11 @@
 struct net_proxy_t : public net_ip_t{
 private:
 	uint8_t flags = 0;
-	id_t_ proxy_stat_sample_set_id = ID_BLANK_ID;
 public:
 	data_id_t id;
 	net_proxy_t();
 	~net_proxy_t();
 	void set_flags(uint8_t flags_);
 	uint8_t get_flags();
-	id_t_ get_proxy_stat_sample_set_id();
 };
 #endif

@@ -1,11 +1,14 @@
 #ifndef NET_PROTO_API_H
 #define NET_PROTO_API_H
 
+#include "algorithm"
+
 namespace net_proto{
 	namespace request{
 		void add_id(id_t_ id);
 		void add_id(std::vector<id_t_> id);
-		void del_id(id_t_ id);
+		void add_id_linked_list(id_t_ id, uint32_t length);
+		bool del_id(id_t_ id);
 		void del_id(std::vector<id_t_> id);
 	};
 	namespace peer{

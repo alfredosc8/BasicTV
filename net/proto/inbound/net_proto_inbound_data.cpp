@@ -188,20 +188,6 @@
 static void net_proto_loop_dummy_read(){
 }
 
-static void net_proto_process_buffer_vector(net_proto_socket_t *proto_socket){
-	std::vector<std::vector<uint8_t> > buffer_vector =
-		proto_socket->get_buffer();
-	for(uint64_t i = 0;i < buffer_vector.size();i++){
-		try{
-			id_t_ imported_data_id =
-				id_api::array::add_data(buffer_vector[i]);
-			proto_socket->add_id_to_log(imported_data_id);
-		}catch(...){
-			// unable to parse that file
-		}
-	}
-}
-
 void net_proto_loop_handle_inbound_data(){
 	std::vector<id_t_> proto_sockets =
 		id_api::cache::get("net_proto_socket_t");
@@ -213,8 +199,6 @@ void net_proto_loop_handle_inbound_data(){
 			print("proto_socket is a nullptr", P_ERR);
 		}
 		proto_socket->update();
-		net_proto_process_buffer_vector(
-			proto_socket);
 	}
 }
 

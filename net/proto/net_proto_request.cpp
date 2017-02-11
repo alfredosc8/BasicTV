@@ -82,27 +82,32 @@ net_proto_linked_list_request_t::net_proto_linked_list_request_t() : id(this, __
 net_proto_linked_list_request_t::~net_proto_linked_list_request_t(){
 }
 
+void net_proto_linked_list_request_t::set_curr_id(id_t_ id_, uint32_t length){
+	curr_id = id_;
+	curr_length = length;
+}
+
+void net_proto_linked_list_request_t::increase_id(){
+	if(curr_length == 0){
+		return;
+	}
+	data_id_t *id =
+		PTR_ID(curr_id, );
+	if(id == nullptr){
+		return;
+	}
+	curr_id = id->get_next_linked_list();
+	curr_length--;
+}
+
+id_t_ net_proto_linked_list_request_t::get_curr_id(){
+	return curr_id;
+}
+
 void net_proto_type_request_t::update_type(std::array<uint8_t, 32> type_){
 	type = type_;
 	set_ids(
 		id_api::cache::get(
 			convert::array::type::from(
 				type_)));
-}
-
-void net_proto_linked_list_request_t::increase_current(){
-	data_id_t *id_ptr =
-		PTR_ID(start_id, );
-	if(id_ptr == nullptr){
-		return; //can't do that...
-	}
-	curr_id = id_ptr->get_next_linked_list();
-	curr_length--;
-}
-
-id_t_ net_proto_linked_list_request_t::get_curr_id(){
-	if(unlikely(curr_id == ID_BLANK_ID)){
-		return start_id;
-	}
-	return curr_id;
 }

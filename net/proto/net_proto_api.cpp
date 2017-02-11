@@ -7,6 +7,55 @@
 
 static id_t_ self_peer_id = ID_BLANK_ID;
 
+void net_proto::request::add_id(id_t_ id){
+	net_proto_id_request_t *id_request_ptr =
+		new net_proto_id_request_t;
+	id_request_ptr->set_peer_id(ID_BLANK_ID); //redundant
+	id_request_ptr->set_ids({id});
+}	
+
+void net_proto::request::add_id(std::vector<id_t_> id){
+	for(uint64_t i = 0;i < id.size();i++){
+		add_id(id);
+	}
+}
+
+void net_proto::request::add_id_linked_list(id_t_ id, uint32_t length){
+	net_proto_linked_list_request_t *linked_list_request_ptr =
+		new net_proto_linked_list_request_t;
+	linked_list_request_ptr->set_peer_id(ID_BLANK_ID);
+	linked_list_request_ptr->set_curr_id(id, length);
+}
+
+bool net_proto::request::del_id(id_t_ id){
+	std::vector<id_t_> id_request_vector =
+		id_api::cache::get(
+			"net_proto_id_request_t");
+	for(uint64_t i = 0;i < id_request_vector.size();i++){
+		net_proto_id_request_t *id_request =
+			PTR_DATA(id_request_vector[i],
+				 net_proto_id_request_t);
+		if(id_request == nullptr){
+			continue;
+		}
+		std::vector<id_t_> id_vector =
+			id_request->get_ids();
+		auto id_ptr =
+			std::find(
+				id_vector.begin(),
+				id_vector.end(),
+				id);
+		if(id_ptr != id_vector.end()){
+			id_vector.erase(
+				id_ptr);
+			id_request->set_ids(
+				id_vector);
+			return true;
+		}
+	}
+	return false;
+}
+
 void net_proto::peer::set_self_peer_id(id_t_ self_peer_id_){
 	self_peer_id = self_peer_id_;
 }
@@ -86,4 +135,3 @@ std::vector<id_t_> net_proto::socket::connect(id_t_ peer_id_, uint32_t min){
 	}
 	return retval;
 }
-
