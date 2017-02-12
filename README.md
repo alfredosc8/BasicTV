@@ -1,4 +1,4 @@
-Join the IRC chat at #basictv on Freenode [here](http://webchat.freenode.net/?channels=#basictv).
+Join the IRC chat at #basictv on Freenode [here](http://webchat.freenode.net/?channels=#basictv)
 
 Pretty rough around the edges, not a working testnet yet, but it'll be working okay soon enough (2/11/17)
 
@@ -38,3 +38,5 @@ Currently, the only way to load audio is through WAV/AIFF/OGG files on disk, but
 
 ##How would I watch content?
 All channels are downloaded and contained in the tv_window_t type. This type is responsible for syncing time throughout a channel, as well as positioning information, selecting streams, among other ideas.
+
+There is only one tv_window_t type allowed currently (will improve to a multiplexer system), and this is interfaced with through the console currently. IR remotes will be added in the future.
