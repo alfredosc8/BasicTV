@@ -5,8 +5,6 @@
   When a linked list request is sent over to a peer, any new information
   along that linked list (within the length set in the type) will be
   automatically sent. 
-
-  TODO: include multiple peers to send that information down
  */
 
 struct net_proto_request_bare_t{

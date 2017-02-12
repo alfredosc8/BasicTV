@@ -7,15 +7,23 @@
 #include "net_proto_socket.h"
 #include "../../id/id_api.h"
 
-/*
-  TODO: make a thread smart linked list creator for each
-  of the IDs non-redundantly (using PTR_ID_FAST)
- */
-
 net_proto_socket_t::net_proto_socket_t() : id(this, __FUNCTION__){
 }
 
 net_proto_socket_t::~net_proto_socket_t(){}
+
+/*
+  bare_* takes care of encryption, decryption, and verification of information
+ */
+
+void net_proto_socket_t::bare_send(std::vector<uint8_t> data){
+	
+}
+
+void net_proto_socket_t::bare_recv(){
+	last_update_time_micro_s = get_time_microseconds();
+	print("implement me", P_CRIT);
+}
 
 void net_proto_socket_t::set_socket_id(id_t_ socket_id_){
 	socket_id = socket_id_;
@@ -63,9 +71,6 @@ void net_proto_socket_t::send_id(id_t_ id_){
 	  1. Constructor has NONET
 	  2. Fulfilling net_proto_request_t checks it with DDoS vectors
 	  3. Right here (only for security)
-	  
-	  TODO: possibly add a class where exporting doesn't make sense and
-	  where exporting is malicious
 	 */
 	if(type == "encrypt_priv_key_t"){
 		print("malicious request, not filling", P_WARN);
@@ -117,14 +122,8 @@ void net_proto_socket_t::read_and_parse(){
 	if(socket_ptr == nullptr){
 		print("socket_ptr is a nullptr", P_ERR);
 	}
-	std::vector<uint8_t> net_data =
-		socket_ptr->recv_all_buffer();
-	if(net_data.size() != 0){
-		last_update_time_micro_s = get_time_microseconds();
-		working_buffer.insert(
-			working_buffer.end(),
-			net_data.begin(),
-			net_data.end()); // should always add one byte
+	bare_recv();
+	if(working_buffer.size() != 0){
 		std::pair<net_proto_standard_data_t, std::vector<uint8_t> > net_final;
 		try{
 			/*
@@ -228,4 +227,14 @@ void net_proto_socket_t::update_connection(){
 
 uint64_t net_proto_socket_t::get_last_update_micro_s(){
 	return last_update_time_micro_s;
+}
+
+bool net_proto_socket_t::is_alive(){
+	net_socket_t *socket =
+		PTR_DATA(socket_id,
+			 net_socket_t);
+	if(socket == nullptr){
+		return false;
+	}
+	return socket->is_alive();
 }

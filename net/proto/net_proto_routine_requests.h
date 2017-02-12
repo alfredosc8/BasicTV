@@ -1,6 +1,9 @@
 #ifndef NET_PROTO_ROUTINE_REQUESTS_H
 #define NET_PROTO_ROUTINE_REQUESTS_H
 
+#include "vector"
+#include "string"
+
 /*
   This is for handling routine requests that ought to be made as an entire
   data types.
@@ -21,6 +24,11 @@
 #define NET_PROTO_ROUTINE_REQUEST_DEFAULT_FAST_INTERVAL 500000
 
 // doesn't run it every time, checks settings file for frequency
-// TODO: add the ability to add and remove items from the request list
+
 extern void net_proto_routine_requests_loop();
+
+// only used by net_proto API
+
+extern std::vector<std::string> routine_request_fast_vector;
+extern std::vector<std::string> routine_request_slow_vector;
 #endif

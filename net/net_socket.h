@@ -36,6 +36,7 @@ private:
 	TCPsocket socket = nullptr;
 	void socket_check();
 	id_t_ proxy_id = ID_BLANK_ID;
+	// TODO: actually use these
 	id_t_ outbound_stat_sample_set_id = ID_BLANK_ID;
 	id_t_ inbound_stat_sample_set_id = ID_BLANK_ID;
 public:

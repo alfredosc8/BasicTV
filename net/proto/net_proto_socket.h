@@ -35,7 +35,8 @@ private:
 	void process_buffer();
 	// send with whatever encryption system that has been set up
 	// should be rather seamless if we sync the beginning
-	//void bare_send(std::vector<uint8_t> data);
+	void bare_send(std::vector<uint8_t> data);
+	void bare_recv(); // writes to working_buffer directly
 public:
 	data_id_t id;
 	net_proto_socket_t();
@@ -51,6 +52,8 @@ public:
 	std::vector<std::vector<uint8_t> > get_buffer();
 	uint64_t get_last_update_micro_s();
 	void update_connection(); // make sure it is connected properly
+	// direct connection to port in the ID
+	bool is_alive();
 };
 
 #endif

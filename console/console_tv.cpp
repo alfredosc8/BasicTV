@@ -155,6 +155,8 @@ DEC_CMD(tv_test_audio){
 	}
 	tv_channel_t *channel =
 		new tv_channel_t;
+	channel->id.noexp_all_data();
+	channel->id.nonet_all_data();
 	window->set_channel_id(channel->id.get_id());
 	std::vector<id_t_> all_frame_audios =
 		::tv_audio_load_wav(
@@ -165,6 +167,8 @@ DEC_CMD(tv_test_audio){
 		tv_frame_audio_t *frame_audio =
 			PTR_DATA(all_frame_audios[i],
 				 tv_frame_audio_t);
+		frame_audio->id.noexp_all_data();
+		frame_audio->id.nonet_all_data();
 		if(unlikely(frame_audio == nullptr)){
 			print_socket("frame audio is a nullptr\n");
 		}else{

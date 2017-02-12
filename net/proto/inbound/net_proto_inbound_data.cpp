@@ -180,11 +180,6 @@
 	
 // }
 
-/*
-  TODO: actually delete net_request_t after the data came to prevent
-  redundant queries
- */
-
 static void net_proto_loop_dummy_read(){
 }
 
@@ -270,7 +265,8 @@ static void net_proto_handle_inbound_type_request(id_t_ request_id){
 			PTR_DATA(proto_socket_vector[i],
 				 net_proto_socket_t);
 		CONTINUE_IF_NULL(proto_socket);
-		if(proto_socket->get_peer_id() == peer_id){
+		if(proto_socket->get_peer_id() != peer_id &&
+		   proto_socket->is_alive()){
 			proto_socket_ptr =
 				PTR_DATA(proto_socket_vector[i],
 					 net_proto_socket_t);

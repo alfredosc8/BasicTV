@@ -54,7 +54,6 @@ void net_proto_init(){
 		settings::get_setting_unsigned_def(
 			"network_port",
 			58486);
-	// TODO: reimplement this when the information is done
 	if(settings::get_setting("socks_enable") == "true"){
 		try{
 			std::string socks_proxy_ip = settings::get_setting("socks_proxy_ip");

@@ -4,6 +4,7 @@
 #include "net_proto_api.h"
 #include "net_proto_socket.h"
 #include "net_proto_peer.h"
+#include "net_proto_routine_requests.h"
 
 static id_t_ self_peer_id = ID_BLANK_ID;
 
@@ -134,4 +135,38 @@ std::vector<id_t_> net_proto::socket::connect(id_t_ peer_id_, uint32_t min){
 			proto_socket->id.get_id());
 	}
 	return retval;
+}
+
+void net_proto::request::add_fast_routine_type(std::string type){
+	routine_request_fast_vector.push_back(
+		type);
+}
+
+void net_proto::request::add_slow_routine_type(std::string type){
+	routine_request_slow_vector.push_back(
+		type);
+}
+
+void net_proto::request::del_fast_routine_type(std::string type){
+	auto iterator =
+		std::find(
+			routine_request_fast_vector.begin(),
+			routine_request_fast_vector.end(),
+			type);
+	if(iterator != routine_request_fast_vector.end()){
+		routine_request_fast_vector.erase(
+			iterator);
+	}
+}
+
+void net_proto::request::del_slow_routine_type(std::string type){
+	auto iterator =
+		std::find(
+			routine_request_slow_vector.begin(),
+			routine_request_slow_vector.end(),
+			type);
+	if(iterator != routine_request_slow_vector.end()){
+		routine_request_slow_vector.erase(
+			iterator);
+	}
 }

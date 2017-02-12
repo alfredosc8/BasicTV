@@ -13,9 +13,6 @@
   requests for IDs along the new ones and the ones that receive data back would
   be far higher than the rest, securing that connection. Factor in multiple RSA
   IDs into account, and possibly multithread requests along those sockets.
-
-  TODO: meter inbound and outbound traffic in the lifetime of a socket (and
-  more fine-grained stats as well, just not needed right now)
  */
 
 /*

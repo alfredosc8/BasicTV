@@ -10,6 +10,10 @@ namespace net_proto{
 		void add_id_linked_list(id_t_ id, uint32_t length);
 		bool del_id(id_t_ id);
 		void del_id(std::vector<id_t_> id);
+		void add_fast_routine_type(std::string type);
+		void del_fast_routine_type(std::string type);
+		void add_slow_routine_type(std::string type);
+		void del_slow_routine_type(std::string type);
 	};
 	namespace peer{
 		void set_self_peer_id(id_t_ self_peer_id_);

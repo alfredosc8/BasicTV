@@ -6,7 +6,6 @@
 
 tv_channel_t::tv_channel_t() : id(this, __FUNCTION__){
 	id.add_data(&stream_list, TV_CHAN_FRAME_LIST_SIZE);
-	ADD_DATA_NONET(broadcast_delay_micro_s);
 	ADD_DATA(status);
 }
 
@@ -44,26 +43,4 @@ void tv_channel_t::del_stream_id(id_t_ id_){
 			// don't break until I know everything works fine
 		}
 	}
-}
-
-uint64_t tv_channel_t::get_broadcast_delay_micro_s(){
-	const uint64_t curr_time =
-		get_time_microseconds();
-	const long double playback_mul =
-		playback_speed/(long double)100.0;
-	const uint64_t pivot_time = 
-		pivot_time_micro_s; // possibly make a private getter?
-	return pivot_time+((curr_time-pivot_time)*playback_mul);
-}
-
-// I see no reason why playback speed is set and pivot time isn't reset,
-// outside of it just being broken or stupid.
-
-void tv_channel_t::set_playback_speed(int64_t playback_speed_){
-	playback_speed = playback_speed_;
-	set_pivot_time_micro_s(get_time_microseconds());
-}
-
-void tv_channel_t::set_pivot_time_micro_s(uint64_t pivot_time_micro_s_){
-	pivot_time_micro_s = pivot_time_micro_s_;
 }
