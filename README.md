@@ -16,7 +16,7 @@ An ID is a pair of two numbers, the UUID (intra-identity) and the SHA-256 hash o
 The following is a checklist that a BasicTV node goes through to connect to the network and operate normally:
 
 * Load all private and public keys from the hard disk
-* Query the user for which PKP to use, or to create a new PKP
+* Query the user for which key to use, or to create a new key
 * Load my network peer information from disk (net_proto_peer_t), create it if I don't have it
 * Connect to a node with an advertised open TCP port normally
 * Begin routine requests to peers for useful information (other peers, TV channel metadata, public keys)
