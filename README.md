@@ -17,14 +17,14 @@ The following is a checklist that a BasicTV node goes through to connect to the 
 
 * Load all private and public keys from the hard disk
 * Query the user for which key to use, or to create a new key
-* Load my network peer information from disk (net_proto_peer_t), create it if I don't have it
+* Load my network peer information from disk (net_proto_peer_t), create it if it doesn't exist
 * Connect to a node with an advertised open TCP port normally
 * Begin routine requests to peers for useful information (other peers, TV channel metadata, public keys)
 * Keep connecting to new peers until we are within a safe range for reliable and stable performance (using net_con_req_t as needed for TCP holepunching)
 
 Since all information sent over the network is individual, cryptographically secure chunks, information can be hoarded and dished out to the network at will, allowing the entire network to act as a giant DVR.
 
-##How would I stream content?
+##How would content be streamed?
 A TV channel has to be created (tv_channel_t). A channel can have up to 256 unique streams: audio, video, or captions. These streams are responsible for maintaining different qualities of video, dubbing and subbing in different languages, as well as any future streamable types that might be implemented (Oculus Rift and other VR, 360 degree view (?), and red and blue 3D). Audio channels are handled by the encoding mechanism (Opus).
 
 Currently, the only way to load audio is through WAV/AIFF/OGG files on disk, but live stream transcoding is in the works. There is no compression scheme for video, so broadcasting video is not an option (infrastructure is proven to work through menus and webcam tests).
@@ -36,7 +36,7 @@ Currently, the only way to load audio is through WAV/AIFF/OGG files on disk, but
 * It will be possible to allow for "pre-broadcasting" information, encrypting raw frame data with a second key, while keeping the linked list entires and metadata in tact, allowing for downloading large amounts of information ahead of a set "live" time, enforce that live time, and allow slower connections to have relatively nice quality content
 * The frame information and channel information needs to match, otherwise it is assumed to be fraudulent
 
-##How would I watch content?
+##How would content be watched?
 All channels are downloaded and contained in the tv_window_t type. This type is responsible for syncing time throughout a channel, as well as positioning information, selecting streams, among other ideas.
 
 There is only one tv_window_t type allowed currently (will improve to a multiplexer system), and this is interfaced with through the console currently. IR remotes will be added in the future.
