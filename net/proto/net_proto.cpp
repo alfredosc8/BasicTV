@@ -16,15 +16,7 @@
 #include "net_proto_meta.h"
 #include "net_proto_api.h"
 
-// socket ID
-static id_t_ incoming_id = ID_BLANK_ID;
-
 void net_proto_loop(){
-	net_socket_t *incoming_socket =
-		PTR_DATA(incoming_id, net_socket_t);
-	if(incoming_socket == nullptr){
-		print("incoming_socket == nullptr", P_ERR);
-	}
 	// all things inbound
 	net_proto_loop_handle_inbound_requests();
 	net_proto_loop_accept_all_connections();
@@ -34,26 +26,30 @@ void net_proto_loop(){
 }
 
 void net_proto_init(){
-	net_socket_t *incoming = new net_socket_t;
-	incoming_id = incoming->id.get_id();
 	net_proto::peer::set_self_peer_id(
 		id_api::array::fetch_one_from_hash(
 			convert::array::type::to("net_proto_peer_t"),
 			get_id_hash(production_priv_key_id)));
+	const uint16_t tmp_port =
+		settings::get_setting_unsigned_def(
+			"net_port",
+			58486);
+	std::string ip_addr =
+		settings::get_setting(
+			"net_hostname");
+	if(ip_addr == ""){
+		ip_addr = net_get_ip();
+	}else{
+		print("assuming the hostname of " + ip_addr, P_NOTE);
+	}
 	if(net_proto::peer::get_self_as_peer() == ID_BLANK_ID){
 		print("can't find old net_proto_peer_t information, generating new", P_NOTE);
 		net_proto::peer::set_self_peer_id(
 			(new net_proto_peer_t)->id.get_id());
 		net_proto::peer::set_self_as_peer(
-			net_get_ip(),
-			settings::get_setting_unsigned_def(
-				"network_port",
-				58486));
+			ip_addr,
+			tmp_port);
 	}
-	const uint16_t tmp_port =
-		settings::get_setting_unsigned_def(
-			"network_port",
-			58486);
 	if(settings::get_setting("socks_enable") == "true"){
 		try{
 			std::string socks_proxy_ip = settings::get_setting("socks_proxy_ip");
@@ -77,8 +73,6 @@ void net_proto_init(){
 	 	}
 	}else{
 	 	print("SOCKS has been disabled", P_NOTE);
-		incoming->set_net_ip("", tmp_port, NET_IP_VER_4);
-	 	incoming->connect();
 	}
 }
 

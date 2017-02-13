@@ -95,6 +95,10 @@ public:
 
 // key_id can be public or private
 namespace encrypt_api{
+	/*
+	  "encrypt" and "decrypt" handle encrypting and signing, that function
+	  depends on the type of the key_id supplied
+	 */
 	std::vector<uint8_t> encrypt(std::vector<uint8_t> data,
 				     id_t_ key_id);
 	std::vector<uint8_t> decrypt(std::vector<uint8_t> data,

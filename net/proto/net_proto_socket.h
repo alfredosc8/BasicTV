@@ -8,15 +8,14 @@
 /*
   net_proto_socket_t: handles protocol specific transcoding
 
-  This should be the only socket type used for protocol communication
-  (net_proto_socket_t is just a friendly wrapper to net_socket_t)
+  net_proto_socket_t handles removing requests when the information
+  is received, as well as encrypting all IDs for sending and abstracting
+  out everything needed to maintain a connection (establishing connections,
+  especially with TCP holepunching, requires direct access to the socket to
+  start, which falls outside of what this datatype does).
 
-  net_proto_socket_t doesn't dive into nitty-gritty technical stuff (namely
-  SOCKS proxies and TCP hole punching).
-  
-  net_proto_socket_t handles holepunching. SOCKS and proxies, since they
-  aren't dependent upon the protocol, are handled one level down at
-  net_socket_t. Proxy identities are stored in net_proxy_t
+  net_proto_socket_t, for statistics reasons, should only be bound to one peer
+  for the lifetime of it. The same logic applies to sockets.
  */
 
 struct net_proto_socket_t{
@@ -51,8 +50,6 @@ public:
 	std::vector<std::pair<uint64_t, id_t_> > get_id_log();
 	std::vector<std::vector<uint8_t> > get_buffer();
 	uint64_t get_last_update_micro_s();
-	void update_connection(); // make sure it is connected properly
-	// direct connection to port in the ID
 	bool is_alive();
 };
 

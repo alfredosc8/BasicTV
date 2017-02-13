@@ -183,9 +183,10 @@ void net_proto_socket_t::process_buffer(){
 	for(uint64_t i = 0;i < buffer.size();i++){
 		const id_t_ tmp_id =
 			id_api::array::add_data(buffer[i]);
-		if(!net_proto::request::del_id(tmp_id)){
+		try{
+			net_proto::request::del_id(tmp_id);
+		}catch(...){
 			print("received information not requested from a socket", P_WARN);
-			// TODO: penalize peers for sending unrequested data
 		}
 	}
 	buffer.clear();
@@ -194,35 +195,6 @@ void net_proto_socket_t::process_buffer(){
 void net_proto_socket_t::update(){
 	read_and_parse();
 	process_buffer();
-}
-
-void net_proto_socket_t::update_connection(){
-	net_proto_peer_t *peer_ptr =
-		PTR_DATA(peer_id,
-			 net_proto_peer_t);
-	if(peer_ptr == nullptr){
-		print("protocol socket is not bound to a peer, cannot connect", P_ERR);
-	}
-	net_socket_t *socket_ptr =
-		PTR_DATA(socket_id,
-			 net_socket_t);
-	if(socket_ptr == nullptr){
-		print("no bound socket, creating new one", P_NOTE);
-		// not actually that bad
-		socket_ptr = new net_socket_t;
-		socket_id = socket_ptr->id.get_id();
-	}
-	const bool current =
-		socket_ptr->get_net_ip_str() == peer_ptr->get_net_ip_str() &&
-		socket_ptr->get_net_port() == peer_ptr->get_net_port();
-	if(!current || socket_ptr->is_alive()){
-		socket_ptr->disconnect();
-		socket_ptr->set_net_ip(
-			peer_ptr->get_net_ip_str(),
-			peer_ptr->get_net_port(),
-			NET_IP_VER_4);
-		socket_ptr->connect();
-	}
 }
 
 uint64_t net_proto_socket_t::get_last_update_micro_s(){

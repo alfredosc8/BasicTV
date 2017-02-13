@@ -8,7 +8,7 @@ namespace net_proto{
 		void add_id(id_t_ id);
 		void add_id(std::vector<id_t_> id);
 		void add_id_linked_list(id_t_ id, uint32_t length);
-		bool del_id(id_t_ id);
+		void del_id(id_t_ id);
 		void del_id(std::vector<id_t_> id);
 		void add_fast_routine_type(std::string type);
 		void del_fast_routine_type(std::string type);
@@ -27,7 +27,7 @@ namespace net_proto{
 		  a peer. Hopefully will decrease the response time if we have
 		  enough threads to effectively spread the load.
 		 */
-		std::vector<id_t_> connect(id_t_ peer_id_, uint32_t min);
+		void connect(id_t_ peer_id_, uint32_t min);
 		// TODO: should be a lookup cache system in net_proto_peer_t
 		std::vector<id_t_> all_proto_socket_of_peer(id_t_ peer_id);
 		id_t_ optimal_proto_socket_of_peer(id_t_ peer_id);

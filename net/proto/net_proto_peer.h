@@ -75,11 +75,14 @@
 struct net_proto_peer_t : public net_ip_t{
 private:
 	uint8_t flags = 0;
+	uint8_t net_flags = 0;
 	std::array<uint8_t, BITCOIN_WALLET_LENGTH> bitcoin_wallet = {{0}};
 public:
 	data_id_t id;
 	net_proto_peer_t();
 	~net_proto_peer_t();
+	uint8_t get_net_flags();
+	void set_net_flags(uint8_t net_flags_);
 	void set_bitcoin_wallet(std::array<uint8_t, BITCOIN_WALLET_LENGTH> bitcoin_wallet_);
 	std::array<uint8_t, BITCOIN_WALLET_LENGTH> get_bitcoin_wallet();
 };

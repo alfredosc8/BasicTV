@@ -1,10 +1,12 @@
 #include "../../id/id_api.h"
 #include "../../util.h"
+#include "../../settings.h"
 #include "net_proto.h"
 #include "net_proto_api.h"
 #include "net_proto_socket.h"
 #include "net_proto_peer.h"
 #include "net_proto_routine_requests.h"
+#include "net_proto_con_req.h"
 
 static id_t_ self_peer_id = ID_BLANK_ID;
 
@@ -28,7 +30,7 @@ void net_proto::request::add_id_linked_list(id_t_ id, uint32_t length){
 	linked_list_request_ptr->set_curr_id(id, length);
 }
 
-bool net_proto::request::del_id(id_t_ id){
+void net_proto::request::del_id(id_t_ id){
 	std::vector<id_t_> id_request_vector =
 		id_api::cache::get(
 			"net_proto_id_request_t");
@@ -51,21 +53,35 @@ bool net_proto::request::del_id(id_t_ id){
 				id_ptr);
 			id_request->set_ids(
 				id_vector);
-			return true;
+			return;
 		}
 	}
-	return false;
+	print("cannot delete request for ID I didn't request", P_ERR);
 }
 
 void net_proto::peer::set_self_peer_id(id_t_ self_peer_id_){
 	self_peer_id = self_peer_id_;
 }
 
+/*
+  Should be done in net_proto_init, actually
+ */
+
 void net_proto::peer::set_self_as_peer(std::string ip, uint16_t port){
 	net_proto_peer_t *proto_peer =
 		PTR_DATA(self_peer_id,
 			 net_proto_peer_t);
 	PRINT_IF_NULL(proto_peer, P_ERR);
+	print("TODO: check for open TCP ports, checking settings file", P_WARN);
+	uint8_t net_flags_tmp = NET_PEER_PUNCHABLE;
+	print("assuming we are TCP hole punchable", P_NOTE);
+	if(settings::get_setting("net_open_tcp_port") == "true"){
+		print("we have an open TCP port defined in settings, adding to my net_proto_peer_t", P_NOTE);
+		net_flags_tmp |= NET_PEER_PORT_OPEN;
+	}else{
+		print("we don't have an open TCP port defined in settings, consider making one for maximum connectivity", P_NOTE);
+	}
+	proto_peer->set_net_flags(net_flags_tmp);
 	proto_peer->set_net_ip(ip, port, NET_IP_VER_4); // ?
 }
 
@@ -116,25 +132,19 @@ id_t_ net_proto::socket::optimal_proto_socket_of_peer(id_t_ peer_id){
 	return optimal_socket.first;
 }
 
-std::vector<id_t_> net_proto::socket::connect(id_t_ peer_id_, uint32_t min){
+void net_proto::socket::connect(id_t_ peer_id_, uint32_t min){
 	std::vector<id_t_> retval;
 	net_proto_peer_t *proto_peer_ptr =
 		PTR_DATA(peer_id_,
 			 net_proto_peer_t);
 	if(proto_peer_ptr == nullptr){
-		return retval;
+		print("cannot connect to a null peer", P_ERR);
 	}
 	int64_t sockets_to_open =
 		min-all_proto_socket_of_peer(peer_id_).size();
 	for(;sockets_to_open > 0;sockets_to_open--){
-		net_proto_socket_t *proto_socket =
-			new net_proto_socket_t;
-		proto_socket->set_peer_id(peer_id_);
-		proto_socket->update_connection();
-		retval.push_back(
-			proto_socket->id.get_id());
+		net_proto_generate_con_req(peer_id_);
 	}
-	return retval;
 }
 
 void net_proto::request::add_fast_routine_type(std::string type){

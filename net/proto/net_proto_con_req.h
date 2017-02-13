@@ -98,4 +98,6 @@ public:
 		 uint64_t heartbeat_timestamp_);
 };
 
+id_t_ net_proto_generate_con_req(id_t_ peer_id);
+
 #endif

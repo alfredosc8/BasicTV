@@ -15,7 +15,6 @@ static void net_proto_send_logic(std::vector<id_t_> id_vector,
 			 net_proto_peer_t);
 	if(proto_peer_ptr == nullptr){
 		print("can't send request to an invalid network peer", P_ERR);
-		return;
 	}
 	// TODO: effectively send across multiple?
 	id_t_ optimal_proto_socket_id =
@@ -34,9 +33,7 @@ static void net_proto_send_logic(std::vector<id_t_> id_vector,
 			PTR_DATA(optimal_proto_socket_id,
 				 net_proto_socket_t);
 		if(proto_socket == nullptr){
-			// would be spammed, delays for connection are
-			// pretty high, especially for holepunching
-			print("can't connect", P_NOTE);
+			print("proto_socket is a nullptr", P_ERR);
 		}
 	}
 	for(uint64_t i = 0;i < id_vector.size();i++){
@@ -45,7 +42,7 @@ static void net_proto_send_logic(std::vector<id_t_> id_vector,
 		if(id_ptr == nullptr){
 			continue;
 		}
-		
+		proto_socket->send_id(id_vector[i]);
 	}
 }
 
@@ -80,11 +77,14 @@ static void net_proto_fill_type_requests(){
 			const std::vector<id_t_> type_vector =
 				id_api::cache::get(
 					proto_type_request->get_type());
-	 		net_proto_send_logic(
-	 			remove_ids_from_vector(
-					type_vector,
-					raw_id_vector),
-				peer_id);
+			try{
+				net_proto_send_logic(
+					remove_ids_from_vector(
+						type_vector,
+						raw_id_vector),
+					peer_id);
+				id_api::destroy(net_proto_type_requests[i]);
+			}catch(...){}
 	 	}
 	}
 }
@@ -103,8 +103,12 @@ static void net_proto_fill_id_requests(){
 	 	if(peer_id != net_proto::peer::get_self_as_peer()){
 			const std::vector<id_t_> id_vector =
 				proto_id_request->get_ids();
-	 		net_proto_send_logic(
-				id_vector, peer_id);
+			
+			try{
+				net_proto_send_logic(
+					id_vector, peer_id);
+				id_api::destroy(net_proto_id_requests[i]);
+			}catch(...){}
 	 	}
 	}
 }
@@ -123,10 +127,13 @@ static void net_proto_fill_linked_list_requests(){
 	 	if(peer_id != net_proto::peer::get_self_as_peer()){
 			const id_t_ curr_id =
 				proto_linked_list_request->get_curr_id();
-			if(PTR_ID(curr_id, ) != nullptr){
-				proto_linked_list_request->increase_id();
-			}
-	 		net_proto_send_logic({curr_id}, peer_id);
+			try{
+				if(PTR_ID(curr_id, ) != nullptr){
+					proto_linked_list_request->increase_id();
+				}
+				net_proto_send_logic({curr_id}, peer_id);
+				id_api::destroy(net_proto_linked_list_requests[i]);
+			}catch(...){}
 	 	}
 	}
 }
