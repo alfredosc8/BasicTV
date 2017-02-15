@@ -16,16 +16,18 @@
 #include "net_proto_meta.h"
 #include "net_proto_api.h"
 
+// TODO: remove "loop" from all of these to make it more uniform
+
 void net_proto_loop(){
 	// all things inbound
 	net_proto_loop_handle_inbound_requests();
 	net_proto_loop_accept_all_connections();
 	// all things outbound
 	net_proto_loop_handle_outbound_requests();
-	net_proto_loop_initiate_all_connections();
+	net_proto_initiate_all_connections();
 }
 
-void net_proto_init(){
+static void net_proto_init_self_peer(){
 	net_proto::peer::set_self_peer_id(
 		id_api::array::fetch_one_from_hash(
 			convert::array::type::to("net_proto_peer_t"),
@@ -50,6 +52,13 @@ void net_proto_init(){
 			ip_addr,
 			tmp_port);
 	}
+}
+
+void net_proto_init(){
+	net_proto_init_self_peer();
+	/*
+	  TODO: connect net_proxy_t to net_socket_t somehow (default setting)
+	 */
 	if(settings::get_setting("socks_enable") == "true"){
 		try{
 			std::string socks_proxy_ip = settings::get_setting("socks_proxy_ip");

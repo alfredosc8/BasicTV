@@ -1,4 +1,4 @@
 #ifndef NET_PROTO_OUTBOUND_CONNECTIONS_H
 #define NET_PROTO_OUTBOUND_CONNECTIONS_H
-void net_proto_loop_initiate_all_connections();
+void net_proto_initiate_all_connections();
 #endif

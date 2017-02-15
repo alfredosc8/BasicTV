@@ -70,6 +70,10 @@
  */
 #define NET_CON_REQ_HOLEPUNCH (2 << 2)
 
+// not actually sent, internal only
+
+#define NET_CON_REQ_DIRECT (3 << 2)
+
 /*
   This can be referred to net_con_req_t in personal flowcharts and docs, but it
   is formally defined as net_proto_con_req_t
