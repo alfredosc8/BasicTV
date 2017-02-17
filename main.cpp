@@ -24,6 +24,7 @@
 #include "compress.h"
 #include "convert.h"
 #include "console/console.h"
+#include "system.h"
 
 /*
   TODO:
@@ -141,6 +142,8 @@ static void init(){
 	*/
 	// default port for ID networking
 	settings::set_setting("network_port", "58486");
+	settings::set_setting("net_hostname", "");
+	settings::set_setting("net_open_tcp_port", "false");
 	// disable socks
 	settings::set_setting("socks_enable", "false");
 	// if SOCKS cannot be set up properly, then terminate
@@ -157,6 +160,9 @@ static void init(){
 	  TODO: use getuid and that stuff when getenv doesn't work (?)
 	 */
 	settings::set_setting("data_folder", ((std::string)getenv("HOME"))+"/.BasicTV/");
+	system_handler::mkdir(
+		settings::get_setting(
+			"data_folder"));
 	settings_init();
 
 	//std::set_new_handler(no_mem);

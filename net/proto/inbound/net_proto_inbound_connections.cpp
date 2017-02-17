@@ -14,6 +14,9 @@ static id_t_ incoming_id = ID_BLANK_ID;
 static void net_proto_accept_direct_connections(net_socket_t *incoming_conn){
 	TCPsocket incoming_socket =
 		incoming_conn->get_tcp_socket();
+	if(incoming_socket == nullptr){
+		return;
+	}
 	TCPsocket tcp_socket = nullptr;
 	while((tcp_socket = SDLNet_TCP_Accept(incoming_socket)) != nullptr){
 		net_socket_t *new_socket =
@@ -108,6 +111,12 @@ void net_proto_accept_all_connections(){
 			      net_socket_t);
 	if(incoming_conn == nullptr){
 		net_proto_create_incoming_socket();
+		incoming_conn =
+			PTR_DATA_FAST(incoming_id,
+				      net_socket_t);
+		if(incoming_conn == nullptr){
+			print("can't open incoming socket", P_ERR);
+		}
         }
 	net_proto_accept_direct_connections(incoming_conn);
 	net_proto_accept_unorthodox_connections(incoming_conn);

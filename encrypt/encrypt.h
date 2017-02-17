@@ -52,10 +52,7 @@
 #define ENCRYPT_KEY_TYPE_PRIV (1)
 #define ENCRYPT_KEY_TYPE_PUB (2)
 
-/*
-  The inevitable symmetric key system that is going to be used will be using
-  this with a new encryption_scheme
- */
+// keys are stored in the DER encoding
 
 struct encrypt_key_t{
 protected:
@@ -68,6 +65,7 @@ public:
 	void set_encrypt_key(std::vector<uint8_t> key_,
 	 		     uint8_t encryption_scheme_);
 	std::pair<uint8_t, std::vector<uint8_t> > get_encrypt_key();
+	uint16_t get_modulus(); // modulus should be in DER (key)
 };
 
 struct encrypt_pub_key_t : virtual encrypt_key_t{
@@ -109,6 +107,9 @@ namespace encrypt_api{
 			std::string gen_str(std::vector<uint8_t> data);
 			std::string gen_str_from_raw(std::array<uint8_t, 32> data);
 		};
+	};
+	namespace search{
+		id_t_ pub_key_from_hash(std::array<uint8_t, 32> hash);
 	};
 	std::vector<uint8_t> get_sha256_hash(std::vector<uint8_t> data);
 };

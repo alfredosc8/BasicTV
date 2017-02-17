@@ -72,7 +72,7 @@ std::string net::get_cache(std::string url, int stale_time){
 void net::force_url(std::string url){
 	CURL *curl_handle = curl_easy_init();
 	curl_easy_setopt(curl_handle, CURLOPT_URL, url.c_str());
-	curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 0L);
+	curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 1L);
 	curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1L);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, curl_write);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, new std::string(url));

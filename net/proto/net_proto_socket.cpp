@@ -6,6 +6,7 @@
 #include "net_proto_meta.h"
 #include "net_proto_socket.h"
 #include "../../id/id_api.h"
+#include "../../encrypt/encrypt.h"
 
 net_proto_socket_t::net_proto_socket_t() : id(this, __FUNCTION__){
 }
@@ -17,7 +18,23 @@ net_proto_socket_t::~net_proto_socket_t(){}
  */
 
 void net_proto_socket_t::bare_send(std::vector<uint8_t> data){
-	
+	print("TODO: implement bare_send", P_CRIT);
+	// size depends on the modulus
+	net_proto_peer_t *proto_peer =
+		PTR_DATA(peer_id,
+			 net_proto_peer_t);
+	if(proto_peer == nullptr){
+		print("can't bare_send data", P_ERR);
+	}
+	const id_t_ pub_key_id =
+		encrypt_api::search::pub_key_from_hash(
+			get_id_hash(
+				proto_peer->id.get_id()));
+	std::vector<uint8_t> encrypt_data =
+		encrypt_api::encrypt(
+			data,
+			pub_key_id);
+			
 }
 
 void net_proto_socket_t::bare_recv(){
@@ -148,6 +165,13 @@ void net_proto_socket_t::read_and_parse(){
 		if(net_final.first.peer_id != ID_BLANK_ID){
 			peer_id = net_final.first.peer_id;
 		}
+		if(net_final.first.macros & NET_STANDARD_ENCRYPT_PACKET){
+			net_final.second =
+				encrypt_api::decrypt(
+				        net_final.second,
+					encrypt_api::search::pub_key_from_hash(
+						get_id_hash(peer_id)));
+		}
 		if(net_final.second.size() > 0){
 			// net_final.second size is the raw size from the socket, so it
 			// includes all extra DEV_CTRL_1s, so it can be used directly to
@@ -177,6 +201,12 @@ void net_proto_socket_t::read_and_parse(){
 		} // doesn't trip when the data isn't finished receiving
 	}
 }
+
+/*
+  TODO: 
+  CHECK ENCRYPT_PUB_KEY_T FOR CORRECTNESS HERE
+  NOW
+ */
 
 void net_proto_socket_t::process_buffer(){
 	print("TODO: pull ID from raw string, not the aftermath", P_NOTE);

@@ -57,7 +57,7 @@ void signal_handler(int signal){
 	switch(signal){
 	case SIGINT:
 	case SIGTERM:
-		exit(signal);
+		running = false;
 	}
 }
 

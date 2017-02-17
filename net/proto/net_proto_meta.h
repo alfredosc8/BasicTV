@@ -2,6 +2,8 @@
 #ifndef NET_PROTO_META_H
 #define NET_PROTO_META_H
 
+#define NET_STANDARD_ENCRYPT_PACKET (1)
+
 /*
   This metadata needs to be readable at all times
 

@@ -16,6 +16,10 @@
 
   net_proto_socket_t, for statistics reasons, should only be bound to one peer
   for the lifetime of it. The same logic applies to sockets.
+
+  It is possible to disable encryption for certain parts of the stream to allow
+  for sending encrypt_pub_key_t along the socket without having to take care
+  of SSL or creating an entire non-encrypted connection.
  */
 
 struct net_proto_socket_t{

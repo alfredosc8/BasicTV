@@ -172,3 +172,35 @@ std::string encrypt_api::hash::sha256::gen_str_from_raw(std::array<uint8_t, 32> 
 	P_V_S(retval, P_SPAM);
 	return retval;
 }
+
+/*
+  Can probably check the id_t_ first
+ */
+
+id_t_ encrypt_api::search::pub_key_from_hash(std::array<uint8_t, 32> hash){
+	std::vector<id_t_> pub_key_vector =
+		id_api::cache::get(
+			"encrypt_pub_key_t");
+	for(uint64_t i = 0;i < pub_key_vector.size();i++){
+		const id_t_ key_id = pub_key_vector[i];
+		if(get_id_hash(key_id) == hash){
+			encrypt_pub_key_t *pub_key_ptr =
+				PTR_DATA(
+					key_id,
+					encrypt_pub_key_t);
+			if(pub_key_ptr == nullptr){
+				continue;
+			}
+			if(encrypt_api::hash::sha256::gen_raw(
+				   pub_key_ptr->get_encrypt_key().second) ==
+			   get_id_hash(key_id)){
+				return key_id;
+			}
+		}
+	}
+	return ID_BLANK_ID;
+}
+
+uint16_t encrypt_key_t::get_modulus(){
+	print("implement modulus getter (differentiate between private and public)", P_CRIT);
+}
