@@ -180,10 +180,10 @@
 	
 // }
 
-static void net_proto_loop_dummy_read(){
+static void net_proto_dummy_read(){
 }
 
-void net_proto_loop_handle_inbound_data(){
+void net_proto_handle_inbound_data(){
 	std::vector<id_t_> proto_sockets =
 		id_api::cache::get("net_proto_socket_t");
 	for(uint64_t i = 0;i < proto_sockets.size();i++){
@@ -225,7 +225,7 @@ static std::array<std::string, 3> malicious_to_bulk_send =
   Move bulk exporting of IDs down to net_proto_socket_t for security reasons
  */
 
-static std::vector<uint8_t> net_proto_loop_export_id_vector(std::vector<id_t_> ids){
+static std::vector<uint8_t> net_proto_export_id_vector(std::vector<id_t_> ids){
 	std::vector<uint8_t> retval;
 	for(uint64_t i = 0;i < ids.size();i++){
 		data_id_t *tmp_id =
@@ -279,7 +279,7 @@ static void net_proto_handle_inbound_type_request(id_t_ request_id){
 		request->get_ids());
 }
 
-static void net_proto_loop_handle_all_inbound_type_requests(){
+static void net_proto_handle_all_inbound_type_requests(){
 	std::vector<id_t_> type_request_vector =
 		id_api::cache::get("net_proto_type_request_t");
 	for(uint64_t i = 0;i < type_request_vector.size();i++){
@@ -288,7 +288,7 @@ static void net_proto_loop_handle_all_inbound_type_requests(){
 	}
 }
 
-static void net_proto_loop_handle_all_inbound_standard_requests(){
+static void net_proto_handle_all_inbound_standard_requests(){
 }
 
 /*
@@ -297,11 +297,11 @@ static void net_proto_loop_handle_all_inbound_standard_requests(){
   I can fill (but can't right now).
  */
 
-static void net_proto_loop_handle_all_inbound_linked_list_requests(){
+static void net_proto_handle_all_inbound_linked_list_requests(){
 }
 
-void net_proto_loop_handle_inbound_requests(){
-	net_proto_loop_handle_all_inbound_type_requests();
-	net_proto_loop_handle_all_inbound_standard_requests();
-	net_proto_loop_handle_all_inbound_linked_list_requests();
+void net_proto_handle_inbound_requests(){
+	net_proto_handle_all_inbound_type_requests();
+	net_proto_handle_all_inbound_standard_requests();
+	net_proto_handle_all_inbound_linked_list_requests();
 }

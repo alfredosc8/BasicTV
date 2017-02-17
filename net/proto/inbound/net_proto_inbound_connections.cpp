@@ -55,8 +55,7 @@ static bool net_proto_facilitate_reverse_forward(net_proto_con_req_t *con_req){
 			new net_proto_socket_t;
 		tmp_socket->set_net_ip(
 			first_peer_ptr->get_net_ip_str(),
-			first_peer_ptr->get_net_port(),
-			NET_IP_VER_4);
+			first_peer_ptr->get_net_port());
 		tmp_socket->connect();
 		proto_socket->set_socket_id(
 			tmp_socket->id.get_id());
@@ -100,11 +99,10 @@ void net_proto_create_incoming_socket(){
 		"",
  		settings::get_setting_unsigned_def(
 			"network_port",
-			58486),
-		NET_IP_VER_4);
+			58486));
 }
 
-void net_proto_loop_accept_all_connections(){
+void net_proto_accept_all_connections(){
 	net_socket_t *incoming_conn =
 		PTR_DATA_FAST(incoming_id,
 			      net_socket_t);

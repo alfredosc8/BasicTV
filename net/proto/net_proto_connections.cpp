@@ -34,8 +34,7 @@ void net_proto_handle_tcp_holepunch(net_proto_con_req_t *con_req){
 			new net_socket_t;
 		holepunch_socket->set_net_ip(
 			peer_ip,
-			peer_port,
-			NET_IP_VER_4);
+			peer_port);
 		holepunch_socket->connect();
 		print("add logic to finish connection", P_CRIT);
 	}

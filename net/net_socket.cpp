@@ -216,8 +216,7 @@ void net_socket_t::set_tcp_socket(TCPsocket socket_){
 		return;
 	}
 	set_net_ip(ip_addr_tmp,
-		   NBO_16(tmp_ip.port),
-		   NET_IP_VER_4);
+		   NBO_16(tmp_ip.port));
 }
 
 TCPsocket net_socket_t::get_tcp_socket(){

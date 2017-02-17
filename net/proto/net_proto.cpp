@@ -20,10 +20,10 @@
 
 void net_proto_loop(){
 	// all things inbound
-	net_proto_loop_handle_inbound_requests();
-	net_proto_loop_accept_all_connections();
+	net_proto_handle_inbound_requests();
+	net_proto_accept_all_connections();
 	// all things outbound
-	net_proto_loop_handle_outbound_requests();
+	net_proto_handle_outbound_requests();
 	net_proto_initiate_all_connections();
 }
 
@@ -72,8 +72,7 @@ void net_proto_init(){
 				new net_proxy_t;
 			proxy_ptr->set_net_ip(
 				socks_proxy_ip,
-				socks_proxy_port,
-				NET_IP_VER_4);
+				socks_proxy_port);
 		}catch(std::exception e){
 			const bool strict =
 				settings::get_setting("socks_strict") == "true";

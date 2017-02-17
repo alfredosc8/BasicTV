@@ -151,7 +151,7 @@ static void net_proto_send_id_requests(){
 static void net_proto_send_linked_list_requests(){
 }
 
-void net_proto_loop_handle_outbound_requests(){
+void net_proto_handle_outbound_requests(){
 	net_proto_fill_type_requests();
 	net_proto_fill_id_requests();
 	net_proto_fill_linked_list_requests();

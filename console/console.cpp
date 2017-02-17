@@ -171,7 +171,7 @@ static id_t_ console_socket_id = ID_BLANK_ID;
 void console_init(){
 	net_socket_t *inbound_socket =
 		new net_socket_t;
-	inbound_socket->set_net_ip("", 59000, NET_IP_VER_4);
+	inbound_socket->set_net_ip("", 59000);
 	inbound_socket->connect();
 	console_socket_id =
 		inbound_socket->id.get_id();

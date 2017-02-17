@@ -82,7 +82,7 @@ void net_proto::peer::set_self_as_peer(std::string ip, uint16_t port){
 		print("we don't have an open TCP port defined in settings, consider making one for maximum connectivity", P_NOTE);
 	}
 	proto_peer->set_net_flags(net_flags_tmp);
-	proto_peer->set_net_ip(ip, port, NET_IP_VER_4); // ?
+	proto_peer->set_net_ip(ip, port);
 }
 
 id_t_ net_proto::peer::get_self_as_peer(){

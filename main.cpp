@@ -221,7 +221,7 @@ static void test_socket(){
 		std::cin >> port;
 		std::pair<std::string, uint16_t> laptop_conn =
 			std::make_pair(ip, port);
-		test_socket_->set_net_ip(ip, port, NET_IP_VER_4);
+		test_socket_->set_net_ip(ip, port);
 		test_socket_->connect();
 		test_socket_->send("AAAA");
 		while(true){
@@ -281,13 +281,13 @@ static void test_max_tcp_sockets(){
 	bool dropped = false;
 	net_socket_t *inbound =
 		new net_socket_t;
-	inbound->set_net_ip("", 50000, NET_IP_VER_4);
+	inbound->set_net_ip("", 50000);
 	inbound->connect();
 	while(!dropped){
 		for(uint64_t i = 0;i < 128;i++){
 			net_socket_t *first =
 				new net_socket_t;
-			first->set_net_ip(ip, 50000, NET_IP_VER_4);
+			first->set_net_ip(ip, 50000);
 			first->connect();
 			net_socket_t *second =
 				new net_socket_t;
@@ -324,7 +324,7 @@ static void test_id_transport(){
 	settings::set_setting("export_data", "true");
 	net_proto_peer_t *tmp =
 		new net_proto_peer_t;
-	tmp->set_net_ip("127.0.0.1", 58486, 0);
+	tmp->set_net_ip("127.0.0.1", 58486);
 	const std::vector<uint8_t> exp =
 		tmp->id.export_data(ID_DATA_NOEXP | ID_DATA_NONET);
 	//test_id_transport_print_exp(exp);
