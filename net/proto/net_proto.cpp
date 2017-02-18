@@ -16,8 +16,6 @@
 #include "net_proto_meta.h"
 #include "net_proto_api.h"
 
-// TODO: remove "loop" from all of these to make it more uniform
-
 void net_proto_loop(){
 	// all things inbound
 	net_proto_handle_inbound_requests();

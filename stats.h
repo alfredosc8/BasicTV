@@ -18,6 +18,8 @@ struct stat_sample_set_standard_t{
 protected:
 	uint64_t max_samples = 0;
 public:
+	stat_sample_set_standard_t();
+	~stat_sample_set_standard_t();
 	void list_virtual_data(data_id_t *id);
 	void set_max_samples(uint64_t max_samples_);
 	uint64_t get_max_samples();
@@ -31,14 +33,16 @@ public:
 
 struct stat_sample_set_t : virtual stat_sample_set_standard_t{
 private:
-	std::vector<std::pair<uint64_t, uint64_t> > sample_vector;
+	std::vector<uint64_t> x;
+	std::vector<uint64_t> y;
 public:
 	data_id_t id;
 	stat_sample_set_t();
 	~stat_sample_set_t();
-	std::vector<std::pair<uint64_t, uint64_t> > get_samples();
-	void set_samples(std::vector<std::pair<uint64_t, uint64_t> > sample_vector_);
 	void add_sample(uint64_t x, uint64_t y);
+	std::vector<uint64_t> get_x();
+	std::vector<uint64_t> get_y();
+	void set_tables(std::vector<uint64_t>, std::vector<uint64_t>);
 };
 
 /*
@@ -47,11 +51,19 @@ public:
   that a peer has wanted information.
 */
 
-struct stat_sample_set_id_t{
+struct stat_sample_set_id_t : virtual stat_sample_set_standard_t{
 private:
-	std::vector<std::pair<uint64_t, id_t_> > sample_vector;
-	
+	/* std::vector<std::pair<uint64_t, id_t_> > sample_vector; */
+	std::vector<uint64_t> x;
+	std::vector<id_t_> y;
 public:
+	data_id_t id;
+	stat_sample_set_id_t();
+	~stat_sample_set_id_t();
+	void add_sample(uint64_t x, id_t_ y);
+	std::vector<uint64_t> get_x();
+	std::vector<id_t_> get_y();
+	void set_tables(std::vector<uint64_t>, std::vector<id_t_>);
 };
 
 #endif

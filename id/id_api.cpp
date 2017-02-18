@@ -432,6 +432,9 @@ void id_api::destroy(id_t_ id){
 	DELETE_TYPE_2(encrypt_priv_key_t);
 	DELETE_TYPE_2(encrypt_pub_key_t);
 
+	// stats
+	DELETE_TYPE_2(stat_sample_set_t);
+	
 	/*
 	  Shouldn't get this far, but if it does, delist it manually
 	 */
