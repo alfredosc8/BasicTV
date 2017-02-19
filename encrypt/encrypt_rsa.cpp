@@ -11,24 +11,21 @@
   TODO: allow for importing of encrypted RSA keys
 */
 
-std::vector<uint8_t> rsa::encrypt(std::vector<uint8_t> data,
-				  std::vector<uint8_t> key,
-				  uint8_t type){
-	if(key.size() == 0){
-		print("key is blank, can't decode anything", P_ERR);
-	}
-	RSA *rsa = nullptr;
+static void rsa_load_key(RSA **rsa, std::vector<uint8_t> key, uint8_t type){
 	const uint8_t *key_start = &(key[0]);
 	if(type == ENCRYPT_KEY_TYPE_PUB){
-		d2i_RSAPublicKey(&rsa, &key_start, key.size());
+		d2i_RSAPublicKey(rsa, &key_start, key.size());
 	}else if(type == ENCRYPT_KEY_TYPE_PRIV){
-		d2i_RSAPrivateKey(&rsa, &key_start, key.size());
+		d2i_RSAPrivateKey(rsa, &key_start, key.size());
 	}else{
 		print("invalid key type supplied", P_ERR);
 	}
 	if(rsa == nullptr){
 		print("can't allocate RSA key:"+(std::string)ERR_error_string(ERR_get_error(), nullptr), P_ERR);
 	}
+}
+
+static std::vector<uint8_t> rsa_encrypt_mod_len(RSA *rsa, std::vector<uint8_t> data, uint8_t type){
 	std::vector<uint8_t> retval(RSA_size(rsa), 0);
 	int32_t encrypt_retval = 0;
 	if(type == ENCRYPT_KEY_TYPE_PRIV){
@@ -51,12 +48,53 @@ std::vector<uint8_t> rsa::encrypt(std::vector<uint8_t> data,
 		print("invalid key type supplied", P_ERR);
 	}
 	if(encrypt_retval == -1){
-		print("unable to encrypt RSA string:"+(std::string)ERR_error_string(ERR_get_error(), nullptr), P_ERR);
+		print("unable to decrypt RSA string:"+(std::string)ERR_error_string(ERR_get_error(), nullptr), P_ERR);
+	}else{
+		retval.insert(
+			retval.begin(), ENCRYPT_RSA);
 	}
-	if(encrypt_retval != retval.size()){
-		P_V(encrypt_retval, P_WARN);
-		P_V(retval.size(), P_WARN);
-		print("size mis-match in RSA encryption", P_ERR);
+	return retval;
+}
+
+static void rsa_encrypt_sanity_check(RSA *rsa, std::vector<uint8_t> data){
+	if(rsa == nullptr){
+		print("RSA key is a nullptr", P_ERR);
+	}
+	if(data.size() == 0){
+		print("no data to encrypt", P_ERR);
+	}
+}
+
+
+std::vector<uint8_t> rsa::encrypt(std::vector<uint8_t> data,
+				  std::vector<uint8_t> key,
+				  uint8_t type){
+	if(key.size() == 0){
+		print("key is blank, can't decode anything", P_ERR);
+	}
+	RSA *rsa = nullptr;
+	rsa_load_key(&rsa, key, type);
+	rsa_encrypt_sanity_check(rsa, data);
+	const uint64_t mod_len = RSA_size(rsa);
+	std::vector<uint8_t> retval;
+	while(data.size() > 0){
+		const uint64_t size =
+			(data.size() > mod_len) ?
+			(mod_len+1) : (data.size());
+		std::vector<uint8_t> mod =
+			rsa_encrypt_mod_len(
+				rsa,
+				std::vector<uint8_t>(
+					data.begin(),
+					data.begin()+size),
+				type);
+		data = std::vector<uint8_t>(
+			data.begin()+size,
+			data.end());
+		retval.insert(
+			retval.end(),
+			mod.begin(),
+			mod.end());
 	}
 	RSA_free(rsa);
 	rsa = nullptr;
@@ -67,25 +105,16 @@ std::vector<uint8_t> rsa::encrypt(std::vector<uint8_t> data,
   TODO: resize the output data to leave off any trailing memory
  */
 
-std::vector<uint8_t> rsa::decrypt(std::vector<uint8_t> data,
-				  std::vector<uint8_t> key,
-				  uint8_t type){
-	if(key.size() == 0){
-		print("key is blank, can't decode anything", P_ERR);
-	}
-	RSA *rsa = nullptr;
-	const uint8_t *key_start = &(key[0]);
-	if(type == ENCRYPT_KEY_TYPE_PUB){
-		d2i_RSAPublicKey(&rsa, &key_start, key.size());
-	}else if(type == ENCRYPT_KEY_TYPE_PRIV){
-		d2i_RSAPrivateKey(&rsa, &key_start, key.size());
-	}else{
-		print("invalid key type supplied", P_ERR);
-	}
-	if(rsa == nullptr){
-		print("can't allocate RSA key:"+(std::string)ERR_error_string(ERR_get_error(), nullptr), P_ERR);
-	}
+static std::vector<uint8_t> rsa_decrypt_mod_len(RSA *rsa, std::vector<uint8_t> data, uint8_t type){
 	std::vector<uint8_t> retval(RSA_size(rsa), 0);
+	if(data.size() != RSA_size(rsa)+1){
+		print("invalid size for mod_len decryption", P_ERR);
+	}
+	const uint8_t scheme = data[0];
+	if(scheme != ENCRYPT_RSA){
+		print("invalid scheme", P_ERR);
+	}
+	data.erase(data.begin());
 	int32_t encrypt_retval = 0;
 	if(type == ENCRYPT_KEY_TYPE_PRIV){
 		encrypt_retval =
@@ -108,6 +137,52 @@ std::vector<uint8_t> rsa::decrypt(std::vector<uint8_t> data,
 	}
 	if(encrypt_retval == -1){
 		print("unable to decrypt RSA string:"+(std::string)ERR_error_string(ERR_get_error(), nullptr), P_ERR);
+	}
+	return retval;
+}
+
+static void rsa_decrypt_sanity_check(RSA *rsa, std::vector<uint8_t> data){
+	if(rsa == nullptr){
+		print("RSA key is a nullptr", P_ERR);
+	}
+	const uint64_t rsa_mod_len = RSA_size(rsa);
+	if(data.size() % (rsa_mod_len+1) != 0){
+		print("invalid length for RSA modulus", P_ERR);
+	}
+	if(data[0] != ENCRYPT_RSA){
+		print("wrong encryption scheme", P_ERR);
+	}
+}
+
+std::vector<uint8_t> rsa::decrypt(std::vector<uint8_t> data,
+				  std::vector<uint8_t> key,
+				  uint8_t type){
+	if(key.size() == 0){
+		print("key is blank, can't decode anything", P_ERR);
+	}
+	RSA *rsa = nullptr;
+	rsa_load_key(&rsa, key, type);
+	rsa_decrypt_sanity_check(rsa, data);
+	const uint64_t mod_len = RSA_size(rsa); // bytes
+	P_V(mod_len, P_NOTE);
+	std::vector<uint8_t> retval;
+	while(data.size() > 0){ // sanity check
+		// checks encryption_scheme too (nonencrypted)
+		std::vector<uint8_t> payload =
+			rsa_decrypt_mod_len(
+				rsa,
+				std::vector<uint8_t>(
+					data.begin(),
+					data.begin()+mod_len+1),
+				type);
+		data = std::vector<uint8_t>(
+			data.begin()+mod_len+1,
+			data.end());
+		retval.insert(
+			retval.end(),
+			payload.begin(),
+			payload.end());
+		P_V(data.size(), P_NOTE);
 	}
 	RSA_free(rsa);
 	rsa = nullptr;
