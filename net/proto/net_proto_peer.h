@@ -51,9 +51,12 @@
 #define NET_PEER_TCP 0
 #define NET_PEER_UDP 1
 
-// assume this is using IPv4
-#define NET_PEER_IPV6 (1 >> 2)
-
+/*
+  The key used to sign this peer information is not (supposed) to be the same
+  key for connecting. Currently, this is only used for locally created 
+  for bootstrap nodes (which should always be signed by the local key).
+ */
+#define NET_PEER_WRONG_KEY (1 << 1)
 /*
   Manually opened port. A node with no other connections has to first connect
   to a node with an open TCP/UDP port, so having forwarded ports are vital
@@ -63,14 +66,13 @@
   to trying to directly connect to all of them using both TCP and UDP, although
   this is both bad behavior and not planned (also should never happen).
 */
-#define NET_PEER_PORT_OPEN (1 >> 3)
+#define NET_PEER_PORT_OPEN (1 << 2)
 
 /*
   Punchable with the supplied protocol
 */
-#define NET_PEER_PUNCHABLE (1 >> 4)
-
-#define NET_PEER_NAT_ADDRESS_PORT_RESTRICTED (1 >> 6)
+#define NET_PEER_PUNCHABLE (1 << 3)
+#define NET_PEER_NAT_ADDRESS_PORT_RESTRICTED (1 << 4)
 
 struct net_proto_peer_t : public net_ip_t{
 private:

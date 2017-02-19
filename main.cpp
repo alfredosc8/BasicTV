@@ -423,7 +423,7 @@ static void test_rsa_encryption(){
 				rsa_key_pair.first),
 			rsa_key_pair.second);
 	for(uint64_t i = 0;i < test_data.size();i++){
-		P_V_C(test_data[i], P_ERR);
+		P_V_C(test_data[i], P_NOTE);
 	}
 }
 
@@ -437,6 +437,7 @@ int main(int argc_, char **argv_){
 	argc = argc_;
 	argv = argv_;
 	init();
+	test_rsa_encryption();
 	//test_id_hex();
 	//test_rsa_encryption();
 	//test_break_id_transport();

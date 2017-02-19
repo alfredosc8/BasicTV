@@ -138,13 +138,14 @@ bool net_cache_t::get_complete(){
 
 /*
   TODO: get some backups for this, seriously
+  canihazip.com/s has the plaintext stuff, which is nice
  */
 
 std::string net_get_ip(){
-	std::string ip_addr =
-		net::get_url("checkip.dyndns.com");
-	ip_addr = ip_addr.substr(
-		ip_addr.find_first_of(":")+2,
-		ip_addr.find_last_of("<//body>")-strlen("<//body>"));
-	return ip_addr;
+	// std::string ip_addr =
+	// 	net::get_url("checkip.dyndns.com");
+	// ip_addr = ip_addr.substr(
+	// 	ip_addr.find_first_of(":")+2,
+	// 	ip_addr.find_last_of("<//body>")-strlen("<//body>"));
+	return net::get_url("canihazip.com/s");
 }

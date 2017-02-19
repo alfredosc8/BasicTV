@@ -53,6 +53,11 @@ std::vector<uint8_t> rsa::encrypt(std::vector<uint8_t> data,
 	if(encrypt_retval == -1){
 		print("unable to encrypt RSA string:"+(std::string)ERR_error_string(ERR_get_error(), nullptr), P_ERR);
 	}
+	if(encrypt_retval != retval.size()){
+		P_V(encrypt_retval, P_WARN);
+		P_V(retval.size(), P_WARN);
+		print("size mis-match in RSA encryption", P_ERR);
+	}
 	RSA_free(rsa);
 	rsa = nullptr;
 	return retval;
@@ -80,7 +85,6 @@ std::vector<uint8_t> rsa::decrypt(std::vector<uint8_t> data,
 	if(rsa == nullptr){
 		print("can't allocate RSA key:"+(std::string)ERR_error_string(ERR_get_error(), nullptr), P_ERR);
 	}
-	
 	std::vector<uint8_t> retval(RSA_size(rsa), 0);
 	int32_t encrypt_retval = 0;
 	if(type == ENCRYPT_KEY_TYPE_PRIV){
@@ -103,7 +107,7 @@ std::vector<uint8_t> rsa::decrypt(std::vector<uint8_t> data,
 		print("invalid key type supplied", P_ERR);
 	}
 	if(encrypt_retval == -1){
-		print("unable to encrypt RSA string:"+(std::string)ERR_error_string(ERR_get_error(), nullptr), P_ERR);
+		print("unable to decrypt RSA string:"+(std::string)ERR_error_string(ERR_get_error(), nullptr), P_ERR);
 	}
 	RSA_free(rsa);
 	rsa = nullptr;
@@ -147,9 +151,9 @@ std::pair<id_t_, id_t_> rsa::gen_key_pair(uint64_t bits){
 			pub_buf,
 			pub_buf+pub_len),
 		ENCRYPT_SCHEME_RSA);
-	delete priv_buf;
+	delete[] priv_buf;
 	priv_buf = nullptr;
-	delete pub_buf;
+	delete[] pub_buf;
 	pub_buf = nullptr;
 	RSA_free(rsa_key);
 	rsa_key = nullptr;

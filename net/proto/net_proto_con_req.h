@@ -91,9 +91,9 @@ public:
 	net_proto_con_req_t();
 	~net_proto_con_req_t();
 	uint8_t get_flags();
-	void get_peer_ids(id_t_ *first_peer_id_,
-			  id_t_ *second_peer_id_,
-			  id_t_ *third_peer_id_);
+	void get_peer_ids(id_t_ *first_peer_id_, // initiator
+			  id_t_ *second_peer_id_, // receiver 
+			  id_t_ *third_peer_id_); // third party (UDP)
 	uint64_t get_heartbeat_timestamp();
 	void set(uint8_t flags_,
 		 id_t_ first_peer_id_,

@@ -13,16 +13,14 @@
 #include "inbound/net_proto_inbound_data.h"
 #include "outbound/net_proto_outbound_connections.h"
 #include "outbound/net_proto_outbound_data.h"
+#include "net_proto_connections.h"
 #include "net_proto_meta.h"
 #include "net_proto_api.h"
 
 void net_proto_loop(){
-	// all things inbound
 	net_proto_handle_inbound_requests();
-	net_proto_accept_all_connections();
-	// all things outbound
 	net_proto_handle_outbound_requests();
-	net_proto_initiate_all_connections();
+	net_proto_connection_manager();
 }
 
 static void net_proto_init_self_peer(){
@@ -52,8 +50,64 @@ static void net_proto_init_self_peer(){
 	}
 }
 
+/*
+  Creates a bootstrap node if it doesn't already exist
+
+  Forces no encryption (generated locally)
+ */
+
+static std::array<std::pair<std::string, uint16_t>, 1> bootstrap_nodes =
+{{{"96.35.0.163", 58486}}}; // TODO: get a domain name
+
+static void net_proto_verify_bootstrap_nodes(){
+	std::vector<id_t_> peer_vector =
+		id_api::cache::get(
+			"net_proto_peer_t");
+	std::vector<std::pair<std::string, uint16_t> > nodes_to_connect =
+		std::vector<std::pair<std::string, uint16_t> >(
+			bootstrap_nodes.begin(),
+			bootstrap_nodes.end());
+	for(uint64_t i = 0;i < peer_vector.size();i++){
+		net_proto_peer_t *proto_peer =
+			PTR_DATA(peer_vector[i],
+				 net_proto_peer_t);
+		if(proto_peer == nullptr){
+			continue;
+		}
+		const std::string ip_addr =
+			proto_peer->get_net_ip_str();
+		auto bootstrap_iter =
+			std::find_if(
+				nodes_to_connect.begin(),
+				nodes_to_connect.end(),
+				[&ip_addr](std::pair<std::string, uint16_t> const& elem){
+					return ip_addr == elem.first;
+				});
+		if(bootstrap_iter != nodes_to_connect.end()){
+			// remove duplicates, prefer encrypted version
+			nodes_to_connect.erase(
+				bootstrap_iter);
+		}
+	}
+	for(uint64_t i = 0;i < nodes_to_connect.size();i++){
+		net_proto_peer_t *proto_peer_ptr =
+			new net_proto_peer_t;
+		// just assume the port is open
+		proto_peer_ptr->set_net_flags(
+			NET_PEER_WRONG_KEY | NET_PEER_PORT_OPEN);
+		proto_peer_ptr->set_net_ip(
+			nodes_to_connect[i].first,
+			nodes_to_connect[i].second);
+	}
+	const uint64_t start_node_count =
+		id_api::cache::get(
+			"net_proto_peer_t").size()-1; // don't count ourselves
+	print("starting with " + std::to_string(start_node_count) + " unique nodes", P_NOTE);
+}
+
 void net_proto_init(){
 	net_proto_init_self_peer();
+	net_proto_verify_bootstrap_nodes();
 	/*
 	  TODO: connect net_proxy_t to net_socket_t somehow (default setting)
 	 */

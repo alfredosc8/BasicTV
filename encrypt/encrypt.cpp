@@ -126,6 +126,13 @@ std::vector<uint8_t> encrypt_api::decrypt(std::vector<uint8_t> data,
 			      &key,
 			      &encryption_scheme,
 			      &key_type);
+	const uint8_t message_encryption_scheme =
+		data[0];
+	data.erase(
+		data.begin());
+	if(encryption_scheme != message_encryption_scheme){
+		print("invalid data-key pair", P_ERR);
+	}
 	switch(encryption_scheme){
 	case ENCRYPT_RSA:
 		retval = rsa::decrypt(data, key, key_type);
@@ -137,11 +144,6 @@ std::vector<uint8_t> encrypt_api::decrypt(std::vector<uint8_t> data,
 		print("unknown encryption scheme is set", P_ERR);
 		break;
 	}
-	// encryption scheme is ALWAYS the first byte
-	retval.insert(
-		retval.begin(),
-		&encryption_scheme,
-		&encryption_scheme+1);
 	return retval;
 }
 

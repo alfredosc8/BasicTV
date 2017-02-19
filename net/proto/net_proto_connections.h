@@ -6,4 +6,6 @@
  */
 #include "net_proto_con_req.h"
 extern void net_proto_handle_tcp_holepunch(net_proto_con_req_t *con_req);
+
+extern void net_proto_connection_manager();
 #endif

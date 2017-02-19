@@ -10,9 +10,6 @@
   TODO: possibly allow for unencrypted traffic through this system
  */
 
-/*
-  TODO: include net_peer_t information with this update
- */
 typedef id_t_ net_proto_standard_id_t;
 typedef uint32_t net_proto_standard_size_t;
 typedef uint8_t net_proto_standard_ver_t;
