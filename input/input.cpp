@@ -57,6 +57,10 @@ void signal_handler(int signal){
 	switch(signal){
 	case SIGINT:
 	case SIGTERM:
+		if(running == false){
+			print("two signals raised, killing manually", P_NOTE);
+			exit(0);
+		}
 		running = false;
 	}
 }

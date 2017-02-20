@@ -27,6 +27,11 @@ static void rsa_load_key(RSA **rsa, std::vector<uint8_t> key, uint8_t type){
 
 static std::vector<uint8_t> rsa_encrypt_mod_len(RSA *rsa, std::vector<uint8_t> data, uint8_t type){
 	std::vector<uint8_t> retval(RSA_size(rsa), 0);
+	uint16_t payload_len = data.size();
+	data.insert(
+		data.begin(),
+		((uint8_t*)&payload_len),
+		((uint8_t*)&payload_len)+2);
 	int32_t encrypt_retval = 0;
 	if(type == ENCRYPT_KEY_TYPE_PRIV){
 		encrypt_retval =
@@ -77,10 +82,11 @@ std::vector<uint8_t> rsa::encrypt(std::vector<uint8_t> data,
 	rsa_encrypt_sanity_check(rsa, data);
 	const uint64_t mod_len = RSA_size(rsa);
 	std::vector<uint8_t> retval;
+	const uint64_t max_len = mod_len-13;
 	while(data.size() > 0){
 		const uint64_t size =
-			(data.size() > mod_len) ?
-			(mod_len+1) : (data.size());
+			(data.size() > max_len) ?
+			(max_len) : (data.size());
 		std::vector<uint8_t> mod =
 			rsa_encrypt_mod_len(
 				rsa,
@@ -100,10 +106,6 @@ std::vector<uint8_t> rsa::encrypt(std::vector<uint8_t> data,
 	rsa = nullptr;
 	return retval;
 }
-
-/*
-  TODO: resize the output data to leave off any trailing memory
- */
 
 static std::vector<uint8_t> rsa_decrypt_mod_len(RSA *rsa, std::vector<uint8_t> data, uint8_t type){
 	std::vector<uint8_t> retval(RSA_size(rsa), 0);
@@ -138,6 +140,15 @@ static std::vector<uint8_t> rsa_decrypt_mod_len(RSA *rsa, std::vector<uint8_t> d
 	if(encrypt_retval == -1){
 		print("unable to decrypt RSA string:"+(std::string)ERR_error_string(ERR_get_error(), nullptr), P_ERR);
 	}
+	uint16_t payload_size =
+		*((uint16_t*)&retval[0]);
+	if(payload_size > retval.size()){
+		print("invalid size for payload, clipping to modulus length", P_ERR);
+		payload_size = retval.size();
+	}
+	retval = std::vector<uint8_t>(
+		retval.begin()+2,
+		retval.begin()+payload_size+2);
 	return retval;
 }
 
@@ -164,25 +175,26 @@ std::vector<uint8_t> rsa::decrypt(std::vector<uint8_t> data,
 	rsa_load_key(&rsa, key, type);
 	rsa_decrypt_sanity_check(rsa, data);
 	const uint64_t mod_len = RSA_size(rsa); // bytes
-	P_V(mod_len, P_NOTE);
 	std::vector<uint8_t> retval;
 	while(data.size() > 0){ // sanity check
 		// checks encryption_scheme too (nonencrypted)
+		const uint64_t size =
+			(data.size() > mod_len+1) ?
+			(mod_len+1) : (data.size());
 		std::vector<uint8_t> payload =
 			rsa_decrypt_mod_len(
 				rsa,
 				std::vector<uint8_t>(
 					data.begin(),
-					data.begin()+mod_len+1),
+					data.begin()+size),
 				type);
 		data = std::vector<uint8_t>(
-			data.begin()+mod_len+1,
+			data.begin()+size,
 			data.end());
 		retval.insert(
 			retval.end(),
 			payload.begin(),
 			payload.end());
-		P_V(data.size(), P_NOTE);
 	}
 	RSA_free(rsa);
 	rsa = nullptr;

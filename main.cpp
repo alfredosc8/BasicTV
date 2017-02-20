@@ -413,17 +413,28 @@ static void test_rsa_key_gen(){
 }
 
 static void test_rsa_encryption(){
+	print("Bit length of RSA key:", P_NOTE);
+	uint64_t key_len = 4096;
+	std::cin >> key_len;
 	std::pair<id_t_, id_t_> rsa_key_pair =
-		rsa::gen_key_pair(4096);
-	std::vector<uint8_t> test_data = {'E', 'N', 'C', 'R', 'Y', 'P', 'T'};
-	test_data =
-		encrypt_api::decrypt(
-			encrypt_api::encrypt(
-				test_data,
-				rsa_key_pair.first),
-			rsa_key_pair.second);
-	for(uint64_t i = 0;i < test_data.size();i++){
-		P_V_C(test_data[i], P_NOTE);
+		rsa::gen_key_pair(key_len);
+	std::vector<uint8_t> test_data;
+	for(uint64_t i = 0;i < 65536;i++){
+		for(uint64_t x = 0;x < 1024;x++){
+			test_data.push_back(
+				(uint8_t)true_rand(0, 255));
+		}
+		std::vector<uint8_t> test_data_output =
+			encrypt_api::decrypt(
+				encrypt_api::encrypt(
+					test_data,
+					rsa_key_pair.first),
+				rsa_key_pair.second);
+		if(test_data == test_data_output){
+			print("it worked with " + std::to_string((long double)test_data.size()/(1024.0*1024.0)) + " MB", P_NOTE);
+		}else{
+			print("FAILED", P_ERR);
+		}
 	}
 }
 
