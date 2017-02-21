@@ -57,7 +57,11 @@ data_id_t *id_api::array::ptr_id(id_t_ id,
 		}
 		// TODO: get a list of items to not query the network for
 		if(type != "console_t"){
-			print("haven't implemented data requests from ID lookups yet", P_ERR);
+			try{
+				id_api::import::load_from_disk(id);
+			}catch(...){
+				print("TODO: create network requests for non-local data", P_WARN);
+			}
 		}
 	}else if(retval->get_type() != type && type != ""){
 		// not really grounds for an error
@@ -438,7 +442,6 @@ void id_api::destroy(id_t_ id){
 	/*
 	  Shouldn't get this far, but if it does, delist it manually
 	 */
-
 	id_api::array::del(id);
 	id_api::cache::del(id, ptr->get_type());
 	
@@ -450,8 +453,13 @@ void id_api::destroy(id_t_ id){
 }
 
 void id_api::destroy_all_data(){
-	while(id_list.size() > 0){
-		destroy(id_list[0]->get_id());
+	std::vector<data_id_t*> list_tmp =
+		id_list;
+	// worst case scenario at the closing part of the
+	// code is something new is created
+	for(uint64_t i = 0;i < list_tmp.size();i++){
+		destroy(list_tmp[i]->get_id());
+		P_V(list_tmp.size(), P_NOTE);
 	}
 }
 
@@ -561,6 +569,31 @@ void id_api::import::load_all_of_type(std::string type, uint8_t flags){
 		  instead to just query all resources to get it from the net at
 		  least on the disk, and from on the disk to memory.
 		 */
+	}
+}
+
+void id_api::import::load_from_disk(id_t_ id){
+	std::vector<std::string> entries =
+		system_handler::find_all_files(
+			settings::get_setting(
+				"data_folder"),
+			convert::array::id::to_hex(
+				id));
+
+	if(entries.size() > 1){
+		print("too many IDs", P_ERR);
+	}else if(entries.size() == 1){
+		std::ifstream in(entries[0], std::ios::binary);
+		if(in.is_open() == false){
+			print("unable to open ID file", P_ERR);
+		}
+		std::vector<uint8_t> id_data;
+		char tmp;
+		while(in.get(tmp)){
+			id_data.push_back(tmp);
+		}
+		in.close();
+		id_api::array::add_data(id_data);
 	}
 }
 

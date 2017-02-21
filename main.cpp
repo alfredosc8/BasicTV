@@ -80,17 +80,17 @@ bool id_throw_exception = true;
 
 static void bootstrap_production_priv_key_id(){
 	id_api::import::load_all_of_type(
-		"encrypt_priv_key_t",
-		ID_API_IMPORT_FROM_DISK);
-	id_api::import::load_all_of_type(
 		"encrypt_pub_key_t",
 		ID_API_IMPORT_FROM_DISK);
-	std::vector<id_t_> all_private_keys =
-		id_api::cache::get(
-			"encrypt_priv_key_t");
+	id_api::import::load_all_of_type(
+		"encrypt_priv_key_t",
+		ID_API_IMPORT_FROM_DISK);
 	std::vector<id_t_> all_public_keys =
 		id_api::cache::get(
 			"encrypt_pub_key_t");
+	std::vector<id_t_> all_private_keys =
+		id_api::cache::get(
+			"encrypt_priv_key_t");
 	encrypt_priv_key_t *priv_key = nullptr;
 	encrypt_pub_key_t *pub_key = nullptr;
 	if(all_private_keys.size() == 0){
@@ -452,7 +452,7 @@ int main(int argc_, char **argv_){
 	argc = argc_;
 	argv = argv_;
 	init();
-	test_rsa_encryption();
+	running = false;
 	//test_id_hex();
 	//test_rsa_encryption();
 	//test_break_id_transport();

@@ -29,6 +29,11 @@
   I mean seriously
  */
 
+static std::array<std::string, 2> encrypt_blacklist = {
+	"encrypt_pub_key_t",
+	"encrypt_priv_key_t"
+};
+
 std::array<uint8_t, 32> get_id_hash(id_t_ id){
 	std::array<uint8_t, 32> retval;
 	memcpy(&(retval[0]), &(id[8]), 32);
@@ -322,9 +327,14 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
 		retval =
 			compressor::to_xz(
 				retval, 9);
-		retval =
-			encrypt_api::encrypt(
-				retval, production_priv_key_id);
+		if(std::find(
+			   encrypt_blacklist.begin(),
+			   encrypt_blacklist.end(),
+			   convert::array::type::from(type)) == encrypt_blacklist.end()){
+			retval =
+				encrypt_api::encrypt(
+					retval, production_priv_key_id);
+		}
 		retval.insert(
 			retval.begin(),
 			preamble.begin(),
@@ -380,14 +390,11 @@ static void id_import_raw(uint8_t* var, uint8_t flags, uint64_t size, std::vecto
 }
 
 /*
-  a call to just ID_IMPORT means the data is guaranteed to not be std::vector,
-  since it is a part of the protocol (and hopefully std::vector never makes it
-  that far).
+  TODO: I mean seriously, clean this up
 */
 #define ID_IMPORT(var) id_import_raw((uint8_t*)&var, 0, sizeof(var), &data)
 
 void data_id_t::import_data(std::vector<uint8_t> data){
-	print("update import function to match encrypted/compressed exporter", P_CRIT);
 	id_t_ trans_id = ID_BLANK_ID;
 	std::array<uint8_t, TYPE_LENGTH> trans_type = {{0}};
 	ID_IMPORT(trans_id);
@@ -396,6 +403,23 @@ void data_id_t::import_data(std::vector<uint8_t> data){
 	P_V_S(convert::array::type::from(trans_type), P_SPAM);
 	if(trans_type != type){
 		print("can't import a mis-matched type", P_ERR);
+	}
+	try{
+		const id_t_ peer_public_key_id =
+			encrypt_api::search::pub_key_from_hash(
+				get_id_hash(
+					trans_id));
+		if(std::find(
+			   encrypt_blacklist.begin(),
+			   encrypt_blacklist.end(),
+			   convert::array::type::from(type)) == encrypt_blacklist.end()){
+			data = encrypt_api::decrypt(
+				data, peer_public_key_id);
+		}
+		data = compressor::from_xz(
+			data);
+	}catch(...){
+		print("can't decode information", P_ERR);
 	}
 	set_id(trans_id);
 	transport_i_t trans_i = 0;
