@@ -22,10 +22,13 @@
   of SSL or creating an entire non-encrypted connection.
  */
 
+#define NET_PROTO_SOCKET_NO_ENCRYPT (1 << 1)
+
 struct net_proto_socket_t{
 private:
 	id_t_ socket_id = ID_BLANK_ID;
 	id_t_ peer_id = ID_BLANK_ID;
+	uint8_t flags = 0;
 	std::vector<uint8_t> working_buffer;
 	// finalized buffer, removed DEV_CTRL_1, native endian, etc.
 	std::vector<std::vector<uint8_t> > buffer;
@@ -55,6 +58,8 @@ public:
 	std::vector<std::vector<uint8_t> > get_buffer();
 	uint64_t get_last_update_micro_s();
 	bool is_alive();
+	uint8_t get_flags();
+	void set_flags(uint8_t);
 };
 
 #endif

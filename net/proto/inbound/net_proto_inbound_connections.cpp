@@ -27,16 +27,16 @@ static void net_proto_accept_direct_connections(net_socket_t *incoming_conn){
 			tcp_socket);
 		new_proto_socket->set_socket_id(
 			new_socket->id.get_id());
-		// Peer information is sent over in packet metadata, and is
-		// taken care of inside net_proto_socket_t entirely
+		// peer information is sent in metadata
+		// no information needs to be sent over without a request, so
+		// everything should be fine from here on out
 	}
 }
 
 // returns true on success, false on failure (retval is should I destroy it?)
 
 static bool net_proto_facilitate_tcp_holepunch(net_proto_con_req_t *con_req){
-// 	print("TODO: implement a TCP hole punch", P_ERR);
-	
+ 	print("TODO: implement a TCP hole punch", P_CRIT);
 	return false;
 }
 
@@ -56,6 +56,7 @@ static bool net_proto_facilitate_reverse_forward(net_proto_con_req_t *con_req){
 			new net_socket_t;
 		net_proto_socket_t *proto_socket =
 			new net_proto_socket_t;
+		// Should I do this or create a net_con_req_t going out?
 		tmp_socket->set_net_ip(
 			first_peer_ptr->get_net_ip_str(),
 			first_peer_ptr->get_net_port());
@@ -77,6 +78,12 @@ static void net_proto_accept_unorthodox_connections(net_socket_t *incoming_conn)
 			PTR_DATA_FAST(con_req_vector[i],
 				      net_proto_con_req_t);
 		if(con_req == nullptr){
+			continue;
+		}
+		id_t_ second_peer_id = ID_BLANK_ID;
+		con_req->get_peer_ids(
+			nullptr, &second_peer_id, nullptr);
+		if(second_peer_id != net_proto::peer::get_self_as_peer()){
 			continue;
 		}
 		switch(con_req->get_flags()){

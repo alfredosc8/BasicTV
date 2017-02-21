@@ -136,6 +136,11 @@ static void bootstrap_production_priv_key_id(){
 }
 
 static void init(){
+	// debugging information for OpenSSL's error printing
+	ERR_load_crypto_strings();
+	// loads OpenSSL stuff (AES only)
+	OpenSSL_add_all_algorithms();
+	OPENSSL_config(nullptr);
 	/*
 	  settings_init() only reads from the file, it doesn't do anything
 	  critical to setting default values
@@ -166,8 +171,6 @@ static void init(){
 	settings_init();
 
 	//std::set_new_handler(no_mem);
-	// debugging information for OpenSSL's error printing
-	ERR_load_crypto_strings();
 	bootstrap_production_priv_key_id();
 
 	
@@ -184,6 +187,7 @@ static void close(){
 	console_close();
 	id_api::destroy_all_data();
 	ERR_free_strings();
+	EVP_cleanup();
 }
 
 static void test_compressor(){

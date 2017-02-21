@@ -8,6 +8,29 @@
 #include <vector>
 
 static void net_proto_initiate_direct_tcp(net_proto_con_req_t *con_req){
+	if(con_req == nullptr){
+		print("con_req is a nullptr", P_ERR);
+	}
+	id_t_ peer_id = ID_BLANK_ID;
+	con_req->get_peer_ids(
+		nullptr, &peer_id, nullptr);
+	net_proto_peer_t *proto_peer =
+		PTR_DATA(peer_id,
+			 net_proto_peer_t);
+	if(proto_peer == nullptr){
+		print("proto_peer is a nullptr", P_ERR);
+	}
+	net_socket_t *socket_ptr =
+		new net_socket_t;
+	socket_ptr->set_net_ip(
+		proto_peer->get_net_ip_str(),
+		proto_peer->get_net_port());
+	socket_ptr->connect();
+	net_proto_socket_t *proto_socket_ptr =
+		new net_proto_socket_t;
+	proto_socket_ptr->set_peer_id(peer_id);
+	proto_socket_ptr->set_socket_id(socket_ptr->id.get_id());
+		
 }
 
 static void net_proto_first_id_logic(net_proto_con_req_t *con_req){

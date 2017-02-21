@@ -142,5 +142,6 @@ void net_proto_create_random_connections(){
 
 void net_proto_connection_manager(){
 	net_proto_accept_all_connections();
+	net_proto_initiate_all_connections();
 	net_proto_create_random_connections();
 }

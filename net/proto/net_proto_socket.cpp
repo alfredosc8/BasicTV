@@ -15,26 +15,64 @@ net_proto_socket_t::~net_proto_socket_t(){}
 
 /*
   bare_* takes care of encryption, decryption, and verification of information
+
+  Should put all information into a second local buffer for reading structs
  */
 
 void net_proto_socket_t::bare_send(std::vector<uint8_t> data){
-	print("TODO: implement bare_send", P_CRIT);
-	// size depends on the modulus
 	net_proto_peer_t *proto_peer =
 		PTR_DATA(peer_id,
 			 net_proto_peer_t);
 	if(proto_peer == nullptr){
-		print("can't bare_send data", P_ERR);
+		print("proto_peer is a nullptr", P_ERR);
 	}
-	const id_t_ pub_key_id =
-		encrypt_api::search::pub_key_from_hash(
-			get_id_hash(
-				proto_peer->id.get_id()));
-	std::vector<uint8_t> encrypt_data =
-		encrypt_api::encrypt(
-			data,
-			pub_key_id);
+	net_socket_t *socket_ptr =
+		PTR_DATA(get_socket_id(),
+			 net_socket_t);
+	if(socket_ptr == nullptr){
+		print("socket is a nullptr", P_ERR);
+	}
+	try{
+		net_proto_standard_data_t std_data;
+		std_data.peer_id = net_proto::peer::get_self_as_peer();
+		std_data.ver_major = VERSION_MAJOR;
+		std_data.ver_minor = VERSION_MINOR;
+		std_data.ver_patch = VERSION_REVISION;
+		const id_t_ pub_key_id =
+			encrypt_api::search::pub_key_from_hash(
+				get_id_hash(
+					proto_peer->id.get_id()));
+		std::vector<uint8_t> payload;
+		if(get_flags() & NET_PROTO_SOCKET_NO_ENCRYPT){
+			payload = data;
+			print("sending data unencrypted", P_WARN);
+		}else{
+			payload =
+				encrypt_api::encrypt(
+					data,
+					pub_key_id);
+			std_data.macros |= NET_STANDARD_ENCRYPT_PACKET;
+		}
+		std_data.size = payload.size();
+		std::vector<uint8_t> data_to_send =
+			net_proto_write_packet_metadata(std_data);
+		data_to_send.insert(
+			data_to_send.end(),
+			payload.begin(),
+			payload.end());
+		socket_ptr->send(data_to_send);
+	}catch(...){
+		print("couldn't send data", P_ERR);
+	}
 			
+}
+
+uint8_t net_proto_socket_t::get_flags(){
+	return flags;
+}
+
+void net_proto_socket_t::set_flags(uint8_t flags_){
+	flags = flags_;
 }
 
 void net_proto_socket_t::bare_recv(){
@@ -101,6 +139,8 @@ void net_proto_socket_t::send_id(id_t_ id_){
 		}
 		std::vector<uint8_t> exported_data =
 			ptr_id->export_data(ID_DATA_NONET);
+		// encryption status of encrypt_pub_key_t and similar types
+		// should be handled inside of the export function
 		socket->send(exported_data);
 	}
 }

@@ -7,6 +7,8 @@
 #include <openssl/engine.h>
 #include <openssl/err.h>
 #include <openssl/sha.h>
+#include <openssl/conf.h>
+#include <openssl/evp.h>
 #include <sstream>
 /*
   encrypt.h: Encryption API
@@ -42,8 +44,10 @@
 
 // RSA encryption scheme, works similarly to SSL
 #define ENCRYPT_RSA (1)
-
 #define ENCRYPT_SCHEME_RSA ENCRYPT_RSA
+
+#define ENCRYPT_AES256_SHA256 (2)
+#define ENCRYPT_SCHEME_AES192_SHA256 ENCRYPT_AES192_SHA256
 
 // symmetric key system (documented in personal notes)
 

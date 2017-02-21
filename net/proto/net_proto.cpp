@@ -56,13 +56,28 @@ static void net_proto_init_self_peer(){
   Forces no encryption (generated locally)
  */
 
-static std::array<std::pair<std::string, uint16_t>, 1> bootstrap_nodes =
+static std::vector<std::pair<std::string, uint16_t> > bootstrap_nodes =
 {{{"96.35.0.163", 58486}}}; // TODO: get a domain name
 
 static void net_proto_verify_bootstrap_nodes(){
 	std::vector<id_t_> peer_vector =
 		id_api::cache::get(
 			"net_proto_peer_t");
+	try{
+		const std::string custom_bootstrap_ip =
+			settings::get_setting(
+				"net_proto_custom_bootstrap_ip");
+		if(custom_bootstrap_ip != ""){
+			bootstrap_nodes.push_back(
+				std::make_pair(
+					custom_bootstrap_ip,
+					std::stoi(
+						settings::get_setting(
+							"net_proto_custom_bootstrap_port"))));
+		}
+	}catch(...){
+		print("no custom bootstrap node specified", P_ERR);
+	}
 	std::vector<std::pair<std::string, uint16_t> > nodes_to_connect =
 		std::vector<std::pair<std::string, uint16_t> >(
 			bootstrap_nodes.begin(),
@@ -92,7 +107,8 @@ static void net_proto_verify_bootstrap_nodes(){
 	for(uint64_t i = 0;i < nodes_to_connect.size();i++){
 		net_proto_peer_t *proto_peer_ptr =
 			new net_proto_peer_t;
-		// just assume the port is open
+		// no harm in assuming port is open
+		// WRONG_KEY forces no encryption
 		proto_peer_ptr->set_net_flags(
 			NET_PEER_WRONG_KEY | NET_PEER_PORT_OPEN);
 		proto_peer_ptr->set_net_ip(

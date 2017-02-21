@@ -98,7 +98,11 @@ std::vector<uint8_t> encrypt_api::encrypt(std::vector<uint8_t> data,
 			      &encryption_scheme,
 			      &key_type);
 	switch(encryption_scheme){
+	case ENCRYPT_AES256_SHA256:
+		print("implement AES-192 first", P_ERR);
+		break;
 	case ENCRYPT_RSA:
+		// can be practical if payload is small enough
 		retval = rsa::encrypt(data, key, key_type);
 		break;
 	case ENCRYPT_UNDEFINED:

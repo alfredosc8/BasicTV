@@ -16,6 +16,7 @@
 #include "../tv/tv_channel.h"
 #include "../tv/tv_window.h"
 #include "../encrypt/encrypt.h"
+#include "../compress.h"
 
 /*
   Because of encryption and compression overheads, making this multithreadable
@@ -249,7 +250,7 @@ static void id_export_raw(uint8_t *var, uint64_t size, std::vector<uint8_t> *vec
 	vector->insert(vector->end(), tmp.begin(), tmp.end());
 }
 
-#define ID_EXPORT(var) id_export_raw((uint8_t*)&var, sizeof(var), &retval)
+#define ID_EXPORT(var, list) id_export_raw((uint8_t*)&var, sizeof(var), &list)
 
 typedef uint16_t transport_i_t;
 typedef uint32_t transport_size_t;
@@ -273,8 +274,9 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
 		return {};
 	}
 	if(is_owner()){
-		ID_EXPORT(id);
-		ID_EXPORT(type);
+		std::vector<uint8_t> preamble;
+		ID_EXPORT(id, preamble);
+		ID_EXPORT(type, preamble);
 		transport_i_t trans_i = 0;
 		transport_size_t trans_size = 0;
 		for(uint64_t i = 0;i < data_vector.size();i++){
@@ -283,7 +285,7 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
 			 */
 			trans_i = i;
 			trans_size = data_vector[i].get_length();
-			ID_EXPORT(trans_i);
+			ID_EXPORT(trans_i, retval);
 			uint8_t *ptr_to_export =
 				(uint8_t*)data_vector[i].get_ptr();
 			if(ptr_to_export == nullptr){
@@ -311,15 +313,22 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
 			if(ptr_to_export == nullptr){
 				print("ptr_to_export is a nullptr (post-vector)", P_ERR);
 			}
-			ID_EXPORT(trans_size);
+			ID_EXPORT(trans_size, retval);
 			id_export_raw((uint8_t*)ptr_to_export, trans_size, &retval);
 			// P_V(trans_i, P_SPAM);
 			// P_V(trans_size, P_SPAM);
 		}
 		P_V(retval.size(), P_NOTE);
-		/*
-		  Compression is taken care of here if needed
-		*/
+		retval =
+			compressor::to_xz(
+				retval, 9);
+		retval =
+			encrypt_api::encrypt(
+				retval, production_priv_key_id);
+		retval.insert(
+			retval.begin(),
+			preamble.begin(),
+			preamble.end());
 	}else{
 		/*
 		  can't compress already encrypted data
@@ -378,6 +387,7 @@ static void id_import_raw(uint8_t* var, uint8_t flags, uint64_t size, std::vecto
 #define ID_IMPORT(var) id_import_raw((uint8_t*)&var, 0, sizeof(var), &data)
 
 void data_id_t::import_data(std::vector<uint8_t> data){
+	print("update import function to match encrypted/compressed exporter", P_CRIT);
 	id_t_ trans_id = ID_BLANK_ID;
 	std::array<uint8_t, TYPE_LENGTH> trans_type = {{0}};
 	ID_IMPORT(trans_id);
