@@ -2,8 +2,8 @@
 #include "encrypt_aes.h"
 
 static void aes_valid_key(std::vector<uint8_t> key){
-	if(key.size() != 256/8){
-		print("AES key is not 256 bit", P_ERR);
+	if(key.size() != 192/8){
+		print("AES key is not 192 bit", P_ERR);
 	}
 }
 
@@ -15,7 +15,7 @@ static std::vector<uint8_t> aes_raw_encrypt(std::vector<uint8_t> plaintext, std:
 	if(!(ctx = EVP_CIPHER_CTX_new())){
 		print("can't create EVP_CIPHER_CTX", P_ERR);
 	}
-	if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), nullptr, key.data(), iv.data())){
+	if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_192_cbc(), nullptr, key.data(), iv.data())){
 		print("can't initialize AES", P_ERR);
 	}
 	if(1 != EVP_EncryptUpdate(ctx, retval.data(), &len, plaintext.data(), plaintext.size())){
@@ -41,7 +41,7 @@ static std::vector<uint8_t> aes_raw_decrypt(std::vector<uint8_t> ciphertext, std
 	if(!(ctx = EVP_CIPHER_CTX_new())){
 		print("can't create EVP_CIPHER_CTX", P_ERR);
 	}
-	if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), nullptr, key.data(), iv.data())){
+	if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_192_cbc(), nullptr, key.data(), iv.data())){
 		print("couldn't initialize AES decryption", P_ERR);
 	}
 	if(1 != EVP_DecryptUpdate(ctx, retval.data(), &len, ciphertext.data(), ciphertext.size())){
@@ -62,9 +62,9 @@ static std::vector<uint8_t> aes_raw_decrypt(std::vector<uint8_t> ciphertext, std
 std::vector<uint8_t> aes::encrypt(std::vector<uint8_t> data,
 				  std::vector<uint8_t> key){
 	aes_valid_key(key);
-	std::vector<uint8_t> retval(128/8+(data.size()*2), 0); // enough
+	std::vector<uint8_t> retval((key.size()/16)+(data.size()*2), 0); // enough
 	std::vector<uint8_t> iv;
-	for(uint64_t i = 0;i < 128/8;i++){
+	for(uint64_t i = 0;i < key.size()/16;i++){
 		iv.push_back((uint8_t)true_rand(0, 255));
 	}
 	retval.insert(
@@ -89,9 +89,9 @@ std::vector<uint8_t> aes::decrypt(std::vector<uint8_t> data,
 	std::vector<uint8_t> retval;
 	std::vector<uint8_t> iv(
 		data.begin(),
-		data.begin()+(128/8));
+		data.begin()+(key.size()/16));
 	data = std::vector<uint8_t>(
-		data.begin()+(128/8),
+		data.begin()+(key.size()/16),
 		data.end());
 	retval =
 		aes_raw_decrypt(

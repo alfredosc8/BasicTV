@@ -454,7 +454,7 @@ int main(int argc_, char **argv_){
 	init();
 	running = false;
 	//test_id_hex();
-	//test_rsa_encryption();
+	test_rsa_encryption(); // includes AES too now
 	//test_break_id_transport();
 	//test_id_transport();
 	//test_max_tcp_sockets();

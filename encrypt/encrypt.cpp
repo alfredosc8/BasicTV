@@ -1,5 +1,6 @@
 #include "encrypt.h"
 #include "encrypt_rsa.h"
+#include "encrypt_aes.h"
 
 encrypt_key_t::encrypt_key_t(){}
 
@@ -87,6 +88,78 @@ static void encrypt_pull_key_info(id_t_ id,
 	}
 }
 
+static std::vector<uint8_t> encrypt_aes192_sha256(std::vector<uint8_t> data,
+						  std::vector<uint8_t> key,
+						  uint8_t key_type){
+	std::vector<uint8_t> retval;
+	std::vector<uint8_t> aes_key;
+	for(uint64_t i = 0;i < 192/8;i++){
+		aes_key.push_back(
+			(uint8_t)true_rand(0, 255));
+	}
+	std::array<uint8_t, 32> hash =
+		encrypt_api::hash::sha256::gen_raw(
+			data);
+	retval.insert(
+		retval.end(),
+		aes_key.begin(),
+		aes_key.end());
+	retval.insert(
+		retval.end(),
+		hash.begin(),
+		hash.end());
+	retval =
+		rsa::encrypt(
+			retval, key, key_type);
+	data = aes::encrypt(
+		data, aes_key);
+	retval.insert(
+		retval.end(),
+		data.begin(),
+		data.end());
+	return retval;
+}
+
+static std::vector<uint8_t> decrypt_aes192_sha256(std::vector<uint8_t> data,
+						  std::vector<uint8_t> key,
+						  uint8_t key_type){
+	std::vector<uint8_t> retval;
+	std::vector<uint8_t> header =
+		rsa::decrypt(
+			std::vector<uint8_t>(
+				data.begin(),
+				data.begin()+key.size()),
+			key,
+			key_type);
+	const std::vector<uint8_t> aes_key(
+		data.begin(),
+		data.begin()+(192/8));
+	std::array<uint8_t, 32> sha_hash;
+	memcpy(sha_hash.data(),
+	       data.data()+(192/8),
+	       32);
+	retval = aes::decrypt(
+		data, aes_key);
+	if(encrypt_api::hash::sha256::gen_raw(retval) != sha_hash){
+		print("incorrect SHA-256 hash, returning blank", P_WARN);
+		retval = {};
+	}
+	return retval;
+}
+
+static uint8_t encrypt_gen_optimal_encrypt(std::vector<uint8_t> data,
+					   std::vector<uint8_t> key){
+	// if(key.size()*8 < 2048+13){
+	// 	print("TODO: (possibly) implement larger than one block headers for unsafe keys", P_ERR);
+	// }
+	// if(data.size()+13 > key.size()){
+	// 	return ENCRYPT_AES192_SHA256;
+	// }else{
+	// 	return ENCRYPT_RSA;
+	// }
+	return ENCRYPT_RSA;
+}
+
 std::vector<uint8_t> encrypt_api::encrypt(std::vector<uint8_t> data,
 					  id_t_ key_id){	
 	std::vector<uint8_t> retval;
@@ -97,9 +170,19 @@ std::vector<uint8_t> encrypt_api::encrypt(std::vector<uint8_t> data,
 			      &key,
 			      &encryption_scheme,
 			      &key_type);
-	switch(encryption_scheme){
-	case ENCRYPT_AES256_SHA256:
-		print("implement AES-192 first", P_ERR);
+	if(encryption_scheme != ENCRYPT_RSA){
+		print("not bothering with non-RSA encryption keys for now", P_ERR);
+	}
+	/*
+	  encryption scheme is just what the keys themselves can handle, meaning
+	  I can encrypt with AES192_SHA256 perfectly fine
+	 */
+	uint8_t message_encryption_scheme =
+		encrypt_gen_optimal_encrypt(data, key);
+	switch(message_encryption_scheme){
+	case ENCRYPT_AES192_SHA256:
+		retval = encrypt_aes192_sha256(
+			data, key, key_type);
 		break;
 	case ENCRYPT_RSA:
 		// can be practical if payload is small enough
@@ -115,8 +198,8 @@ std::vector<uint8_t> encrypt_api::encrypt(std::vector<uint8_t> data,
 	// encryption scheme is ALWAYS the first byte
 	retval.insert(
 		retval.begin(),
-		&encryption_scheme,
-		&encryption_scheme+1);
+		&message_encryption_scheme,
+		&message_encryption_scheme+1);
 	return retval;
 }
 
@@ -134,10 +217,11 @@ std::vector<uint8_t> encrypt_api::decrypt(std::vector<uint8_t> data,
 		data[0];
 	data.erase(
 		data.begin());
-	if(encryption_scheme != message_encryption_scheme){
-		print("invalid data-key pair", P_ERR);
-	}
-	switch(encryption_scheme){
+	switch(message_encryption_scheme){
+	case ENCRYPT_AES192_SHA256:
+		retval = decrypt_aes192_sha256(
+			data, key, key_type);
+		break;
 	case ENCRYPT_RSA:
 		retval = rsa::decrypt(data, key, key_type);
 		break;

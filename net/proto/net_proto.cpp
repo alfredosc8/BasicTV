@@ -122,6 +122,9 @@ static void net_proto_verify_bootstrap_nodes(){
 }
 
 void net_proto_init(){
+	id_api::import::load_all_of_type(
+		"net_proto_peer_t",
+		ID_API_IMPORT_FROM_DISK);
 	net_proto_init_self_peer();
 	net_proto_verify_bootstrap_nodes();
 	/*
