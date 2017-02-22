@@ -34,6 +34,20 @@ static std::array<std::string, 2> encrypt_blacklist = {
 	"encrypt_priv_key_t"
 };
 
+static bool encrypt_blacklist_type(std::string type_){
+	const bool retval =
+		std::find(
+			encrypt_blacklist.begin(),
+			encrypt_blacklist.end(),
+			type_) != encrypt_blacklist.end();
+	if(retval){
+		print("blacklisting " + type_, P_NOTE);
+	}else{
+		print("whitelisting " + type_, P_NOTE);
+	}
+	return retval;
+}
+
 std::array<uint8_t, 32> get_id_hash(id_t_ id){
 	std::array<uint8_t, 32> retval;
 	memcpy(&(retval[0]), &(id[8]), 32);
@@ -294,7 +308,8 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
 			uint8_t *ptr_to_export =
 				(uint8_t*)data_vector[i].get_ptr();
 			if(ptr_to_export == nullptr){
-				print("ptr_to_export is a nullptr (pre-vector)", P_ERR);
+				print("ptr_to_export is a nullptr (pre-vector)", P_WARN);
+				continue;
 			}
 			if(data_vector[i].get_flags() & ID_DATA_BYTE_VECTOR){
 				// print("reading in a byte vector", P_SPAM);
@@ -316,7 +331,8 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
 				trans_size = vector->size()*sizeof(uint64_t);
 			}
 			if(ptr_to_export == nullptr){
-				print("ptr_to_export is a nullptr (post-vector)", P_ERR);
+				print("ptr_to_export is a nullptr (post-vector)", P_WARN);
+				continue;
 			}
 			ID_EXPORT(trans_size, retval);
 			id_export_raw((uint8_t*)ptr_to_export, trans_size, &retval);
@@ -327,10 +343,9 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
 		retval =
 			compressor::to_xz(
 				retval, 9);
-		if(std::find(
-			   encrypt_blacklist.begin(),
-			   encrypt_blacklist.end(),
-			   convert::array::type::from(type)) == encrypt_blacklist.end()){
+		if(!encrypt_blacklist_type(
+			   convert::array::type::from(
+				   type))){
 			retval =
 				encrypt_api::encrypt(
 					retval, production_priv_key_id);
@@ -409,10 +424,9 @@ void data_id_t::import_data(std::vector<uint8_t> data){
 			encrypt_api::search::pub_key_from_hash(
 				get_id_hash(
 					trans_id));
-		if(std::find(
-			   encrypt_blacklist.begin(),
-			   encrypt_blacklist.end(),
-			   convert::array::type::from(type)) == encrypt_blacklist.end()){
+		if(!encrypt_blacklist_type(
+			   convert::array::type::from(
+				   type))){
 			data = encrypt_api::decrypt(
 				data, peer_public_key_id);
 		}

@@ -455,12 +455,15 @@ void id_api::destroy(id_t_ id){
 void id_api::destroy_all_data(){
 	std::vector<data_id_t*> list_tmp =
 		id_list;
-	// worst case scenario at the closing part of the
-	// code is something new is created
 	for(uint64_t i = 0;i < list_tmp.size();i++){
+		if(list_tmp[i]->get_id() == production_priv_key_id){
+			// TODO: fix catch-22
+			continue;
+		}
 		destroy(list_tmp[i]->get_id());
 		P_V(list_tmp.size(), P_NOTE);
 	}
+	destroy(production_priv_key_id);
 }
 
 /*
@@ -627,4 +630,5 @@ std::vector<uint64_t> id_api::bulk_fetch::mod(std::vector<id_t_> vector){
 			retval.push_back(0);
 		}
 	}
+	return retval;
 }
