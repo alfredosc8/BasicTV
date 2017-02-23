@@ -4,6 +4,7 @@
 #include "util.h"
 #include "encrypt/encrypt.h"
 #include "encrypt/encrypt_rsa.h"
+#include "encrypt/encrypt_aes.h"
 #include "tv/tv.h"
 #include "tv/tv_frame_standard.h"
 #include "tv/tv_frame_audio.h"
@@ -442,6 +443,20 @@ static void test_rsa_encryption(){
 	}
 }
 
+static void test_aes(){
+	std::vector<uint8_t> key = {'f','f','f','f','f','f','f','f','f','f','f','f','f','f','f','f','f','f','f','f','f','f','f','f'};
+	std::vector<uint8_t> data = {'T', 'E', 'S', 'T', 'I', 'N', 'G'};
+	if(aes::decrypt(
+		   aes::encrypt(
+			   data, key),
+		   key) == data){
+		print("it works", P_CRIT);
+	}else{
+		print("it does not work", P_CRIT);
+	}
+		
+}
+
 static void test(){}
 
 /*
@@ -453,8 +468,9 @@ int main(int argc_, char **argv_){
 	argv = argv_;
 	init();
 	running = false;
+	test_aes();
 	//test_id_hex();
-	test_rsa_encryption(); // includes AES too now
+	//test_rsa_encryption(); // includes AES too now
 	//test_break_id_transport();
 	//test_id_transport();
 	//test_max_tcp_sockets();

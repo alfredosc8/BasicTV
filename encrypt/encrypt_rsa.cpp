@@ -158,6 +158,8 @@ static void rsa_decrypt_sanity_check(RSA *rsa, std::vector<uint8_t> data){
 	}
 	const uint64_t rsa_mod_len = RSA_size(rsa);
 	if(data.size() % (rsa_mod_len+1) != 0){
+		P_V(data.size(), P_NOTE);
+		P_V(rsa_mod_len+1, P_NOTE);
 		print("invalid length for RSA modulus", P_ERR);
 	}
 	if(data[0] != ENCRYPT_RSA){

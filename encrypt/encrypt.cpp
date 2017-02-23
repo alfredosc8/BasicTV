@@ -124,22 +124,27 @@ static std::vector<uint8_t> decrypt_aes192_sha256(std::vector<uint8_t> data,
 						  std::vector<uint8_t> key,
 						  uint8_t key_type){
 	std::vector<uint8_t> retval;
+	const uint16_t key_length_bytes = (4096/8)+1;
 	std::vector<uint8_t> header =
 		rsa::decrypt(
 			std::vector<uint8_t>(
 				data.begin(),
-				data.begin()+key.size()),
+				data.begin()+key_length_bytes),
 			key,
 			key_type);
 	const std::vector<uint8_t> aes_key(
-		data.begin(),
-		data.begin()+(192/8));
+		header.begin(),
+		header.begin()+(192/8));
 	std::array<uint8_t, 32> sha_hash;
 	memcpy(sha_hash.data(),
-	       data.data()+(192/8),
+	       header.data()+(192/8),
 	       32);
-	retval = aes::decrypt(
-		data, aes_key);
+	retval =
+		aes::decrypt(
+			std::vector<uint8_t>(
+				data.begin()+key_length_bytes,
+				data.end()),
+			aes_key);
 	if(encrypt_api::hash::sha256::gen_raw(retval) != sha_hash){
 		print("incorrect SHA-256 hash, returning blank", P_WARN);
 		retval = {};
@@ -149,15 +154,16 @@ static std::vector<uint8_t> decrypt_aes192_sha256(std::vector<uint8_t> data,
 
 static uint8_t encrypt_gen_optimal_encrypt(std::vector<uint8_t> data,
 					   std::vector<uint8_t> key){
-	// if(key.size()*8 < 2048+13){
-	// 	print("TODO: (possibly) implement larger than one block headers for unsafe keys", P_ERR);
-	// }
-	// if(data.size()+13 > key.size()){
-	// 	return ENCRYPT_AES192_SHA256;
-	// }else{
-	// 	return ENCRYPT_RSA;
-	// }
-	return ENCRYPT_RSA;
+	if(key.size()*8 < 2048+13){
+		print("TODO: (possibly) implement larger than one block headers for unsafe keys", P_ERR);
+	}
+	if(data.size()+13 > key.size()){
+		print("using AES-192 encryption", P_NOTE);
+		return ENCRYPT_AES192_SHA256;
+	}else{
+		print("using plain RSA encryption (small payload)", P_NOTE);
+		return ENCRYPT_RSA;
+	}
 }
 
 std::vector<uint8_t> encrypt_api::encrypt(std::vector<uint8_t> data,

@@ -22,7 +22,7 @@ static std::vector<uint8_t> aes_raw_encrypt(std::vector<uint8_t> plaintext, std:
 		print("can't update AES", P_ERR);
 	}
 	ciphertext_len = len;
-	if(1 != EVP_EncryptFinal_ex(ctx, retval.data() + len, &len)){
+	if(1 != EVP_EncryptFinal_ex(ctx, retval.data(), &len)){
 		print("can't encrypt AES", P_ERR);
 	}
 	ciphertext_len += len;
@@ -33,22 +33,38 @@ static std::vector<uint8_t> aes_raw_encrypt(std::vector<uint8_t> plaintext, std:
 	return retval;
 }
 
+static void aes_error_printer(){
+	ERR_print_errors_fp(stderr);
+}
+
 static std::vector<uint8_t> aes_raw_decrypt(std::vector<uint8_t> ciphertext, std::vector<uint8_t> key, std::vector<uint8_t> iv){
 	std::vector<uint8_t> retval(ciphertext.size()*2, 0);
 	EVP_CIPHER_CTX *ctx = nullptr;
 	int len;
 	int plaintext_len;
+	P_V(key.size(), P_NOTE);
+	P_V(iv.size(), P_NOTE);
 	if(!(ctx = EVP_CIPHER_CTX_new())){
+		aes_error_printer();
 		print("can't create EVP_CIPHER_CTX", P_ERR);
 	}
 	if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_192_cbc(), nullptr, key.data(), iv.data())){
+		aes_error_printer();
 		print("couldn't initialize AES decryption", P_ERR);
 	}
 	if(1 != EVP_DecryptUpdate(ctx, retval.data(), &len, ciphertext.data(), ciphertext.size())){
+		aes_error_printer();
 		print("couldn't update AES decryption", P_ERR);
+	}else{
+		retval = std::vector<uint8_t>(
+			retval.begin(),
+			retval.begin()+len);
 	}
 	plaintext_len = len;
-	if(1 != EVP_DecryptFinal_ex(ctx, retval.data() + len, &len)){
+	if(1 != EVP_DecryptFinal_ex(ctx, retval.data(), &len)){
+		P_V(len, P_NOTE);
+		P_V(retval.size(), P_NOTE);
+		aes_error_printer();
 		print("couldn't decrypt AES", P_ERR);
 	}
 	plaintext_len += len;
@@ -62,9 +78,9 @@ static std::vector<uint8_t> aes_raw_decrypt(std::vector<uint8_t> ciphertext, std
 std::vector<uint8_t> aes::encrypt(std::vector<uint8_t> data,
 				  std::vector<uint8_t> key){
 	aes_valid_key(key);
-	std::vector<uint8_t> retval((key.size()/16)+(data.size()*2), 0); // enough
+	std::vector<uint8_t> retval((key.size())+(data.size()*2), 0); // enough
 	std::vector<uint8_t> iv;
-	for(uint64_t i = 0;i < key.size()/16;i++){
+	for(uint64_t i = 0;i < key.size();i++){
 		iv.push_back((uint8_t)true_rand(0, 255));
 	}
 	retval.insert(
@@ -89,9 +105,9 @@ std::vector<uint8_t> aes::decrypt(std::vector<uint8_t> data,
 	std::vector<uint8_t> retval;
 	std::vector<uint8_t> iv(
 		data.begin(),
-		data.begin()+(key.size()/16));
+		data.begin()+(key.size()));
 	data = std::vector<uint8_t>(
-		data.begin()+(key.size()/16),
+		data.begin()+(key.size()),
 		data.end());
 	retval =
 		aes_raw_decrypt(
