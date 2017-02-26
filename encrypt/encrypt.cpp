@@ -54,7 +54,7 @@ static void encrypt_pull_key_info(id_t_ id,
 				  std::vector<uint8_t> *key,
 				  uint8_t *encryption_scheme,
 				  uint8_t *key_type){
-	data_id_t *ptr = PTR_ID(id, );
+	data_id_t *ptr = PTR_ID_FAST(id, );
 	if(ptr == nullptr){
 		print("id is nullptr", P_ERR);
 	}

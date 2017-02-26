@@ -175,10 +175,8 @@ static void init(){
 			"data_folder"));
 	settings_init();
 
-	//std::set_new_handler(no_mem);
 	bootstrap_production_priv_key_id();
 
-	
 	tv_init();
 	input_init();
 	net_proto_init();
@@ -555,7 +553,7 @@ static void benchmark_encryption(std::string method){
 		P_V_S(get_readable_time(datum.first), P_NOTE);
 		P_V_S(get_readable_time(datum.second), P_NOTE);
 		out << size_bytes << " " << datum.first << " " << datum.second << std::endl;
-		print(std::to_string(benchmark_data.size()-i-1) + "left to go", P_NOTE);
+		print(std::to_string(benchmark_data.size()-i-1) + " left to go", P_NOTE);
 	}
 	out.close();
 	print("benchmark completed", P_NOTE);
