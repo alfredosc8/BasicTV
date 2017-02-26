@@ -463,12 +463,113 @@ static void test(){}
   TODO: make these tests so they can be more easily ran (all of them)
  */
 
+static std::pair<uint64_t, std::vector<uint8_t> > benchmark_timed_encryption(std::vector<uint8_t> data, id_t_ key){
+	std::pair<uint64_t, std::vector<uint8_t> > retval;
+	const uint64_t start_time_micro_s =
+		get_time_microseconds();
+	retval.second = 
+		encrypt_api::encrypt(data, key);
+	retval.first =
+		get_time_microseconds()-start_time_micro_s;
+	return retval;
+}
+
+static uint64_t benchmark_timed_decryption(std::vector<uint8_t> data, id_t_ key){
+	const uint64_t start_time_micro_s =
+		get_time_microseconds();
+	encrypt_api::decrypt(data, key);
+	return get_time_microseconds()-start_time_micro_s;
+}
+
+static std::pair<uint64_t, uint64_t> encryption_benchmark_datum(std::vector<uint8_t> data,
+								std::pair<id_t_, id_t_> keys,
+								std::string scheme){
+	std::pair<uint64_t, uint64_t> retval;
+	const uint64_t start_time_micro_s =
+		get_time_microseconds();
+	std::vector<uint8_t> encrypt_data;
+	if(scheme == "rsa"){
+		print("forcing RSA for benchmark datum", P_NOTE);
+		encrypt_data =
+			encrypt_api::encrypt(
+				data, keys.first, ENCRYPT_RSA);
+	}else if(scheme == "aes"){
+		print("forcing AES-192 for benchmark datum", P_NOTE);
+		encrypt_data =
+			encrypt_api::encrypt(
+				data, keys.first, ENCRYPT_AES192_SHA256);
+	}else{
+		print("letting encryption API choose scheme for benchmark datum", P_NOTE);
+		encrypt_data =
+			encrypt_api::encrypt(data, keys.first);
+	}
+	retval.first = get_time_microseconds()-start_time_micro_s;
+	encrypt_api::decrypt(encrypt_data, keys.second);
+	retval.second = get_time_microseconds()-(retval.first+start_time_micro_s);
+	return retval;
+}
+
+static void benchmark_encryption(std::string method){
+	// payload of data, encryption time, decryptiont ime
+	std::vector<uint32_t> benchmark_data;
+	for(uint64_t i = 1;i <= 64;i++){
+		benchmark_data.push_back(i);
+	}
+	std::pair<id_t_, id_t_> rsa_key_pair =
+		rsa::gen_key_pair(4096); // TODO: modify encrypt API to not assume this
+	data_id_t *priv_key = PTR_ID(rsa_key_pair.first, );
+	if(priv_key != nullptr){
+		priv_key->noexp_all_data();
+	}
+	data_id_t *pub_key = PTR_ID(rsa_key_pair.second, );
+	if(pub_key != nullptr){
+		pub_key->noexp_all_data();
+	}
+	std::ofstream out(method + ".bench");
+	if(out.is_open() == false){
+		print("can't open benchmark output file", P_ERR);
+	}
+	std::vector<uint8_t> payload;
+	for(uint64_t i = 0;i < benchmark_data.size();i++){
+		const uint64_t size_bytes = (benchmark_data[i]*1024*1024);
+		if(payload.size() > size_bytes){
+			payload.erase(
+				payload.begin()+size_bytes,
+				payload.end());
+		}else if(payload.size() < size_bytes){
+			payload.insert(
+				payload.end(),
+				size_bytes-payload.size(),
+				0b10101010);
+		}
+		std::pair<uint64_t, uint64_t> datum =
+			encryption_benchmark_datum(
+				payload,
+				rsa_key_pair,
+				method);
+		P_V(size_bytes, P_NOTE);
+		P_V_S(get_readable_time(datum.first), P_NOTE);
+		P_V_S(get_readable_time(datum.second), P_NOTE);
+		out << size_bytes << " " << datum.first << " " << datum.second << std::endl;
+	}
+	out.close();
+	print("benchmark completed", P_NOTE);
+}
+
 int main(int argc_, char **argv_){
 	argc = argc_;
 	argv = argv_;
 	init();
-	running = false;
-	test_aes();
+	try{
+		if(settings::get_setting("benchmark_encryption") == "rsa"){
+			benchmark_encryption("rsa");
+		}else if(settings::get_setting("benchmark_encryption") == "aes"){
+			benchmark_encryption("aes");
+		}else if(settings::get_setting("benchmark_encryption") != ""){
+			benchmark_encryption("");
+		}
+	}catch(...){} // don't expect it to be set unless it is true
+	//test_aes();
 	//test_id_hex();
 	//test_rsa_encryption(); // includes AES too now
 	//test_break_id_transport();

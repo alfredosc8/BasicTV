@@ -217,6 +217,17 @@ uint64_t true_rand(uint64_t min, uint64_t max){
 	std::uniform_int_distribution<std::mt19937::result_type> dist6(min, max);
 	return dist6(rng);
 }
+
+std::vector<uint8_t> true_rand_byte_vector(uint32_t size_bytes){
+	std::random_device rnd_device;
+	std::mt19937 mersenne_engine(rnd_device());
+	std::uniform_int_distribution<uint8_t> dist(0, 255);
+	auto gen = std::bind(dist, mersenne_engine);
+	std::vector<uint8_t> retval(size_bytes);
+	std::generate(std::begin(retval), std::end(retval), gen);
+	return retval;
+}
+
 uint64_t flip_bit_section(uint8_t begin, uint8_t end){
 	if(unlikely(end == begin)){
 		return 0;
@@ -269,3 +280,14 @@ std::string to_hex(uint8_t s){
 	return ss.str();
 }
 
+std::string get_readable_time(uint64_t time_micro_s){
+	const uint64_t seconds =
+		time_micro_s/1000000;
+	const uint64_t milliseconds =
+		(time_micro_s/1000)-(seconds*1000);
+	const uint64_t microseconds =
+		time_micro_s-(milliseconds*1000)-(seconds*1000000);
+	return std::to_string(seconds) + ":" +
+		std::to_string(milliseconds) + ":" +
+		std::to_string(microseconds);
+}

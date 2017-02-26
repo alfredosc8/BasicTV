@@ -66,7 +66,9 @@ static void encrypt_pull_key_info(id_t_ id,
 		}
 		std::pair<uint8_t, std::vector<uint8_t> > key_data =
 			pub_key->get_encrypt_key();
-		*encryption_scheme = key_data.first;
+		if(encryption_scheme != nullptr){
+			*encryption_scheme = key_data.first;
+		}
 		*key = key_data.second;
 		*key_type = ENCRYPT_KEY_TYPE_PUB;
  	}else if(ptr->get_type() == "encrypt_priv_key_t"){
@@ -77,7 +79,9 @@ static void encrypt_pull_key_info(id_t_ id,
 		}
 		std::pair<uint8_t, std::vector<uint8_t> > key_data =
 			priv_key->get_encrypt_key();
-		*encryption_scheme = key_data.first;
+		if(encryption_scheme != nullptr){
+			*encryption_scheme = key_data.first;
+		}
 		*key = key_data.second;
 		*key_type = ENCRYPT_KEY_TYPE_PRIV;		
 	}else{
@@ -167,25 +171,29 @@ static uint8_t encrypt_gen_optimal_encrypt(std::vector<uint8_t> data,
 }
 
 std::vector<uint8_t> encrypt_api::encrypt(std::vector<uint8_t> data,
-					  id_t_ key_id){	
+					  id_t_ key_id,
+					  uint8_t encryption_scheme){
 	std::vector<uint8_t> retval;
-	uint8_t encryption_scheme = ENCRYPT_UNDEFINED;
 	std::vector<uint8_t> key;
+	uint8_t key_encryption_scheme = 0;
 	uint8_t key_type = 0;
 	encrypt_pull_key_info(key_id,
 			      &key,
-			      &encryption_scheme,
+			      &key_encryption_scheme,
 			      &key_type);
-	if(encryption_scheme != ENCRYPT_RSA){
+	if(key_encryption_scheme != ENCRYPT_RSA){
 		print("not bothering with non-RSA encryption keys for now", P_ERR);
 	}
 	/*
 	  encryption scheme is just what the keys themselves can handle, meaning
 	  I can encrypt with AES192_SHA256 perfectly fine
 	 */
-	uint8_t message_encryption_scheme =
-		encrypt_gen_optimal_encrypt(data, key);
-	switch(message_encryption_scheme){
+	if(encryption_scheme == ENCRYPT_UNDEFINED){
+		encryption_scheme =
+			encrypt_gen_optimal_encrypt(data, key);
+	}
+	P_V(encryption_scheme, P_DEBUG);
+	switch(encryption_scheme){
 	case ENCRYPT_AES192_SHA256:
 		retval = encrypt_aes192_sha256(
 			data, key, key_type);
@@ -204,8 +212,8 @@ std::vector<uint8_t> encrypt_api::encrypt(std::vector<uint8_t> data,
 	// encryption scheme is ALWAYS the first byte
 	retval.insert(
 		retval.begin(),
-		&message_encryption_scheme,
-		&message_encryption_scheme+1);
+		&encryption_scheme,
+		&encryption_scheme+1);
 	return retval;
 }
 

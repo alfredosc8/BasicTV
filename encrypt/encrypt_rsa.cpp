@@ -222,6 +222,7 @@ std::pair<id_t_, id_t_> rsa::gen_key_pair(uint64_t bits){
 			nullptr,
 			nullptr);
 	if(rsa_key == nullptr){
+		P_V(bits, P_NOTE);
 		print("can't generate new RSA key:"+(std::string)ERR_error_string(ERR_get_error(), nullptr), P_ERR);
 	}
 	uint8_t *priv_buf = 0;

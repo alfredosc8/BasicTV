@@ -102,7 +102,8 @@ namespace encrypt_api{
 	  depends on the type of the key_id supplied
 	 */
 	std::vector<uint8_t> encrypt(std::vector<uint8_t> data,
-				     id_t_ key_id);
+				     id_t_ key_id,
+				     uint8_t scheme = ENCRYPT_UNDEFINED);
 	std::vector<uint8_t> decrypt(std::vector<uint8_t> data,
 				     id_t_ key_id);
 	namespace hash{

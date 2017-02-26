@@ -7,78 +7,132 @@ static void aes_valid_key(std::vector<uint8_t> key){
 	}
 }
 
-static std::vector<uint8_t> aes_raw_encrypt(std::vector<uint8_t> plaintext, std::vector<uint8_t> key, std::vector<uint8_t> iv){
-	std::vector<uint8_t> retval(plaintext.size()*2, 0);
-	EVP_CIPHER_CTX *ctx = nullptr;
-	int32_t len;
-	int32_t ciphertext_len;
-	if(!(ctx = EVP_CIPHER_CTX_new())){
-		print("can't create EVP_CIPHER_CTX", P_ERR);
-	}
-	if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_192_cbc(), nullptr, key.data(), iv.data())){
-		print("can't initialize AES", P_ERR);
-	}
-	if(1 != EVP_EncryptUpdate(ctx, retval.data(), &len, plaintext.data(), plaintext.size())){
-		print("can't update AES", P_ERR);
-	}
-	ciphertext_len = len;
-	if(1 != EVP_EncryptFinal_ex(ctx, retval.data(), &len)){
-		print("can't encrypt AES", P_ERR);
-	}
-	ciphertext_len += len;
-	retval = std::vector<uint8_t>(
-		retval.begin(),
-		retval.begin()+ciphertext_len);
-	EVP_CIPHER_CTX_free(ctx);
-	return retval;
-}
-
-static void aes_error_printer(){
+static void handleErrors(){
 	ERR_print_errors_fp(stderr);
 }
 
+/*
+  copied from OpenSSL wiki page
+
+  TODO: actually do this securely, possibly use either AES-NI or NaCl (when
+  they support AES well enough)
+ */
+
+
+static int libcrypto_encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
+  unsigned char *iv, unsigned char *ciphertext)
+{
+  EVP_CIPHER_CTX *ctx;
+
+  int len;
+
+  int ciphertext_len;
+
+  /* Create and initialise the context */
+  if(!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
+
+  /* Initialise the encryption operation. IMPORTANT - ensure you use a key
+   * and IV size appropriate for your cipher
+   * In this example we are using 256 bit AES (i.e. a 256 bit key). The
+   * IV size for *most* modes is the same as the block size. For AES this
+   * is 128 bits */
+  if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_192_cbc(), NULL, key, iv))
+    handleErrors();
+
+  /* Provide the message to be encrypted, and obtain the encrypted output.
+   * EVP_EncryptUpdate can be called multiple times if necessary
+   */
+  if(1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len))
+    handleErrors();
+  ciphertext_len = len;
+
+  /* Finalise the encryption. Further ciphertext bytes may be written at
+   * this stage.
+   */
+  if(1 != EVP_EncryptFinal_ex(ctx, ciphertext + len, &len)) handleErrors();
+  ciphertext_len += len;
+
+  /* Clean up */
+  EVP_CIPHER_CTX_free(ctx);
+
+  return ciphertext_len;
+}
+
+static int libcrypto_decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
+  unsigned char *iv, unsigned char *plaintext)
+{
+  EVP_CIPHER_CTX *ctx;
+
+  int len;
+
+  int plaintext_len;
+
+  /* Create and initialise the context */
+  if(!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
+
+  /* Initialise the decryption operation. IMPORTANT - ensure you use a key
+   * and IV size appropriate for your cipher
+   * In this example we are using 256 bit AES (i.e. a 256 bit key). The
+   * IV size for *most* modes is the same as the block size. For AES this
+   * is 128 bits */
+  if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_192_cbc(), NULL, key, iv))
+    handleErrors();
+
+  /* Provide the message to be decrypted, and obtain the plaintext output.
+   * EVP_DecryptUpdate can be called multiple times if necessary
+   */
+  if(1 != EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len))
+    handleErrors();
+  plaintext_len = len;
+
+  /* Finalise the decryption. Further plaintext bytes may be written at
+   * this stage.
+   */
+  if(1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len)) handleErrors();
+  plaintext_len += len;
+
+  /* Clean up */
+  EVP_CIPHER_CTX_free(ctx);
+
+  return plaintext_len;
+}
+
+static std::vector<uint8_t> aes_raw_encrypt(std::vector<uint8_t> plaintext, std::vector<uint8_t> key, std::vector<uint8_t> iv){
+	uint8_t *retval_raw = new uint8_t[plaintext.size()+128];
+	uint32_t retval_size = 
+		libcrypto_encrypt(plaintext.data(),
+				  plaintext.size(),
+				  key.data(),
+				  iv.data(),
+				  retval_raw);
+	std::vector<uint8_t> retval(
+		retval_raw,
+		retval_raw+retval_size);
+	delete[] retval_raw;
+	retval_raw = nullptr;
+	return retval;
+}
+
 static std::vector<uint8_t> aes_raw_decrypt(std::vector<uint8_t> ciphertext, std::vector<uint8_t> key, std::vector<uint8_t> iv){
-	std::vector<uint8_t> retval(ciphertext.size()*2, 0);
-	EVP_CIPHER_CTX *ctx = nullptr;
-	int len;
-	int plaintext_len;
-	P_V(key.size(), P_NOTE);
-	P_V(iv.size(), P_NOTE);
-	if(!(ctx = EVP_CIPHER_CTX_new())){
-		aes_error_printer();
-		print("can't create EVP_CIPHER_CTX", P_ERR);
-	}
-	if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_192_cbc(), nullptr, key.data(), iv.data())){
-		aes_error_printer();
-		print("couldn't initialize AES decryption", P_ERR);
-	}
-	if(1 != EVP_DecryptUpdate(ctx, retval.data(), &len, ciphertext.data(), ciphertext.size())){
-		aes_error_printer();
-		print("couldn't update AES decryption", P_ERR);
-	}else{
-		retval = std::vector<uint8_t>(
-			retval.begin(),
-			retval.begin()+len);
-	}
-	plaintext_len = len;
-	if(1 != EVP_DecryptFinal_ex(ctx, retval.data(), &len)){
-		P_V(len, P_NOTE);
-		P_V(retval.size(), P_NOTE);
-		aes_error_printer();
-		print("couldn't decrypt AES", P_ERR);
-	}
-	plaintext_len += len;
-	retval = std::vector<uint8_t>(
-		retval.begin(),
-		retval.begin()+plaintext_len);
-	EVP_CIPHER_CTX_free(ctx);
+	uint8_t *retval_raw = new uint8_t[ciphertext.size()+128];
+	uint32_t retval_size = 
+		libcrypto_decrypt(ciphertext.data(),
+				  ciphertext.size(),
+				  key.data(),
+				  iv.data(),
+				  retval_raw);
+	std::vector<uint8_t> retval(
+		retval_raw,
+		retval_raw+retval_size);
+	delete[] retval_raw;
+	retval_raw = nullptr;
 	return retval;
 }
 
 std::vector<uint8_t> aes::encrypt(std::vector<uint8_t> data,
 				  std::vector<uint8_t> key){
 	aes_valid_key(key);
-	std::vector<uint8_t> retval((key.size())+(data.size()*2), 0); // enough
+	std::vector<uint8_t> retval; // enough
 	std::vector<uint8_t> iv;
 	for(uint64_t i = 0;i < key.size();i++){
 		iv.push_back((uint8_t)true_rand(0, 255));
