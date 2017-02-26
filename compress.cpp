@@ -27,7 +27,13 @@ static void compressor_zlib_error_checker(int32_t retval){
 
 std::vector<uint8_t> compressor::to_xz(std::vector<uint8_t> input,
 				       uint8_t compression_level){
-	uint64_t retval_size = (input.size()*1.1)+12;
+#ifdef __arm__
+	long unsigned int retval_size =
+		(input.size()*1.1)+12;
+#else
+	uint64_t retval_size =
+		(input.size()*1.1)+12;
+#endif
 	uint8_t *retval_char = new uint8_t[retval_size];
 	compressor_zlib_error_checker(
 		compress(
@@ -45,7 +51,13 @@ std::vector<uint8_t> compressor::to_xz(std::vector<uint8_t> input,
 }
 
 std::vector<uint8_t> compressor::from_xz(std::vector<uint8_t> input){
-	uint64_t retval_size = input.size()*3;
+#ifdef __arm__
+	long unsigned int retval_size =
+		input.size()*3;
+#else
+	uint64_t retval_size =
+		input.size()*3;
+#endif
 	uint8_t *retval_char = new uint8_t[retval_size];
 	compressor_zlib_error_checker(
 		uncompress(
