@@ -551,10 +551,11 @@ static void benchmark_encryption(std::string method){
 				payload,
 				rsa_key_pair,
 				method);
-		P_V(size_bytes, P_NOTE);
+		P_V(size_bytes/(1024*1024), P_NOTE);
 		P_V_S(get_readable_time(datum.first), P_NOTE);
 		P_V_S(get_readable_time(datum.second), P_NOTE);
 		out << size_bytes << " " << datum.first << " " << datum.second << std::endl;
+		print(std::to_string(benchmark_data.size()-i-1) + "left to go", P_NOTE);
 	}
 	out.close();
 	print("benchmark completed", P_NOTE);
