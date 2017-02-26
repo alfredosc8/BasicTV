@@ -379,11 +379,13 @@ static std::vector<id_t_> tv_audio_get_current_frame_audios(){
 }
 
 void tv_audio_loop(){
-	Mix_Volume(-1, MIX_MAX_VOLUME); // -1 sets all channels
-	tv_audio_clean_audio_data();
-	tv_audio_add_frame_audios(
-		tv_audio_remove_redundant_ids(
-			tv_audio_get_current_frame_audios()));
+	if(settings::get_setting("audio") == "true"){
+		Mix_Volume(-1, MIX_MAX_VOLUME); // -1 sets all channels
+		tv_audio_clean_audio_data();
+		tv_audio_add_frame_audios(
+			tv_audio_remove_redundant_ids(
+				tv_audio_get_current_frame_audios()));
+	}
 }
 
 void tv_audio_close(){

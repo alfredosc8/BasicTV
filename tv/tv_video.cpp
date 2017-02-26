@@ -323,7 +323,9 @@ static void tv_render_all(){
 }
 
 void tv_video_loop(){
-	tv_render_all();
+	if(settings::get_setting("video") == "true"){
+		tv_render_all();
+	}
 }
 
 static void tv_init_test_menu(){
