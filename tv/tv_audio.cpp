@@ -212,36 +212,40 @@ std::vector<id_t_> tv_audio_load_wav(id_t_ channel_id, uint64_t start_time_micro
 }
 
 void tv_audio_init(){
-	SDL_Init(SDL_INIT_AUDIO);
-	try{
-		output_sampling_rate =
-			std::stoi(
-				settings::get_setting(
-					"snd_output_sampling_rate"));
-		output_bit_depth =
-			std::stoi(
-				settings::get_setting(
-					"snd_output_bit_depth"));
-		output_chunk_size =
-			std::stoi(
-				settings::get_setting(
-					"snd_output_chunk_size"));
-	}catch(...){
-		// no big problem, these values are sane (maybe not chunk size)
-		print("cannot read sound settings from file, setting default", P_WARN);
-		output_sampling_rate = TV_AUDIO_DEFAULT_SAMPLING_RATE;
-		output_bit_depth = TV_AUDIO_DEFAULT_BIT_DEPTH;
-		output_chunk_size = TV_AUDIO_DEFAULT_CHUNK_SIZE;
-	}
-	if(Mix_OpenAudio(output_sampling_rate,
-			 tv_audio_sdl_format_from_depth(
-				 output_bit_depth),
-			 1,
-			 output_chunk_size) < 0){
-		P_V(output_sampling_rate, P_WARN);
-		P_V(output_bit_depth, P_WARN);
-		P_V(output_chunk_size, P_WARN);
-		print("cannot open audio:" + (std::string)(Mix_GetError()), P_ERR);
+	if(settings::get_setting("audio") == "true"){
+		SDL_Init(SDL_INIT_AUDIO);
+		try{
+			output_sampling_rate =
+				std::stoi(
+					settings::get_setting(
+						"snd_output_sampling_rate"));
+			output_bit_depth =
+				std::stoi(
+					settings::get_setting(
+						"snd_output_bit_depth"));
+			output_chunk_size =
+				std::stoi(
+					settings::get_setting(
+						"snd_output_chunk_size"));
+		}catch(...){
+			// no big problem, these values are sane (maybe not chunk size)
+			print("cannot read sound settings from file, setting default", P_WARN);
+			output_sampling_rate = TV_AUDIO_DEFAULT_SAMPLING_RATE;
+			output_bit_depth = TV_AUDIO_DEFAULT_BIT_DEPTH;
+			output_chunk_size = TV_AUDIO_DEFAULT_CHUNK_SIZE;
+		}
+		if(Mix_OpenAudio(output_sampling_rate,
+				 tv_audio_sdl_format_from_depth(
+					 output_bit_depth),
+				 1,
+				 output_chunk_size) < 0){
+			P_V(output_sampling_rate, P_WARN);
+			P_V(output_bit_depth, P_WARN);
+			P_V(output_chunk_size, P_WARN);
+			print("cannot open audio:" + (std::string)(Mix_GetError()), P_ERR);
+		}
+	}else{
+		print("audio has been disabled in the settings", P_NOTE);
 	}
 }
 

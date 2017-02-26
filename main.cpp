@@ -158,6 +158,10 @@ static void init(){
 	settings::set_setting("socks_proxy_ip", "127.0.0.1");
 	// SOCKS proxy port in ASCII
 	settings::set_setting("socks_proxy_port", "9050");
+	// enable subsystems in settings
+	settings::set_setting("video", "true");
+	settings::set_setting("audio", "true");
+	// shouldn't need to disable other stuff
 	/*
 	  Using "~" doesn't work with C++, so get the information from getenv()
 

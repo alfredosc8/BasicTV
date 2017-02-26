@@ -395,31 +395,35 @@ static void tv_init_test_webcam(){
 }
 
 void tv_video_init(){
-	SDL_Init(SDL_INIT_VIDEO);
-	uint16_t x_res = WINDOW_X_RES;
-	uint16_t y_res = WINDOW_Y_RES;
-	try{
-		x_res = std::stoi(settings::get_setting("window_x_res"));
-		y_res = std::stoi(settings::get_setting("window_y_res"));
-	}catch(...){}
-	sdl_window = SDL_CreateWindow("BasicTV",
-				      SDL_WINDOWPOS_CENTERED,
-				      SDL_WINDOWPOS_CENTERED,
-				      x_res,
-				      y_res,
-				      SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-	if(sdl_window == nullptr){
-		print((std::string)"window is nullptr:"+SDL_GetError(), P_ERR);
+	if(settings::get_setting("video") == "true"){
+		SDL_Init(SDL_INIT_VIDEO);
+		uint16_t x_res = WINDOW_X_RES;
+		uint16_t y_res = WINDOW_Y_RES;
+		try{
+			x_res = std::stoi(settings::get_setting("window_x_res"));
+			y_res = std::stoi(settings::get_setting("window_y_res"));
+		}catch(...){}
+		sdl_window = SDL_CreateWindow("BasicTV",
+					      SDL_WINDOWPOS_CENTERED,
+					      SDL_WINDOWPOS_CENTERED,
+					      x_res,
+					      y_res,
+					      SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+		if(sdl_window == nullptr){
+			print((std::string)"window is nullptr:"+SDL_GetError(), P_ERR);
+		}
+		// blank the screen black
+		SDL_FillRect(
+			SDL_GetWindowSurface(sdl_window),
+			NULL,
+			SDL_MapRGB(SDL_GetWindowSurface(sdl_window)->format, 0, 0, 0));
+		SDL_UpdateWindowSurface(sdl_window);
+		//tv_init_test_test_card(x_res, y_res);
+		//tv_init_test_menu();
+		//tv_init_test_webcam();
+	}else{
+		print("video has been disabled in the settings", P_NOTE);
 	}
-	// blank the screen black
-	SDL_FillRect(
-		SDL_GetWindowSurface(sdl_window),
-		NULL,
-		SDL_MapRGB(SDL_GetWindowSurface(sdl_window)->format, 0, 0, 0));
-	SDL_UpdateWindowSurface(sdl_window);
-	//tv_init_test_test_card(x_res, y_res);
-	//tv_init_test_menu();
-	//tv_init_test_webcam();
 }
 
 void tv_video_close(){
