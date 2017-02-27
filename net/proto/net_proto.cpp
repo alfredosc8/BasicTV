@@ -19,9 +19,9 @@
 #include "net_proto_routine_requests.h"
 
 void net_proto_loop(){
-	net_proto_handle_inbound_requests();
+	net_proto_handle_inbound_data();
 	net_proto_handle_outbound_requests();
-	net_proto_connection_manager();
+	net_proto_connection_manager(); // in and out
 	net_proto_routine_requests_loop();
 }
 
