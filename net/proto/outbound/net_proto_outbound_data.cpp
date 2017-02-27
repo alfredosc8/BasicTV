@@ -95,9 +95,10 @@ static void net_proto_fill_type_requests(){
 					net_proto_socket_t);
 			if(proto_socket_ptr == nullptr){
 				print("socket is a nullptr", P_WARN);
+				continue;
 			}
 			proto_socket_ptr->send_id(
-				proto_type_request->id.get_id());
+				net_proto_type_requests[i]);
 		}
 	}
 }

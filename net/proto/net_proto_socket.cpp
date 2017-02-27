@@ -141,7 +141,11 @@ void net_proto_socket_t::send_id(id_t_ id_){
 			ptr_id->export_data(ID_DATA_NONET);
 		// encryption status of encrypt_pub_key_t and similar types
 		// should be handled inside of the export function
-		socket->send(exported_data);
+		try{
+			socket->send(exported_data);
+		}catch(...){
+			print("cannot send ID across socket", P_WARN);
+		}
 	}
 }
 
