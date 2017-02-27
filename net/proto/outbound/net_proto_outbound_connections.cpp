@@ -28,6 +28,11 @@ static void net_proto_initiate_direct_tcp(net_proto_con_req_t *con_req){
 	socket_ptr->connect();
 	if(socket_ptr->is_alive() == false){
 		print("couldn't connect to peer", P_NOTE);
+	}else{
+		print("opened connection with peer (IP: " +
+		      proto_peer->get_net_ip_str() + " port:" +
+		      std::to_string(proto_peer->get_net_port()) + ")",
+		      P_NOTE);
 	}
 	proto_peer->set_last_attempted_connect_time(
 		get_time_microseconds());
@@ -40,12 +45,15 @@ static void net_proto_initiate_direct_tcp(net_proto_con_req_t *con_req){
 static void net_proto_first_id_logic(net_proto_con_req_t *con_req){
 	switch(con_req->get_flags()){
 	case (NET_CON_REQ_TCP | NET_CON_REQ_DIRECT):
+		print("attempting a direct TCP connection", P_DEBUG);
 		net_proto_initiate_direct_tcp(con_req);
 		break;
 	case (NET_CON_REQ_TCP | NET_CON_REQ_HOLEPUNCH):
+		print("attempting a TCP holepunch", P_DEBUG);
 		net_proto_handle_tcp_holepunch(con_req);
 		break;
 	default:
+		print("invalid flags for con_req, not establishing", P_WARN);
 		break;
 	}
 }
@@ -75,8 +83,8 @@ void net_proto_initiate_all_connections(){
 				print("second peer is a nullptr", P_NOTE);
 				continue;
 			}
-			if(second_peer_ptr->get_last_attempted_connect_time()-1000000 <
-			   get_time_microseconds()){
+			if(get_time_microseconds() >
+			   second_peer_ptr->get_last_attempted_connect_time()+1000000){
 				net_proto_first_id_logic(con_req);
 			}else{
 				//print("skipping connection to peer, too fast", P_SPAM);

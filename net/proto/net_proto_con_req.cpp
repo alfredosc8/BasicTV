@@ -68,7 +68,7 @@ static uint8_t peer_connection_flags_to_con_req(net_proto_peer_t *peer_ptr){
 
 id_t_ net_proto_generate_con_req(id_t_ peer_id){
 	if(peer_id == net_proto::peer::get_self_as_peer()){
-		print("attempted to connect to myself, not connecting", P_WARN);
+		//print("attempted to connect to myself, not connecting", P_WARN);
 		return ID_BLANK_ID;
 	}
 	net_proto_peer_t *peer_ptr =
