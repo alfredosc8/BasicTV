@@ -5,6 +5,7 @@
 #include "../net_proto_request.h"
 #include "../../../util.h"
 #include "../../../id/id_api.h"
+#include "../net_proto_api.h"
 
 // static std::vector<uint8_t> net_proto_read_struct_segment(uint8_t *data,
 // 							  uint64_t data_size){
@@ -247,7 +248,10 @@ static void net_proto_handle_inbound_type_request(id_t_ request_id){
 	net_proto_type_request_t *request =
 		PTR_DATA(request_id,
 			 net_proto_type_request_t);
-	PRINT_IF_NULL(request, P_ERR);
+	if(request == nullptr){
+		print("request is a nullptr", P_NOTE);
+		return;
+	}
 	/*
 	  TODO: Pull net_proto_peer_t ID from request, search all sockets
 	  to find a valid socket the data can be sent on, and send 
@@ -275,14 +279,29 @@ static void net_proto_handle_inbound_type_request(id_t_ request_id){
 			}
 		}
 	}
-	proto_socket_ptr->send_id_vector(
-		request->get_ids());
+	if(proto_socket_ptr != nullptr){
+		proto_socket_ptr->send_id_vector(
+			request->get_ids());
+	}else{
+		print("couldn't find a valid socket for peer request filling", P_NOTE);
+	}
 }
 
 static void net_proto_handle_all_inbound_type_requests(){
 	std::vector<id_t_> type_request_vector =
 		id_api::cache::get("net_proto_type_request_t");
 	for(uint64_t i = 0;i < type_request_vector.size();i++){
+		net_proto_type_request_t *type_request =
+			PTR_DATA(type_request_vector[i],
+				 net_proto_type_request_t);
+		if(type_request == nullptr){
+			print("type request is a nullptr", P_DEBUG);
+			continue;
+		}
+		if(type_request->get_peer_id() ==
+		   net_proto::peer::get_self_as_peer()){
+			continue;
+		}
 		net_proto_handle_inbound_type_request(
 			type_request_vector[i]);
 	}
