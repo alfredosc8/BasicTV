@@ -20,6 +20,7 @@ namespace net_proto{
 		// IP/URL and port, easy wrapper. Assume default if not called
 		void set_self_as_peer(std::string ip, uint16_t port);
 		id_t_ get_self_as_peer();
+		id_t_ random_peer_id();
 	};
 	namespace socket{
 		/*

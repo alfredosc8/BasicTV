@@ -132,6 +132,26 @@ id_t_ net_proto::socket::optimal_proto_socket_of_peer(id_t_ peer_id){
 	return optimal_socket.first;
 }
 
+id_t_ net_proto::peer::random_peer_id(){
+	std::vector<id_t_> proto_peer_vector =
+		id_api::cache::get(
+			"net_proto_peer_t");
+	if(proto_peer_vector.size() < 2){
+		print("no connected clients to pull random ID from", P_WARN);
+		return ID_BLANK_ID;
+	}
+	std::random_shuffle(
+		proto_peer_vector.begin(),
+		proto_peer_vector.begin()+2);
+	for(uint64_t i = 0;i < 2;i++){
+		if(proto_peer_vector[i] !=
+		   net_proto::peer::get_self_as_peer()){
+			return proto_peer_vector[i];
+		}
+	}
+	return ID_BLANK_ID;
+}
+
 void net_proto::socket::connect(id_t_ peer_id_, uint32_t min){
 	std::vector<id_t_> retval;
 	net_proto_peer_t *proto_peer_ptr =

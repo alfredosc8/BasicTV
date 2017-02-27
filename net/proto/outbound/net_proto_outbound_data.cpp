@@ -85,9 +85,23 @@ static void net_proto_fill_type_requests(){
 					peer_id);
 				id_api::destroy(net_proto_type_requests[i]);
 			}catch(...){}
-	 	}
+	 	}else{
+			// created locally, distribute out randomly
+			// TODO: assign a peer to send out to in type itself
+			net_proto_socket_t *proto_socket_ptr =
+				PTR_DATA(
+					net_proto::socket::optimal_proto_socket_of_peer(
+						net_proto::peer::random_peer_id()),
+					net_proto_socket_t);
+			if(proto_socket_ptr == nullptr){
+				print("socket is a nullptr", P_WARN);
+			}
+			proto_socket_ptr->send_id(
+				proto_type_request->id.get_id());
+		}
 	}
 }
+
 
 static void net_proto_fill_id_requests(){
 	std::vector<id_t_> net_proto_id_requests =
