@@ -79,7 +79,6 @@ id_t_ net_proto_generate_con_req(id_t_ peer_id){
 	}
 	const uint8_t net_flags =
 		peer_connection_flags_to_con_req(peer_ptr);
-	uint64_t timestamp = 0;
 	net_proto_con_req_t *proto_con_req =
 		new net_proto_con_req_t;
 	proto_con_req->set(

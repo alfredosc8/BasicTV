@@ -33,6 +33,8 @@ static void net_proto_initiate_direct_tcp(net_proto_con_req_t *con_req){
 		      proto_peer->get_net_ip_str() + " port:" +
 		      std::to_string(proto_peer->get_net_port()) + ")",
 		      P_NOTE);
+		delete con_req;
+		con_req = nullptr;
 	}
 	proto_peer->set_last_attempted_connect_time(
 		get_time_microseconds());
