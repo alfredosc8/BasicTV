@@ -14,6 +14,8 @@ stat_sample_set_t::stat_sample_set_t() : id(this, __FUNCTION__){
 	list_virtual_data(&id);
 	id.add_data(&x, ~0);
 	id.add_data(&y, ~0);
+	id.noexp_all_data(); // ideally keep them over long periods of time
+	id.nonet_all_data();
 }
 
 stat_sample_set_t::~stat_sample_set_t(){

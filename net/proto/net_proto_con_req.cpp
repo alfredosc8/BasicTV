@@ -67,14 +67,14 @@ static uint8_t peer_connection_flags_to_con_req(net_proto_peer_t *peer_ptr){
 }
 
 id_t_ net_proto_generate_con_req(id_t_ peer_id){
-	if(peer_id == net_proto::peer::get_self_as_peer()){
-		//print("attempted to connect to myself, not connecting", P_WARN);
-		return ID_BLANK_ID;
-	}
 	net_proto_peer_t *peer_ptr =
 		PTR_DATA_FAST(peer_id,
 			      net_proto_peer_t);
 	if(peer_ptr == nullptr){
+		return ID_BLANK_ID;
+	}
+	if(peer_id == net_proto::peer::get_self_as_peer()){
+		//print("attempted to connect to myself, not connecting", P_WARN);
 		return ID_BLANK_ID;
 	}
 	const uint8_t net_flags =
