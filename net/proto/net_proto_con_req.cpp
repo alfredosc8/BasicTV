@@ -10,7 +10,7 @@ net_proto_con_req_t::net_proto_con_req_t() : id(this, __FUNCTION__){
 	ADD_DATA(first_peer_id);
 	ADD_DATA(second_peer_id);
 	ADD_DATA(third_peer_id);
-	ADD_DATA(heartbeat_timestamp);
+	ADD_DATA(timestamp);
 }
 
 net_proto_con_req_t::~net_proto_con_req_t(){
@@ -34,20 +34,20 @@ void net_proto_con_req_t::get_peer_ids(id_t_ *first_peer_id_,
 	}
 }
 
-uint64_t net_proto_con_req_t::get_heartbeat_timestamp(){
-	return heartbeat_timestamp;
+uint64_t net_proto_con_req_t::get_timestamp(){
+	return timestamp;
 }
 
 void net_proto_con_req_t::set(uint8_t flags_,
 			      id_t_ first_peer_id_,
 			      id_t_ second_peer_id_,
 			      id_t_ third_peer_id_,
-			      uint64_t heartbeat_timestamp_){
+			      uint64_t timestamp_){
 	flags = flags_;
 	first_peer_id = first_peer_id_;
 	second_peer_id = second_peer_id_;
 	third_peer_id = third_peer_id_;
-	heartbeat_timestamp = heartbeat_timestamp_;
+	timestamp = timestamp_;
 }
 
 static uint8_t peer_connection_flags_to_con_req(net_proto_peer_t *peer_ptr){
@@ -79,15 +79,7 @@ id_t_ net_proto_generate_con_req(id_t_ peer_id){
 	}
 	const uint8_t net_flags =
 		peer_connection_flags_to_con_req(peer_ptr);
-	// TODO: dedicate a seperate set of flags to connection info?
-	uint64_t heartbeat_timestamp = 0;
-	if(net_flags & NET_CON_REQ_HOLEPUNCH){
-		heartbeat_timestamp =
-			get_time_microseconds()+
-			settings::get_setting_unsigned_def(
-				"net_holepunch_time_offset", 10000000);
-		// ten seconds default
-	}
+	uint64_t timestamp = 0;
 	net_proto_con_req_t *proto_con_req =
 		new net_proto_con_req_t;
 	proto_con_req->set(
@@ -95,7 +87,7 @@ id_t_ net_proto_generate_con_req(id_t_ peer_id){
 		net_proto::peer::get_self_as_peer(),
 		peer_id,
 		ID_BLANK_ID,
-		heartbeat_timestamp); // reserved for third party for UDP (not implemented)
+		get_time_microseconds()); // reserved for third party for UDP (not implemented)
 	print("started connection negotiation with peer " +
 	      convert::array::id::to_hex(peer_id) + " (IP: " +
 	      peer_ptr->get_net_ip_str() + " port: " +

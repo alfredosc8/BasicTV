@@ -38,7 +38,7 @@
   First peer (sender) wants to connect to the second peer (receiver). Second
   peer doesn't have a TCP port open, but the first does. 
 
-  Since this doesn't require hole punching at all, heartbeat_timestamp is set
+  Since this doesn't require hole punching at all, timestamp is set
   to the current time (falls in line with deletion rules). 
 
   When the second peer receives this, it connects to the first peer like it
@@ -58,7 +58,7 @@
   peer doesn't have a port open, nor does the first peer.
 
   Assuming the connection request protocol is TCP:
-  heartbeat_timestamp is set to the UNIX time at which the SYN packets will be
+  timestamp is set to the UNIX time at which the SYN packets will be
   sent by the first towards the second and vice-versa. Both sides ought to know
   pretty quickly if it had worked (from what they received). If it didn't work
   (within the timeout time, probably three seconds), try it again. Keep this up
@@ -85,7 +85,7 @@ private:
 	id_t_ first_peer_id = ID_BLANK_ID;
 	id_t_ second_peer_id = ID_BLANK_ID;
 	id_t_ third_peer_id = ID_BLANK_ID;
-	uint64_t heartbeat_timestamp = 0;
+	uint64_t timestamp = 0;
 public:
 	data_id_t id;
 	net_proto_con_req_t();
@@ -94,12 +94,12 @@ public:
 	void get_peer_ids(id_t_ *first_peer_id_, // initiator
 			  id_t_ *second_peer_id_, // receiver 
 			  id_t_ *third_peer_id_); // third party (UDP)
-	uint64_t get_heartbeat_timestamp();
+	uint64_t get_timestamp();
 	void set(uint8_t flags_,
 		 id_t_ first_peer_id_,
 		 id_t_ second_peer_id_,
 		 id_t_ third_peer_id_,
-		 uint64_t heartbeat_timestamp_);
+		 uint64_t timestamp_);
 };
 
 id_t_ net_proto_generate_con_req(id_t_ peer_id);

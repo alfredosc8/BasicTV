@@ -14,7 +14,7 @@
 
 void net_proto_handle_tcp_holepunch(net_proto_con_req_t *con_req){
 	const uint64_t timestamp =
-		con_req->get_heartbeat_timestamp();
+		con_req->get_timestamp();
 	const uint64_t cur_timestamp =
 		get_time_microseconds();
 	const uint64_t offset = 100000;
@@ -173,8 +173,31 @@ void net_proto_create_random_connections(){
 	}
 }
 
+static void net_proto_remove_stale_requests(){
+	std::vector<id_t_> con_req_vector =
+		id_api::cache::get(
+			"net_proto_con_req_t");
+	for(uint64_t i = 0;i < con_req_vector.size();i++){
+		net_proto_con_req_t *con_req_ptr =
+			PTR_DATA(con_req_vector[i],
+				 net_proto_con_req_t);
+		if(con_req_ptr == nullptr){
+			continue;
+		}
+		if(get_time_microseconds() > con_req_ptr->get_timestamp()+(30*1000*1000)){
+			print("deleting stale con_req", P_NOTE);
+			print("TODO: turn con_req timeout into a setting", P_NOTE);
+			// no harm in deleting the type if it is known that
+			// it cannot be exported or networked
+			delete con_req_ptr;
+			con_req_ptr = nullptr;
+		}
+	}
+}
+
 void net_proto_connection_manager(){
 	net_proto_accept_all_connections();
 	net_proto_initiate_all_connections();
 	net_proto_create_random_connections();
+	net_proto_remove_stale_requests();
 }
