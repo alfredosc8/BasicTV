@@ -83,7 +83,8 @@ static void net_proto_fill_type_requests(){
 						type_vector,
 						raw_id_vector),
 					peer_id);
-				id_api::destroy(net_proto_type_requests[i]);
+				delete proto_type_request;
+				proto_type_request = nullptr;
 			}catch(...){}
 	 	}else{
 			// created locally, distribute out randomly
@@ -99,6 +100,8 @@ static void net_proto_fill_type_requests(){
 			}
 			proto_socket_ptr->send_id(
 				net_proto_type_requests[i]);
+			delete proto_type_request;
+			proto_type_request = nullptr;
 		}
 	}
 }
