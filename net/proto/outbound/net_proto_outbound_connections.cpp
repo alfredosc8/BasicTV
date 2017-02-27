@@ -89,6 +89,8 @@ void net_proto_initiate_all_connections(){
 			if(get_time_microseconds() >
 			   second_peer_ptr->get_last_attempted_connect_time()+1000000){
 				net_proto_first_id_logic(con_req);
+				second_peer_ptr->set_last_attempted_connect_time(
+					get_time_microseconds());
 			}else{
 				//print("skipping connection to peer, too fast", P_SPAM);
 			}

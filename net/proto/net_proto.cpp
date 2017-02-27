@@ -56,8 +56,7 @@ static void net_proto_init_self_peer(){
   Forces no encryption (generated locally)
  */
 
-static std::vector<std::pair<std::string, uint16_t> > bootstrap_nodes =
-{{{"96.35.0.163", 58486}}}; // TODO: get a domain name
+static std::vector<std::pair<std::string, uint16_t> > bootstrap_nodes;
 
 static void net_proto_verify_bootstrap_nodes(){
 	std::vector<id_t_> peer_vector =
@@ -79,10 +78,13 @@ static void net_proto_verify_bootstrap_nodes(){
 	}catch(...){
 		print("no custom bootstrap node specified", P_NOTE);
 	}
-	std::vector<std::pair<std::string, uint16_t> > nodes_to_connect =
+	std::vector<std::pair<std::string, uint16_t> > nodes_to_connect;
+	if(bootstrap_nodes.size() > 0){
+		nodes_to_connect = 
 		std::vector<std::pair<std::string, uint16_t> >(
 			bootstrap_nodes.begin(),
 			bootstrap_nodes.end());
+	}
 	print("attempting to read in " + std::to_string(nodes_to_connect.size()) + " bootstrap nodes", P_DEBUG);
 	for(uint64_t i = 0;i < peer_vector.size();i++){
 		net_proto_peer_t *proto_peer =
