@@ -51,9 +51,10 @@ static void net_proto_first_id_logic(net_proto_con_req_t *con_req){
 		net_proto_initiate_direct_tcp(con_req);
 		break;
 	case (NET_CON_REQ_TCP | NET_CON_REQ_HOLEPUNCH):
-		print("attempting a TCP holepunch", P_DEBUG);
-		net_proto_handle_tcp_holepunch(con_req);
-		break;
+		print("TODO: properly implement a TCP holepunch", P_WARN);
+		//print("attempting a TCP holepunch", P_DEBUG);
+		//net_proto_handle_tcp_holepunch(con_req);
+		//break;
 	default:
 		print("invalid flags for con_req, not establishing", P_WARN);
 		break;
