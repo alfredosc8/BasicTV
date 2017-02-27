@@ -138,7 +138,7 @@ void net_proto::socket::connect(id_t_ peer_id_, uint32_t min){
 		PTR_DATA(peer_id_,
 			 net_proto_peer_t);
 	if(proto_peer_ptr == nullptr){
-		print("cannot connect to a null peer", P_ERR);
+		print("cannot connect to a null peer", P_WARN);
 	}
 	int64_t sockets_to_open =
 		min-all_proto_socket_of_peer(peer_id_).size();

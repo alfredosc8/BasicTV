@@ -68,6 +68,7 @@ static void net_proto_verify_bootstrap_nodes(){
 			settings::get_setting(
 				"net_proto_custom_bootstrap_ip");
 		if(custom_bootstrap_ip != ""){
+			print("adding custom bootstrap ip from settings", P_NOTE);
 			bootstrap_nodes.push_back(
 				std::make_pair(
 					custom_bootstrap_ip,
@@ -76,12 +77,13 @@ static void net_proto_verify_bootstrap_nodes(){
 							"net_proto_custom_bootstrap_port"))));
 		}
 	}catch(...){
-		print("no custom bootstrap node specified", P_ERR);
+		print("no custom bootstrap node specified", P_NOTE);
 	}
 	std::vector<std::pair<std::string, uint16_t> > nodes_to_connect =
 		std::vector<std::pair<std::string, uint16_t> >(
 			bootstrap_nodes.begin(),
 			bootstrap_nodes.end());
+	print("attempting to read in " + std::to_string(nodes_to_connect.size()) + " bootstrap nodes", P_DEBUG);
 	for(uint64_t i = 0;i < peer_vector.size();i++){
 		net_proto_peer_t *proto_peer =
 			PTR_DATA(peer_vector[i],
@@ -114,6 +116,9 @@ static void net_proto_verify_bootstrap_nodes(){
 		proto_peer_ptr->set_net_ip(
 			nodes_to_connect[i].first,
 			nodes_to_connect[i].second);
+		print("created peer with IP " + nodes_to_connect[i].first +
+		      " and port " + std::to_string(nodes_to_connect[i].second),
+		      P_NOTE);
 	}
 	const uint64_t start_node_count =
 		id_api::cache::get(

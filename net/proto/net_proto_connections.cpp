@@ -134,7 +134,12 @@ void net_proto_create_random_connections(){
 	std::random_shuffle(
 		peer_id_vector.begin(),
 		peer_id_vector.end());
-	for(uint64_t i = 0;i < max_connection_count-connection_number;i++){
+	uint64_t connections_to_start =
+		max_connection_count-connection_number;
+	if(connections_to_start > peer_id_vector.size()){
+		connections_to_start = peer_id_vector.size();
+	}
+	for(uint64_t i = 0;i < connections_to_start;i++){
 		net_proto::socket::connect(
 			peer_id_vector[i], 1);
 	}

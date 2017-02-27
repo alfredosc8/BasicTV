@@ -189,8 +189,10 @@ static void close(){
 	net_proto_close();
 	console_close();
 	id_api::destroy_all_data();
-	ERR_free_strings();
+	ENGINE_cleanup();
 	EVP_cleanup();
+	ERR_free_strings();
+	CRYPTO_cleanup_all_ex_data();
 }
 
 static void test_compressor(){
@@ -514,7 +516,7 @@ static std::pair<uint64_t, uint64_t> encryption_benchmark_datum(std::vector<uint
 static void benchmark_encryption(std::string method){
 	// payload of data, encryption time, decryptiont ime
 	std::vector<uint32_t> benchmark_data;
-	for(uint64_t i = 1;i <= 64;i++){
+	for(uint64_t i = 1;i <=1024;i++){
 		benchmark_data.push_back(i);
 	}
 	std::pair<id_t_, id_t_> rsa_key_pair =

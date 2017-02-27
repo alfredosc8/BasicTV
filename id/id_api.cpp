@@ -47,24 +47,22 @@ data_id_t *id_api::array::ptr_id(id_t_ id,
 				 std::string type,
 				 uint8_t flags){
 	if(id == ID_BLANK_ID){
+		print("attempted to fetch a blank ID", P_SPAM);
 		return nullptr;
 	}
 	data_id_t *retval = id_find(id);
 	if(retval == nullptr){
-		if(flags & ID_LOOKUP_FAST){
-			// TODO: actually check the disk
-			return nullptr;
-		}
 		// TODO: get a list of items to not query the network for
 		if(type != "console_t"){
 			try{
+				print("attempting import from disk", P_SPAM);
 				id_api::import::load_from_disk(id);
 			}catch(...){
 				print("TODO: create network requests for non-local data", P_WARN);
 			}
 		}
 	}else if(retval->get_type() != type && type != ""){
-		// not really grounds for an error
+		print("type-id mismatch", P_SPAM);
 		return nullptr;
 	}
 	return retval;

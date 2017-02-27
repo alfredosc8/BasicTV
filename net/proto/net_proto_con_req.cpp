@@ -50,15 +50,36 @@ void net_proto_con_req_t::set(uint8_t flags_,
 	heartbeat_timestamp = heartbeat_timestamp_;
 }
 
+static uint8_t peer_connection_flags_to_con_req(net_proto_peer_t *peer_ptr){
+	uint8_t retval = 0;
+	const uint8_t peer_flags = peer_ptr->get_net_flags();
+	if((peer_flags & 0b11) == NET_PEER_TCP){
+		retval = NET_CON_REQ_TCP;
+	}else if((peer_flags & 0b11) == NET_PEER_UDP){
+		retval = NET_CON_REQ_UDP;
+	}
+	if(peer_flags & NET_PEER_PORT_OPEN){
+		return retval | NET_CON_REQ_DIRECT;
+	}else if(peer_flags & NET_PEER_PUNCHABLE){
+		return retval | NET_CON_REQ_HOLEPUNCH;
+	}
+	return retval;
+}
+
 id_t_ net_proto_generate_con_req(id_t_ peer_id){
+	if(peer_id == net_proto::peer::get_self_as_peer()){
+		print("attempted to connect to myself, not connecting", P_WARN);
+		return ID_BLANK_ID;
+	}
 	net_proto_peer_t *peer_ptr =
 		PTR_DATA_FAST(peer_id,
 			      net_proto_peer_t);
 	if(peer_ptr == nullptr){
 		return ID_BLANK_ID;
 	}
-	print("set networking flags properly", P_CRIT);
-	uint8_t net_flags = NET_CON_REQ_HOLEPUNCH;
+	const uint8_t net_flags =
+		peer_connection_flags_to_con_req(peer_ptr);
+	// TODO: dedicate a seperate set of flags to connection info?
 	uint64_t heartbeat_timestamp = 0;
 	if(net_flags & NET_CON_REQ_HOLEPUNCH){
 		heartbeat_timestamp =
@@ -75,5 +96,9 @@ id_t_ net_proto_generate_con_req(id_t_ peer_id){
 		peer_id,
 		ID_BLANK_ID,
 		heartbeat_timestamp); // reserved for third party for UDP (not implemented)
+	print("started connection negotiation with peer " +
+	      convert::array::id::to_hex(peer_id) + " (IP: " +
+	      peer_ptr->get_net_ip_str() + " port: " +
+	      std::to_string(peer_ptr->get_net_port()) + ")", P_NOTE);
 	return proto_con_req->id.get_id();
 }
