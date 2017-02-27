@@ -279,11 +279,11 @@ typedef uint32_t transport_size_t;
  */
 
 std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
-	// TODO: enforce flags
 	std::vector<uint8_t> retval;
 	bool valid = false;
 	for(uint64_t i = 3;i < data_vector.size();i++){
-		if(!(data_vector[i].get_flags() & ID_DATA_NOEXP)){
+		if(!((data_vector[i].get_flags() & flags_) & ID_DATA_NONET &&
+		     (data_vector[i].get_flags() & flags_) & ID_DATA_NOEXP)){
 			valid = true;
 			break;
 		}
