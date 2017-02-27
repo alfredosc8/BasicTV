@@ -58,8 +58,12 @@ void signal_handler(int signal){
 	case SIGINT:
 	case SIGTERM:
 		if(running == false){
-			print("two signals raised, killing manually", P_NOTE);
-			exit(0);
+			if(closing == true){
+				print("can't force close on shutdown, risk memory loss, wait it out", P_NOTE);
+			}else{
+				print("two signals raised, killing manually", P_NOTE);
+				exit(0);
+			}
 		}
 		running = false;
 	}

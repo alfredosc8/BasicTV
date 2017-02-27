@@ -113,6 +113,30 @@ static uint64_t get_all_peer_socket_count(std::vector<std::pair<id_t_, uint64_t>
 	return retval;
 }
 
+// TODO: make this not clearnet-y
+
+static bool pending_clearnet_con_req_for_peer(id_t_ peer_id){
+	std::vector<id_t_> con_req_vector =
+		id_api::cache::get(
+			"net_proto_con_req_t");
+	for(uint64_t i = 0;i < con_req_vector.size();i++){
+		net_proto_con_req_t *con_req_ptr =
+			PTR_DATA_FAST(
+				con_req_vector[i],
+				net_proto_con_req_t);
+		if(con_req_ptr == nullptr){
+			continue;
+		}
+		id_t_ peer_id_con_req = ID_BLANK_ID;
+		con_req_ptr->get_peer_ids(
+			nullptr, &peer_id_con_req, nullptr);
+		if(peer_id == peer_id_con_req){
+			return true;
+		}
+	}
+	return false;
+}
+
 /*
   Creates random connections to peers
  */
@@ -140,8 +164,12 @@ void net_proto_create_random_connections(){
 		connections_to_start = peer_id_vector.size();
 	}
 	for(uint64_t i = 0;i < connections_to_start;i++){
-		net_proto::socket::connect(
-			peer_id_vector[i], 1);
+		if(pending_clearnet_con_req_for_peer(peer_id_vector[i]) == false){
+			net_proto::socket::connect(
+				peer_id_vector[i], 1);
+		}else{
+			print("not initiating another connection until first con_req is handled somehow", P_DEBUG);
+		}
 	}
 }
 

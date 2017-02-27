@@ -42,6 +42,7 @@
 int argc = 0;
 char **argv = nullptr;
 bool running = true;
+bool closing = false;
 
 /*
   All information imported has the SHA256 hash of the public key. It follows
@@ -184,6 +185,7 @@ static void init(){
 }
 
 static void close(){
+	closing = true;
 	tv_close();
 	input_close();
 	net_proto_close();

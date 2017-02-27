@@ -26,3 +26,11 @@ void net_proto_peer_t::set_bitcoin_wallet(std::array<uint8_t, BITCOIN_WALLET_LEN
 std::array<uint8_t, BITCOIN_WALLET_LENGTH> net_proto_peer_t::get_bitcoin_wallet(){
 	return bitcoin_wallet;
 }
+
+void net_proto_peer_t::set_last_attempted_connect_time(uint64_t time_micro_s){
+	last_attempted_connect = time_micro_s;
+}
+
+uint64_t net_proto_peer_t::get_last_attempted_connect_time(){
+	return last_attempted_connect;
+}

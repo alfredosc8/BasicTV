@@ -79,6 +79,8 @@ private:
 	uint8_t flags = 0;
 	uint8_t net_flags = 0;
 	std::array<uint8_t, BITCOIN_WALLET_LENGTH> bitcoin_wallet = {{0}};
+	// cache
+	uint64_t last_attempted_connect = 0;
 public:
 	data_id_t id;
 	net_proto_peer_t();
@@ -87,5 +89,7 @@ public:
 	void set_net_flags(uint8_t net_flags_);
 	void set_bitcoin_wallet(std::array<uint8_t, BITCOIN_WALLET_LENGTH> bitcoin_wallet_);
 	std::array<uint8_t, BITCOIN_WALLET_LENGTH> get_bitcoin_wallet();
+	void set_last_attempted_connect_time(uint64_t time_micro_s);
+	uint64_t get_last_attempted_connect_time();
 };
 #endif

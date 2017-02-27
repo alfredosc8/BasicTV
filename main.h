@@ -13,6 +13,7 @@
 extern int argc;
 extern char **argv;
 extern bool running;
+extern bool closing;
 extern std::array<uint8_t, 4> version;
 extern id_t_ production_priv_key_id;
 extern bool id_throw_exception;

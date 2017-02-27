@@ -26,11 +26,15 @@ static void net_proto_initiate_direct_tcp(net_proto_con_req_t *con_req){
 		proto_peer->get_net_ip_str(),
 		proto_peer->get_net_port());
 	socket_ptr->connect();
+	if(socket_ptr->is_alive() == false){
+		print("couldn't connect to peer", P_NOTE);
+	}
+	proto_peer->set_last_attempted_connect_time(
+		get_time_microseconds());
 	net_proto_socket_t *proto_socket_ptr =
 		new net_proto_socket_t;
 	proto_socket_ptr->set_peer_id(peer_id);
 	proto_socket_ptr->set_socket_id(socket_ptr->id.get_id());
-		
 }
 
 static void net_proto_first_id_logic(net_proto_con_req_t *con_req){
@@ -64,7 +68,19 @@ void net_proto_initiate_all_connections(){
 			&second_id,
 			nullptr);
 		if(first_id == self_peer_id){
-			net_proto_first_id_logic(con_req);
+			net_proto_peer_t *second_peer_ptr =
+				PTR_DATA(second_id,
+					 net_proto_peer_t);
+			if(second_peer_ptr == nullptr){
+				print("second peer is a nullptr", P_NOTE);
+				continue;
+			}
+			if(second_peer_ptr->get_last_attempted_connect_time()-1000000 <
+			   get_time_microseconds()){
+				net_proto_first_id_logic(con_req);
+			}else{
+				print("skipping connection to peer, too fast", P_NOTE);
+			}
 		}
 		// second is always inbound, don't bother with that here
 	}
