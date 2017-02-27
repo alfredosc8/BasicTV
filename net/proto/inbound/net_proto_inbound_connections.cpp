@@ -110,6 +110,7 @@ void net_proto_create_incoming_socket(){
  		settings::get_setting_unsigned_def(
 			"network_port",
 			58486));
+	incoming_conn->connect();
 }
 
 void net_proto_accept_all_connections(){
