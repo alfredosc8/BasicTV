@@ -42,6 +42,9 @@ static void net_proto_initiate_direct_tcp(net_proto_con_req_t *con_req){
 		new net_proto_socket_t;
 	proto_socket_ptr->set_peer_id(peer_id);
 	proto_socket_ptr->set_socket_id(socket_ptr->id.get_id());
+	// TODO: return socket and send this in first_id_logic?
+	proto_socket_ptr->send_id(
+		net_proto::peer::get_self_as_peer());
 }
 
 static void net_proto_first_id_logic(net_proto_con_req_t *con_req){
