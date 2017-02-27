@@ -16,11 +16,13 @@
 #include "net_proto_connections.h"
 #include "net_proto_meta.h"
 #include "net_proto_api.h"
+#include "net_proto_routine_requests.h"
 
 void net_proto_loop(){
 	net_proto_handle_inbound_requests();
 	net_proto_handle_outbound_requests();
 	net_proto_connection_manager();
+	net_proto_routine_requests_loop();
 }
 
 static void net_proto_init_self_peer(){
