@@ -79,7 +79,7 @@ void net_proto_initiate_all_connections(){
 			   get_time_microseconds()){
 				net_proto_first_id_logic(con_req);
 			}else{
-				print("skipping connection to peer, too fast", P_NOTE);
+				//print("skipping connection to peer, too fast", P_SPAM);
 			}
 		}
 		// second is always inbound, don't bother with that here
