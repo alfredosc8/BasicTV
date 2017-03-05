@@ -89,13 +89,25 @@ static void net_proto_fill_type_requests(){
 	 	}else{
 			// created locally, distribute out randomly
 			// TODO: assign a peer to send out to in type itself
-			net_proto_socket_t *proto_socket_ptr =
-				PTR_DATA(
+			id_t_ proto_peer_id =
+				net_proto::peer::random_peer_id();
+			if(proto_peer_id == ID_BLANK_ID){
+				// completely isolated from network
+				continue;
+			}
+			uint32_t try_count = 0;
+			net_proto_socket_t *proto_socket_ptr = nullptr;
+			do{
+				proto_socket_ptr = PTR_DATA(
 					net_proto::socket::optimal_proto_socket_of_peer(
-						net_proto::peer::random_peer_id()),
+						proto_peer_id),
 					net_proto_socket_t);
+				proto_peer_id =
+					net_proto::peer::random_peer_id();
+				try_count++;
+			}while(proto_socket_ptr == nullptr && try_count < 8);
 			if(proto_socket_ptr == nullptr){
-				print("socket is a nullptr", P_SPAM);
+				// no open socket to any peer
 				continue;
 			}
 			proto_socket_ptr->send_id(

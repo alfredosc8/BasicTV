@@ -137,7 +137,6 @@ id_t_ net_proto::peer::random_peer_id(){
 		id_api::cache::get(
 			"net_proto_peer_t");
 	if(proto_peer_vector.size() < 2){
-		print("no connected clients to pull random ID from", P_SPAM);
 		return ID_BLANK_ID;
 	}
 	std::random_shuffle(
