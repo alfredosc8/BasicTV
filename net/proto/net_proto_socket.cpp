@@ -77,7 +77,25 @@ void net_proto_socket_t::set_flags(uint8_t flags_){
 
 void net_proto_socket_t::bare_recv(){
 	last_update_time_micro_s = get_time_microseconds();
-	print("implement me", P_CRIT);
+	net_socket_t *socket_ptr =
+		PTR_DATA_FAST(
+			socket_id,
+			net_socket_t);
+	if(socket_ptr == nullptr){
+		print("socket for net_proto_socket_t is a nullptr", P_WARN);
+		return;
+	}
+	std::vector<uint8_t> socket_buf =
+		socket_ptr->recv_all_buffer();
+	working_buffer.insert(
+		working_buffer.end(),
+		socket_buf.begin(),
+		socket_buf.end());
+	// is only responsible for updating the bare recv vector
+	/*
+	  TODO: don't copy the information over, but just return a pointer
+	  or something (of course make it thread safe tho).
+	 */
 }
 
 void net_proto_socket_t::set_socket_id(id_t_ socket_id_){
