@@ -271,10 +271,13 @@ void net_proto_socket_t::read_and_parse(){
  */
 
 void net_proto_socket_t::process_buffer(){
-	print("TODO: pull ID from raw string, not the aftermath", P_NOTE);
 	for(uint64_t i = 0;i < buffer.size();i++){
-		const id_t_ tmp_id =
-			id_api::array::add_data(buffer[i]);
+		id_t_ tmp_id = ID_BLANK_ID;
+		if(buffer[i].size() < sizeof(id_t_)){
+			print("supposedly complete buffer entry is too short for ID", P_WARN);
+			continue;
+		}
+		memcpy(&(tmp_id[0]), buffer[i].data(), sizeof(id_t_));
 		try{
 			net_proto::request::del_id(tmp_id);
 		}catch(...){

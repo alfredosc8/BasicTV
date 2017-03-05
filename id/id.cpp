@@ -271,9 +271,6 @@ static void id_export_raw(uint8_t *var, uint64_t size, std::vector<uint8_t> *vec
 
 #define ID_EXPORT(var, list) id_export_raw((uint8_t*)&var, sizeof(var), &list)
 
-typedef uint16_t transport_i_t;
-typedef uint32_t transport_size_t;
-
 /*
   flags will be what types to EXCLUDE
  */
@@ -538,4 +535,48 @@ uint32_t data_id_ptr_t::get_length(){
 
 uint8_t data_id_ptr_t::get_flags(){
 	return flags;
+}
+
+/*
+  Data coming in has to be relatively sane
+ */
+
+std::vector<uint8_t> id_transport::get_entry(std::vector<uint8_t> data, transport_i_t trans_i){
+	/*
+	  The following entries should be readable, even if it is encrypted:
+	  0: ID
+	  1: type (32-byte string)
+	  2: public key for decryption
+
+	  Anything beyond this is originally decrypted, and once decrypted, can
+	  be fetched with this function
+	 */
+	uint64_t data_pos = 0;
+	while(data_pos < data.size()){
+		const uint32_t preamble_size =
+			sizeof(transport_i_t)+sizeof(transport_size_t);
+		if(data.size()-data_pos < preamble_size){
+			break;
+		}
+		transport_i_t tmp_trans_i = 0;
+		memcpy(&tmp_trans_i,
+		       data.data()+data_pos,
+		       sizeof(tmp_trans_i)); 
+		transport_size_t tmp_trans_size = 0;
+		memcpy(&tmp_trans_size,
+		       data.data()+data_pos+sizeof(transport_i_t),
+		       sizeof(transport_size_t));
+		if(tmp_trans_i == trans_i){
+			return std::vector<uint8_t>(
+				data.begin()+data_pos+preamble_size,
+				data.begin()+data_pos+preamble_size+tmp_trans_size);
+		}else{
+			data_pos += tmp_trans_size+preamble_size;
+		}
+	}
+	return {};
+}
+
+std::vector<uint8_t> id_transport::set_entry(std::vector<uint8_t> entry){
+	print("implement individual entry setting somehow", P_CRIT);
 }
