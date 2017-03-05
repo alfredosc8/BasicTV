@@ -100,7 +100,7 @@ static void net_proto_accept_unorthodox_connections(net_socket_t *incoming_conn)
 	}
 }
 
-void net_proto_create_incoming_socket(){
+static void net_proto_create_incoming_socket(){
 	net_socket_t *incoming_conn =
 		new net_socket_t;
 	incoming_id =

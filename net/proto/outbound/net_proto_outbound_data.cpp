@@ -95,7 +95,7 @@ static void net_proto_fill_type_requests(){
 						net_proto::peer::random_peer_id()),
 					net_proto_socket_t);
 			if(proto_socket_ptr == nullptr){
-				print("socket is a nullptr", P_WARN);
+				print("socket is a nullptr", P_SPAM);
 				continue;
 			}
 			proto_socket_ptr->send_id(
