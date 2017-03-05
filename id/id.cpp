@@ -41,9 +41,9 @@ static bool encrypt_blacklist_type(std::string type_){
 			encrypt_blacklist.end(),
 			type_) != encrypt_blacklist.end();
 	if(retval){
-		print("blacklisting " + type_, P_NOTE);
+		print("blacklisted " + type_, P_NOTE);
 	}else{
-		print("whitelisting " + type_, P_NOTE);
+		print("whitelisted " + type_, P_NOTE);
 	}
 	return retval;
 }
