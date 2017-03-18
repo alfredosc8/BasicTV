@@ -186,6 +186,9 @@ static void console_accept_connections(){
 	}
 	TCPsocket tmp_socket =
 		socket->get_tcp_socket();
+	if(tmp_socket == nullptr){
+		print("console inbound socket is a nullptr", P_ERR);
+	}
 	TCPsocket new_socket =
 		nullptr;
 	if((new_socket = SDLNet_TCP_Accept(tmp_socket)) != nullptr){

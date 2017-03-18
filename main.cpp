@@ -26,6 +26,7 @@
 #include "convert.h"
 #include "console/console.h"
 #include "system.h"
+#include "escape.h"
 
 /*
   TODO:
@@ -563,10 +564,30 @@ static void benchmark_encryption(std::string method){
 	print("benchmark completed", P_NOTE);
 }
 
-int main(int argc_, char **argv_){
-	argc = argc_;
-	argv = argv_;
-	init();
+static void test_escape_string(){
+	const char escape_char = 0xFF;
+	std::vector<uint8_t> all_escaped_stuff;
+	for(uint64_t i = 0;i < 512;i++){
+		std::vector<uint8_t> tmp =
+			escape_vector(
+				true_rand_byte_vector(
+					8192),
+				escape_char);
+		all_escaped_stuff.insert(
+			all_escaped_stuff.end(),
+			tmp.begin(),
+			tmp.end());
+	}
+	P_V(all_escaped_stuff.size(), P_NOTE);
+	std::pair<std::vector<std::vector<uint8_t> >, std::vector<uint8_t> > deconstructed =
+		unescape_all_vectors(
+			all_escaped_stuff,
+			escape_char);
+	P_V(deconstructed.first.size(), P_NOTE);
+	P_V(deconstructed.second.size(), P_NOTE);
+}
+
+static void benchmark_encryption(){
 	try{
 		if(settings::get_setting("benchmark_encryption") == "rsa"){
 			benchmark_encryption("rsa");
@@ -576,6 +597,13 @@ int main(int argc_, char **argv_){
 			benchmark_encryption("");
 		}
 	}catch(...){} // don't expect it to be set unless it is true
+}
+
+int main(int argc_, char **argv_){
+	argc = argc_;
+	argv = argv_;
+	init();
+	test_escape_string();
 	//test_aes();
 	//test_id_hex();
 	//test_rsa_encryption(); // includes AES too now
