@@ -1,6 +1,5 @@
 #include "net_proto_outbound_data.h"
 #include "../net_proto_socket.h"
-#include "../net_proto_dev_ctrl.h" // apply dev_ctrl function
 #include "../net_proto_meta.h" // apply meta function
 #include "../net_proto_request.h"
 #include "../net_proto_peer.h"

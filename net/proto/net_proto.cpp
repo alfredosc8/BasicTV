@@ -8,7 +8,6 @@
 
 #include "net_proto.h"
 #include "net_proto_socket.h"
-#include "net_proto_dev_ctrl.h"
 #include "inbound/net_proto_inbound_connections.h"
 #include "inbound/net_proto_inbound_data.h"
 #include "outbound/net_proto_outbound_connections.h"

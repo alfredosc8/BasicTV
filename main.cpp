@@ -22,7 +22,7 @@
 #include "net/proto/net_proto.h"
 #include "net/net.h" // two seperate units (right now)
 #include "id/id_api.h"
-#include "compress.h"
+#include "compress/compress.h"
 #include "convert.h"
 #include "console/console.h"
 #include "system.h"
@@ -204,8 +204,8 @@ static void test_compressor(){
 		input_data.push_back(i&0xFF);
 	}
 	std::vector<uint8_t> output_data =
-		compressor::from_xz(
-			compressor::to_xz(
+		compressor::xz::from(
+			compressor::xz::to(
 				input_data,
 				0));
 	if(std::equal(input_data.begin(), input_data.end(), output_data.begin())){

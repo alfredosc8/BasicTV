@@ -16,7 +16,7 @@
 #include "../tv/tv_channel.h"
 #include "../tv/tv_window.h"
 #include "../encrypt/encrypt.h"
-#include "../compress.h"
+#include "../compress/compress.h"
 
 /*
   Because of encryption and compression overheads, making this multithreadable
@@ -338,8 +338,9 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
 		}
 		P_V(retval.size(), P_NOTE);
 		retval =
-			compressor::to_xz(
-				retval, 9);
+			compressor::compress(
+				retval, 9, ID_BLANK_TYPE);
+		// TODO: actually pass a type
 		if(!encrypt_blacklist_type(
 			   convert::array::type::from(
 				   type))){
@@ -427,7 +428,7 @@ void data_id_t::import_data(std::vector<uint8_t> data){
 			data = encrypt_api::decrypt(
 				data, peer_public_key_id);
 		}
-		data = compressor::from_xz(
+		data = compressor::decompress(
 			data);
 	}catch(...){
 		print("can't decode information", P_ERR);

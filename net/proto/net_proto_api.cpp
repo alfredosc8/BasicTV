@@ -122,11 +122,11 @@ id_t_ net_proto::socket::optimal_proto_socket_of_peer(id_t_ peer_id){
 			continue;
 		}
 		if(optimal_socket.first == ID_BLANK_ID ||
-		   proto_socket->get_last_update_micro_s() > optimal_socket.second){
+		   proto_socket->get_last_recv_micro_s() > optimal_socket.second){
 			optimal_socket =
 				std::make_pair(
 					proto_socket_vector[i],
-					proto_socket->get_last_update_micro_s());
+					proto_socket->get_last_recv_micro_s());
 		}
 	}
 	return optimal_socket.first;

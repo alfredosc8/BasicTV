@@ -38,3 +38,5 @@
       - [ ] Bitcoin donations to the node wallet
     - [ ] Send to an RSS feed
     - [ ] Send to an email address
+  - [ ] Implement Zstandard compression
+    - [ ] Create 255 compression dictionaries built-in for different native types

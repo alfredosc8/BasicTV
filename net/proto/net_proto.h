@@ -12,7 +12,6 @@
   Multiple connections can be made to a single client perfectly fine. However,
   the node you are connecting to will register all of the sockets as individual
   peers. 
-
   Multiple connections doesn't make much sense unless you want to increase the
   throughput of the Tor network by opening more circuits. SOCKS proxies are 
   somewhat implemented, but the easy creating and destroying of Tor circuits 
@@ -21,11 +20,7 @@
 
 #define NET_PROTO_MAX_SOCKET_PER_PEER 16
 
-// single identifies the beginning of the metadata, double is single, etc.
-#define NET_PROTO_DEV_CTRL_1 0x11
-
-// adjust this value
-#define NET_PROTO_META_LENGTH 12
+#define NET_PROTO_ESCAPE 0x11
 
 extern void net_proto_init();
 extern void net_proto_loop();

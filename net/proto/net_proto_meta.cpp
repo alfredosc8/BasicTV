@@ -7,8 +7,7 @@
 
 std::vector<uint8_t> net_proto_write_packet_metadata(
         net_proto_standard_data_t data){
-	std::vector<uint8_t> retval = {NET_PROTO_DEV_CTRL_1};
-	WRITE_DATA_META(data.size);
+	std::vector<uint8_t> retval;
 	retval.insert(retval.end(), &(data.peer_id[0]), &(data.peer_id[0])+data.peer_id.size());
 	WRITE_DATA_META(data.ver_major);
 	WRITE_DATA_META(data.ver_minor);
@@ -21,19 +20,23 @@ std::vector<uint8_t> net_proto_write_packet_metadata(
 
 #define READ_DATA_META(ptr)						\
 	if(ptr != nullptr){						\
-		if(offset + sizeof(*ptr) > data_length){		\
+		if(offset + sizeof(*ptr) > data.size()){		\
 			print("metadata is too short", P_ERR);		\
 		}else{							\
-			memcpy(ptr, &data[0], sizeof(*ptr));		\
+			memcpy(ptr, ((uint8_t*)&data[0])+offset, sizeof(*ptr));	\
 		}							\
 	}								\
 	offset += sizeof(*ptr);						\
 
-void net_proto_read_packet_metadata(uint8_t *data,
-				    uint32_t data_length,
+/*
+  New system is using a general escape to encapsulate the standard data and
+  the payload independently, so the stripping of control characters is done
+  automatically and we can read it fine starting from zero
+ */
+
+void net_proto_read_packet_metadata(std::vector<uint8_t> data,
 				    net_proto_standard_data_t *standard_data){
-	uint64_t offset = 1; // NET_PROTO_DEV_CTRL_1
-	READ_DATA_META(&(standard_data->size));
+	uint64_t offset = 0;
 	READ_DATA_META(&(standard_data->peer_id));
 	READ_DATA_META(&(standard_data->ver_major));
 	READ_DATA_META(&(standard_data->ver_minor));

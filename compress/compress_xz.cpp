@@ -1,5 +1,5 @@
-#include "main.h"
-#include "util.h"
+#include "../main.h"
+#include "../util.h"
 #include "compress.h"
 
 /*
@@ -25,7 +25,7 @@ static void compressor_zlib_error_checker(int32_t retval){
 
 // TODO: actually use compression_level
 
-std::vector<uint8_t> compressor::to_xz(std::vector<uint8_t> input,
+std::vector<uint8_t> compressor::xz::to(std::vector<uint8_t> input,
 				       uint8_t compression_level){
 #ifdef __arm__
 	long unsigned int retval_size =
@@ -36,7 +36,7 @@ std::vector<uint8_t> compressor::to_xz(std::vector<uint8_t> input,
 #endif
 	uint8_t *retval_char = new uint8_t[retval_size];
 	compressor_zlib_error_checker(
-		compress(
+		::compress(
 			retval_char,
 			&retval_size,
 			&(input[0]),
@@ -50,7 +50,7 @@ std::vector<uint8_t> compressor::to_xz(std::vector<uint8_t> input,
 	return retval;
 }
 
-std::vector<uint8_t> compressor::from_xz(std::vector<uint8_t> input){
+std::vector<uint8_t> compressor::xz::from(std::vector<uint8_t> input){
 #ifdef __arm__
 	long unsigned int retval_size =
 		input.size()*3;

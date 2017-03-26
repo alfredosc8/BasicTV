@@ -1,0 +1,281 @@
+#include "../../main.h"
+#include "../../id/id_api.h"
+#include "../../util.h"
+#include "../net.h"
+#include "../net_socket.h"
+#include "net_proto_meta.h"
+#include "net_proto_socket.h"
+#include "../../id/id_api.h"
+#include "../../encrypt/encrypt.h"
+
+/*
+  TODO: 
+  make network socket chunk metadata export/import to a standard format
+  clean up some old DEV_CTRL stuff (superceeded by general escape stuff)
+  whittle away at all of the buffers (possibly)
+ */
+
+net_proto_socket_t::net_proto_socket_t() : id(this, __FUNCTION__){
+}
+
+net_proto_socket_t::~net_proto_socket_t(){}
+
+/*
+  bare_* takes care of encryption, decryption, and verification of information
+
+  Should put all information into a second local buffer for reading structs
+ */
+
+void net_proto_socket_t::bare_send(std::vector<uint8_t> data){
+	net_proto_peer_t *proto_peer =
+		PTR_DATA(peer_id,
+			 net_proto_peer_t);
+	if(proto_peer == nullptr){
+		print("proto_peer is a nullptr", P_ERR);
+	}
+	net_socket_t *socket_ptr =
+		PTR_DATA(get_socket_id(),
+			 net_socket_t);
+	if(socket_ptr == nullptr){
+		print("socket is a nullptr", P_ERR);
+	}
+	try{
+		net_proto_standard_data_t std_data;
+		std_data.peer_id = net_proto::peer::get_self_as_peer();
+		std_data.ver_major = VERSION_MAJOR;
+		std_data.ver_minor = VERSION_MINOR;
+		std_data.ver_patch = VERSION_REVISION;
+		const id_t_ pub_key_id =
+			encrypt_api::search::pub_key_from_hash(
+				get_id_hash(
+					proto_peer->id.get_id()));
+		std::vector<uint8_t> payload;
+		if(get_flags() & NET_PROTO_SOCKET_NO_ENCRYPT){
+			payload = data;
+			print("sending data unencrypted", P_WARN);
+		}else{
+			payload =
+				encrypt_api::encrypt(
+					data,
+					pub_key_id);
+			std_data.macros |= NET_STANDARD_ENCRYPT_PACKET;
+		}
+		std_data.size = payload.size();
+		std::vector<uint8_t> data_to_send =
+			net_proto_write_packet_metadata(std_data);
+		data_to_send.insert(
+			data_to_send.end(),
+			payload.begin(),
+			payload.end());
+		socket_ptr->send(data_to_send);
+	}catch(...){
+		print("couldn't send data", P_ERR);
+	}
+			
+}
+
+uint8_t net_proto_socket_t::get_flags(){
+	return flags;
+}
+
+void net_proto_socket_t::set_flags(uint8_t flags_){
+	flags = flags_;
+}
+
+void net_proto_socket_t::bare_recv(){
+	last_update_time_micro_s = get_time_microseconds();
+	net_socket_t *socket_ptr =
+		PTR_DATA_FAST(
+			socket_id,
+			net_socket_t);
+	if(socket_ptr == nullptr){
+		print("socket for net_proto_socket_t is a nullptr", P_WARN);
+		return;
+	}
+	std::vector<uint8_t> socket_buf =
+		socket_ptr->recv_all_buffer();
+	working_buffer.insert(
+		working_buffer.end(),
+		socket_buf.begin(),
+		socket_buf.end());
+	// is only responsible for updating the bare recv vector
+	/*
+	  TODO: don't copy the information over, but just return a pointer
+	  or something (of course make it thread safe tho).
+	 */
+}
+
+void net_proto_socket_t::set_socket_id(id_t_ socket_id_){
+	socket_id = socket_id_;
+	working_buffer.clear();
+	if(buffer.size() != 0){
+		print("valid buffers still exist, should have fetched the structs before setting new socket_id", P_WARN);
+	}
+	buffer.clear();
+}
+
+id_t_ net_proto_socket_t::get_socket_id(){
+	return socket_id;
+}
+
+void net_proto_socket_t::set_peer_id(id_t_ peer_id_){
+	peer_id = peer_id_;
+}
+
+id_t_ net_proto_socket_t::get_peer_id(){
+	return peer_id;
+}
+
+std::vector<std::vector<uint8_t> > net_proto_socket_t::get_buffer(){
+	std::vector<std::vector<uint8_t> > retval;
+	retval = buffer;
+	buffer.clear();
+	return retval;
+}
+
+void net_proto_socket_t::send_id(id_t_ id_){
+	data_id_t *ptr_id =
+		PTR_ID(id_, );
+	if(ptr_id == nullptr){
+		print("can't send non-existent ID", P_NOTE);
+		return;
+	}
+	std::string type = ptr_id->get_type();
+	/*
+	  The "malicious" flag isn't the only protection. NONET flags in the
+	  data should be tripped when anything serious is being handled (RSA
+	  private keys). That doesn't inherently mean nothing is sent though,
+	  and this makes it not fill the request at all.
+
+	  There are currently three checks for malicious information:
+	  1. Constructor has NONET
+	  2. Fulfilling net_proto_request_t checks it with DDoS vectors
+	  3. Right here (only for security)
+	 */
+	if(type == "encrypt_priv_key_t"){
+		print("malicious request, not filling", P_WARN);
+	}else{
+		net_socket_t *socket =
+			PTR_DATA(socket_id,
+				 net_socket_t);
+		if(socket == nullptr){
+			print("socket is invalid, can't send", P_WARN);
+			return;
+		}
+		std::vector<uint8_t> exported_data =
+			ptr_id->export_data(ID_DATA_NONET);
+		// encryption status of encrypt_pub_key_t and similar types
+		// should be handled inside of the export function
+		try{
+			socket->send(exported_data);
+		}catch(...){
+			print("cannot send ID across socket", P_WARN);
+		}
+	}
+}
+
+void net_proto_socket_t::send_id_vector(std::vector<id_t_> id_vector){
+	for(uint64_t i = 0;i < id_vector.size();i++){
+		send_id(id_vector[i]);
+	}
+}
+
+// isn't used outside of this file (should be in meta though).
+
+static std::pair<net_proto_standard_data_t, std::vector<uint8_t> >
+net_proto_socket_read_struct_segment(std::vector<uint8_t> working_buffer){
+	// size is the rest of data, not the size of the read data
+	std::pair<net_proto_standard_data_t, std::vector<uint8_t> > retval;
+	net_proto_read_packet_metadata(working_buffer.data(),
+				       working_buffer.size(),
+				       &retval.first);
+	/*
+	  I don't see a need to have a sanity check with this
+	 */
+	if(working_buffer.size() >= retval.first.size){
+		uint8_t *start = working_buffer.data()+NET_PROTO_STANDARD_DATA_LENGTH;
+		uint8_t *end = working_buffer.data()+NET_PROTO_STANDARD_DATA_LENGTH+retval.first.size;
+		retval.second =
+			std::vector<uint8_t>(start, end);
+	}
+	return retval;
+}
+
+/*
+  TODO: destroy this monstrocity and replace it entirely with pure escapes.
+  The chunk of data itself will get an escape, and the metadata about the
+  peer itself (version, encryption public key ID, other stuff) will be inside
+  of another. The metadata will be sent first, and the escaped payload will be
+  second (works well with encryption too, since there is no half and half
+  encryption used here). They both use the NET_PROTO_ESCAPE.
+ */
+
+void net_proto_socket_t::read_and_parse(){
+	net_socket_t *socket_ptr =
+		PTR_DATA(socket_id,
+			 net_socket_t);
+	if(socket_ptr == nullptr){
+		print("socket_ptr is a nullptr", P_ERR);
+	}
+	bare_recv();
+	if(working_buffer.size() != 0){
+		try{
+			std::pair<std::vector<uint8_t>, std::vector<uint8_t> > chunk =
+				unescape_vector(
+					working_buffer,
+					NET_PROTO_ESCAPE);
+		}catch(...){
+			// couldn't escape the vector, should more well define
+			// the conditions for throwing errors here
+		}
+		if(chunk.first.size() != 0){
+			if(curr_prefix.size() == 0){
+				curr_prefix = chunk.first;
+			}else{
+				
+			}
+		}
+	}
+}
+
+/*
+  TODO: 
+  CHECK ENCRYPT_PUB_KEY_T FOR CORRECTNESS HERE
+  NOW
+ */
+
+void net_proto_socket_t::process_buffer(){
+	for(uint64_t i = 0;i < buffer.size();i++){
+		id_t_ tmp_id = ID_BLANK_ID;
+		if(buffer[i].size() < sizeof(id_t_)){
+			print("supposedly complete buffer entry is too short for ID", P_WARN);
+			continue;
+		}
+		memcpy(&(tmp_id[0]), buffer[i].data(), sizeof(id_t_));
+		try{
+			net_proto::request::del_id(tmp_id);
+		}catch(...){
+			print("received information not requested from a socket", P_WARN);
+		}
+	}
+	buffer.clear();
+}
+
+void net_proto_socket_t::update(){
+	read_and_parse();
+	process_buffer();
+}
+
+uint64_t net_proto_socket_t::get_last_update_micro_s(){
+	return last_update_time_micro_s;
+}
+
+bool net_proto_socket_t::is_alive(){
+	net_socket_t *socket =
+		PTR_DATA(socket_id,
+			 net_socket_t);
+	if(socket == nullptr){
+		return false;
+	}
+	return socket->is_alive();
+}

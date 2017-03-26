@@ -6,7 +6,6 @@
 
 /*
   This metadata needs to be readable at all times
-
   TODO: possibly allow for unencrypted traffic through this system
  */
 
@@ -21,7 +20,6 @@ typedef uint32_t net_proto_standard_unused_t;
 struct net_proto_standard_data_t{
 private:
 public:
-	net_proto_standard_size_t size = 0;
 	net_proto_standard_id_t peer_id = ID_BLANK_ID;
 	net_proto_standard_ver_t ver_major = 0;
 	net_proto_standard_ver_t ver_minor = 0;
@@ -34,8 +32,7 @@ extern std::vector<uint8_t> net_proto_write_packet_metadata(
         net_proto_standard_data_t data);
 
 extern void net_proto_read_packet_metadata(
-	uint8_t *data,
-	uint32_t data_length,
+	std::vector<uint8_t> data,
 	net_proto_standard_data_t *standard_data);
 	
 #endif
