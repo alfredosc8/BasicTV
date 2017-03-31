@@ -20,14 +20,14 @@
 #define ID_LENGTH 40
 #define TYPE_LENGTH 32 // standard maximum length for C++ types
 typedef std::array<uint8_t, ID_LENGTH> id_t_;
-//typedef uint64_t id_t_; // needs a snazzier name
 
 const id_t_ blank_id = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 const std::array<uint8_t, 32> blank_type = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+const std::array<uint8_t, 32> blank_hash = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 #define ID_BLANK_ID blank_id
 #define ID_BLANK_TYPE (blank_type)
-#define ID_BLANK_HASH (blank_type)
+#define ID_BLANK_HASH (blank_hash)
 
 #define ID_DATA_NOEXP (1 << 0)
 #define ID_DATA_NONET (1 << 1)

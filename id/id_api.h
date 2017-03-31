@@ -79,12 +79,20 @@ namespace id_api{
 		  Perhaps sort by last access time (when that gets implemented)?
 		 */
 	};
+	namespace disk{
+		void build_index_from_disk();
+		// handled by destroy, but could be independent...
+		void save_to_disk(std::vector<id_t_>);
+		void save_to_disk(id_t_);
+		void load_from_disk(std::vector<id_t_>);
+		void load_from_disk(id_t_);
+		std::string get_filename(id_t_);
+	};
 	namespace import{
 		void load_all_of_type(std::string type, uint8_t flags);
 		// used for saving, not needed for network (too slow as well)
 		uint64_t ver_on_disk(id_t_);
 		// used internally, called by id_api::array::ptr_* and others
-		void load_from_disk(id_t_);
 		void load_from_net(id_t_);
 	};
 	// metadata from the raw, unencrypted, and decompressed string
@@ -100,4 +108,5 @@ namespace id_api{
 	void destroy(id_t_ id);
 	void destroy_all_data();
 };
+
 #endif

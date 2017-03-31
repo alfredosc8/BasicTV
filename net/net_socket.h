@@ -1,5 +1,5 @@
 #include "../id/id.h"
-#include "../stats.h"
+#include "../stats/stats.h"
 #include "net_const.h"
 #include "net_ip.h"
 #include "net_proxy.h"

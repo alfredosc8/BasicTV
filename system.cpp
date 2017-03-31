@@ -42,10 +42,16 @@ void system_handler::rm(std::string file){
 
 std::vector<std::string> system_handler::find(std::string directory, std::string search){
 	// no need for anything more advanced right now
-	std::string raw_cmd = cmd_output("find " + directory + " | grep " + search);
-	std::vector<std::string> retval =
-		newline_to_vector(
-			cmd_output("find " + directory + " | grep " + search));
+	std::vector<std::string> retval;
+	if(search != ""){
+		retval =
+			newline_to_vector(
+				cmd_output("find " + directory + " | grep " + search));;
+	}else{
+		retval =
+			newline_to_vector(
+				cmd_output("find " + directory));
+	}
 	if(retval.size() > 1){
 		retval.erase(retval.begin()); // directory itself
 	}

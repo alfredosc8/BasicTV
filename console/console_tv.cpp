@@ -136,7 +136,7 @@ DEC_CMD(tv_test_audio){
 	const uint64_t start_time_micro_s =
 		get_time_microseconds()+std::stoull(registers.at(0));
 	const std::string file =
-		cmd_vector.at(1);
+		registers.at(1);
 	tv_window_t *window = nullptr;
 	std::vector<id_t_> all_windows =
 		id_api::cache::get(

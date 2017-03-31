@@ -136,3 +136,10 @@ bool file::is_file(std::string file){
 		return S_ISREG(sb.st_mode);
 	}
 }
+
+std::string file::ensure_slash_at_end(std::string str){
+	if(str[str.size()-1] != SLASH){
+		str += std::string(1, SLASH);
+	}
+	return str;
+}

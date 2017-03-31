@@ -16,14 +16,10 @@
 #include "../net/proto/net_proto_con_req.h"
 #include "../net/proto/net_proto.h"
 #include "../net/net.h"
-
 #include "../input/input.h"
 #include "../input/input_ir.h"
-
 #include "../settings.h"
-
 #include "../system.h"
-
 
 static std::vector<data_id_t*> id_list;
 static std::vector<std::pair<std::vector<id_t_>, std::array<uint8_t, TYPE_LENGTH> > > type_cache;
@@ -47,7 +43,6 @@ data_id_t *id_api::array::ptr_id(id_t_ id,
 				 std::string type,
 				 uint8_t flags){
 	if(id == ID_BLANK_ID){
-		print("attempted to fetch a blank ID", P_SPAM);
 		return nullptr;
 	}
 	data_id_t *retval = id_find(id);
@@ -56,9 +51,9 @@ data_id_t *id_api::array::ptr_id(id_t_ id,
 		if(type != "console_t"){
 			try{
 				print("attempting import from disk", P_SPAM);
-				id_api::import::load_from_disk(id);
+				id_api::disk::load_from_disk(id);
 			}catch(...){
-				print("TODO: create network requests for non-local data", P_WARN);
+				net_proto::request::add_id(id);
 			}
 		}
 	}else if(retval->get_type() != type && type != ""){
@@ -317,19 +312,9 @@ std::vector<id_t_> id_api::get_all(){
   very nice for cluster computing, but that's not a high priority.
  */
 
-static std::string id_api_get_filename(id_t_ id_){
-	std::string retval;
-	data_id_t *id = PTR_ID(id_, );
-	retval += settings::get_setting("data_folder");
-	retval += id->get_type() + "/";
-	retval += convert::array::id::to_hex(id_) + "_" + std::to_string(id->get_mod_inc()); // + _ + id incrementor (if it existed)
-	P_V_S(retval, P_SPAM);
-	return retval;
-}
-
 static bool id_api_should_write_to_disk_mod_inc(id_t_ id_){
 	std::string directory =
-		id_api_get_filename(id_);
+		id_api::disk::get_filename(id_);
 	directory =
 		directory.substr(
 			0,
@@ -379,34 +364,13 @@ static bool id_api_should_write_to_disk_mod_inc(id_t_ id_){
  */
 
 void id_api::destroy(id_t_ id){	
-	bool should_write_to_disk =
-		id_api_should_write_to_disk_mod_inc(id);
-	// handles mod_inc logic
-	if(unlikely(should_write_to_disk == false)){
-		return;
-	}
-	data_id_t *ptr = PTR_ID(id, );
-	if(ptr == nullptr){
-		return;
-	}
-	std::vector<uint8_t> exportable_data =
-		ptr->export_data(ID_DATA_NONET);
-	const bool can_export = settings::get_setting("export_data") == "true";
-	if(likely((exportable_data.size() != 0) && can_export)){
-		// make this work on Windows
-		const std::string filename =
-			id_api_get_filename(id);
-		system_handler::rm(filename);
-		system_handler::mkdir(settings::get_setting("data_folder")+ptr->get_type());
-		std::ofstream out(filename, std::ios::out | std::ios::binary);
-		if(out.is_open() == false){
-			print("cannot open file for exporting", P_ERR);
-			
-		}
-		out.write((const char*)exportable_data.data(), exportable_data.size());
-		out.close();
+	if(id_api_should_write_to_disk_mod_inc(id) == true &&
+	   settings::get_setting("export_data") == "true"){
+		id_api::disk::save_to_disk(id);
 	}
 	// TV subsystem
+	data_id_t *ptr =
+		PTR_ID(id, );
 	DELETE_TYPE_2(tv_frame_video_t);
 	DELETE_TYPE_2(tv_frame_audio_t);
 	DELETE_TYPE_2(tv_frame_caption_t);
@@ -459,7 +423,7 @@ void id_api::destroy_all_data(){
 			continue;
 		}
 		destroy(list_tmp[i]->get_id());
-		P_V(list_tmp.size(), P_NOTE);
+		P_V(list_tmp.size(), P_DEBUG);
 	}
 	destroy(production_priv_key_id);
 }
@@ -531,8 +495,9 @@ void id_api::import::load_all_of_type(std::string type, uint8_t flags){
 	if(flags & ID_API_IMPORT_FROM_DISK){
 		std::vector<std::string> find_out =
 			system_handler::find_all_files(
-				settings::get_setting(
-					"data_folder"),
+				file::ensure_slash_at_end(
+					settings::get_setting(
+						"data_folder")),
 				type);
 		for(uint64_t i = 0;i < find_out.size();i++){
 			P_V_S(find_out[i], P_SPAM);
@@ -570,31 +535,6 @@ void id_api::import::load_all_of_type(std::string type, uint8_t flags){
 		  instead to just query all resources to get it from the net at
 		  least on the disk, and from on the disk to memory.
 		 */
-	}
-}
-
-void id_api::import::load_from_disk(id_t_ id){
-	std::vector<std::string> entries =
-		system_handler::find_all_files(
-			settings::get_setting(
-				"data_folder"),
-			convert::array::id::to_hex(
-				id));
-
-	if(entries.size() > 1){
-		print("too many IDs", P_ERR);
-	}else if(entries.size() == 1){
-		std::ifstream in(entries[0], std::ios::binary);
-		if(in.is_open() == false){
-			print("unable to open ID file", P_ERR);
-		}
-		std::vector<uint8_t> id_data;
-		char tmp;
-		while(in.get(tmp)){
-			id_data.push_back(tmp);
-		}
-		in.close();
-		id_api::array::add_data(id_data);
 	}
 }
 

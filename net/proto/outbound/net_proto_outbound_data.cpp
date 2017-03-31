@@ -132,7 +132,6 @@ static void net_proto_fill_id_requests(){
 	 	if(peer_id != net_proto::peer::get_self_as_peer()){
 			const std::vector<id_t_> id_vector =
 				proto_id_request->get_ids();
-			
 			try{
 				net_proto_send_logic(
 					id_vector, peer_id);

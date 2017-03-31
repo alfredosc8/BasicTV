@@ -2,15 +2,24 @@
 #include "../util.h"
 #include "net.h"
 #include "net_socket.h"
-#include "../stats.h"
+#include "../stats/stats.h"
 #include "../id/id_api.h"
 
 net_socket_t::net_socket_t() : id(this, __FUNCTION__){
 	id.add_data(&status, 8);
 	id.noexp_all_data();
 	id.nonet_all_data();
-	outbound_stat_sample_set_id = (new stat_sample_set_t)->id.get_id();
-	inbound_stat_sample_set_id = (new stat_sample_set_t)->id.get_id();
+	stat_sample_set_t *outbound_stat_sample_set_ptr =
+		new stat_sample_set_t;
+	stat_sample_set_t *inbound_stat_sample_set_ptr =
+		new stat_sample_set_t;
+	// just for speed and usage over time
+	outbound_stat_sample_set_ptr->reset(
+		{8, 8});
+	inbound_stat_sample_set_ptr->reset(
+		{8, 8});
+	outbound_stat_sample_set_id = outbound_stat_sample_set_ptr->id.get_id();;
+	inbound_stat_sample_set_id = inbound_stat_sample_set_ptr->id.get_id();;
 }
 
 net_socket_t::~net_socket_t(){}
@@ -50,11 +59,10 @@ bool net_socket_t::is_alive(){
 
 void net_socket_t::send(std::vector<uint8_t> data){
 	socket_check();
-	uint8_t *byte_ptr = new uint8_t[data.size()];
-	for(uint64_t i = 0;i < data.size();i++){
-		byte_ptr[i] = data[i];
-	}
-	const int64_t sent_bytes = SDLNet_TCP_Send(socket, byte_ptr, data.size());
+	const int64_t sent_bytes =
+		SDLNet_TCP_Send(socket,
+				data.data(),
+				data.size());
 	if(sent_bytes == -1){
 		print("server port mismatch", P_ERR);
 	}else if(sent_bytes > 0 && sent_bytes != (int64_t)data.size()){
@@ -62,18 +70,18 @@ void net_socket_t::send(std::vector<uint8_t> data){
 		disconnect();
 	}
 	print("sent " + std::to_string(sent_bytes) + " bytes", P_DEBUG);
-	std::pair<uint64_t, uint64_t> data_point =
-		std::make_pair(
-			get_time_microseconds(),
-			sent_bytes);
-	stat_sample_set_t *outbound_sample_set =
-		PTR_DATA(outbound_stat_sample_set_id,
-			 stat_sample_set_t);
-	if(outbound_sample_set != nullptr){
-		outbound_sample_set->add_sample(
-			data_point.first,
-			data_point.second);
-	}
+	// std::pair<uint64_t, uint64_t> data_point =
+	// 	std::make_pair(
+	// 		get_time_microseconds(),
+	// 		sent_bytes);
+	// stat_sample_set_t *outbound_sample_set =
+	// 	PTR_DATA(outbound_stat_sample_set_id,
+	// 		 stat_sample_set_t);
+	// if(outbound_sample_set != nullptr){
+	// 	outbound_sample_set->add(
+	// 	{std::vector<uint8_t>(&data_point.first, &data_point.first+1),
+	// 	 std::vector<uint8_t>(&data_point.first, &data_point.first+1)});
+	// }
 }
 
 void net_socket_t::send(std::string data){
@@ -129,14 +137,15 @@ std::vector<uint8_t> net_socket_t::recv(uint64_t byte_count, uint64_t flags){
 			}
 		}
 		if(data_received != 0){
-			stat_sample_set_t *inbound_stat_sample_set =
-				PTR_DATA(inbound_stat_sample_set_id,
-					 stat_sample_set_t);
-			if(inbound_stat_sample_set != nullptr){
-				inbound_stat_sample_set->add_sample(
-					get_time_microseconds(),
-					data_received);
-			}
+			// stat_sample_set_t *inbound_stat_sample_set =
+			// 	PTR_DATA(inbound_stat_sample_set_id,
+			// 		 stat_sample_set_t);
+			// uint64_t time_microseconds = get_time_microseconds();
+			// if(inbound_stat_sample_set != nullptr){
+			// 	inbound_stat_sample_set->add(
+			// 	{std::vector<uint8_t>(&time_microseconds, &time_microseconds+1),
+			// 	 std::vector<uint8_t>(&time_microseconds, &time_microseconds+1)});
+			// }
 		}
 		if(local_buffer.size() >= byte_count){
 			auto start = local_buffer.begin();

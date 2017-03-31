@@ -20,7 +20,7 @@
 #include "input/input.h"
 #include "input/input_ir.h"
 #include "net/proto/net_proto.h"
-#include "net/net.h" // two seperate units (right now)
+#include "net/net.h"
 #include "id/id_api.h"
 #include "compress/compress.h"
 #include "convert.h"
@@ -42,7 +42,16 @@
 
 int argc = 0;
 char **argv = nullptr;
-bool running = true;
+/*
+  TODO: should probably move into one globabl program state variable with
+  bitwiser operators
+
+  These aren't exactly opposite of each other, since the closing behavior
+  is not compatiable with the initialization (running is the last thing to
+  flip, since not all program functions are defined as operating at that
+  point).
+*/
+bool running = false;
 bool closing = false;
 
 /*
@@ -152,6 +161,8 @@ static void init(){
 	settings::set_setting("network_port", "58486");
 	settings::set_setting("net_hostname", "");
 	settings::set_setting("net_open_tcp_port", "false");
+	// console port
+	settings::set_setting("console_port", "59000");
 	// disable socks
 	settings::set_setting("socks_enable", "false");
 	// if SOCKS cannot be set up properly, then terminate
@@ -163,6 +174,8 @@ static void init(){
 	// enable subsystems in settings
 	settings::set_setting("video", "true");
 	settings::set_setting("audio", "true");
+	// throw level
+	settings::set_setting("throw_level", std::to_string(P_CRIT));
 	// shouldn't need to disable other stuff
 	/*
 	  Using "~" doesn't work with C++, so get the information from getenv()
@@ -603,7 +616,8 @@ int main(int argc_, char **argv_){
 	argc = argc_;
 	argv = argv_;
 	init();
-	test_escape_string();
+	running = true;
+	//test_escape_string();
 	//test_aes();
 	//test_id_hex();
 	//test_rsa_encryption(); // includes AES too now

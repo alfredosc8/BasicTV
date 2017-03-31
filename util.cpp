@@ -85,8 +85,11 @@ void print(std::string data, int level, const char *func){
 		}
 		std::cout << print_level_text(level) << " "
 			  << " " << data << std::endl;
-		if(level == P_CRIT){
+		if(settings::get_setting_unsigned_def(
+			   "throw_level", P_CRIT) <= level){
 			std::cerr << "CRITICAL ERROR" << std::endl;
+			// standard throws aren't as easily debuggable
+			std::raise(SIGINT);
 		}
 		if(level >= P_ERR){
 			throw std::runtime_error(data);

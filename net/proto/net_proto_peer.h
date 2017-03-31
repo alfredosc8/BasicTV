@@ -78,7 +78,7 @@ struct net_proto_peer_t : public net_ip_t{
 private:
 	uint8_t flags = 0;
 	uint8_t net_flags = 0;
-	std::array<uint8_t, BITCOIN_WALLET_LENGTH> bitcoin_wallet = {{0}};
+	id_t_ crypto_wallet_id = ID_BLANK_ID;
 	// cache
 	uint64_t last_attempted_connect = 0;
 public:

@@ -29,6 +29,7 @@ net_proto_socket_t::net_proto_socket_t() : id(this, __FUNCTION__){
 	std_data_.ver_patch = VERSION_REVISION;
 	std_data_.macros = 0;
 	std_data_.unused = 0;
+	std_data_.peer_id = net_proto::peer::get_self_as_peer();
 	std_data =
 		net_proto_write_packet_metadata(
 			std_data_);
@@ -47,6 +48,7 @@ void net_proto_socket_t::update_working_buffer(){
 	std::vector<uint8_t> buffer =
 		socket_ptr->recv_all_buffer();
 	if(buffer.size() != 0){
+		P_V(buffer.size(), P_SPAM);
 		last_recv_micro_s = get_time_microseconds();
 		working_buffer.insert(
 			working_buffer.end(),
@@ -66,12 +68,18 @@ void net_proto_socket_t::update_block_buffer(){
 	  TODO: Possibly do sanity checks on length of first segment and slide
 	  all buffers left by one to fix?
 	 */
+	if(block_buffer.size() == 0){
+		block_buffer.push_back(
+			std::make_pair(
+				std::vector<uint8_t>(),
+				std::vector<uint8_t>()));
+	}
 	for(uint64_t i = 0;i < block_data.first.size();i++){
-		if(block_buffer.end()->first.size() == 0){
-			block_buffer.end()->first =
+		if(block_buffer[block_buffer.size()-1].first.size() == 0){
+			block_buffer[block_buffer.size()-1].first =
 				block_data.first[i];
-		}else if(block_buffer.end()->second.size() == 0){
-			block_buffer.end()->second =
+		}else if(block_buffer[block_buffer.size()-1].second.size() == 0){
+			block_buffer[block_buffer.size()-1].second =
 				block_data.first[i];
 		}else{
 			block_buffer.push_back(
@@ -112,8 +120,10 @@ void net_proto_socket_t::send_id(id_t_ id_){
 	if(socket_ptr == nullptr){
 		print("socket is a nullptr", P_ERR);
 	}
-	socket_ptr->send(std_data);
-	socket_ptr->send(payload);
+	socket_ptr->send(escape_vector(std_data, NET_PROTO_ESCAPE));
+	socket_ptr->send(escape_vector(payload, NET_PROTO_ESCAPE));
+	P_V(std_data.size(), P_SPAM);
+	P_V(payload.size(), P_SPAM);
 }
 
 void net_proto_socket_t::send_id_vector(std::vector<id_t_> id_vector){

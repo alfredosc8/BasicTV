@@ -37,6 +37,4 @@ public:
 	uint16_t get_net_port();
 };
 
-
-
 #endif

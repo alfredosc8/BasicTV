@@ -15,8 +15,6 @@ typedef uint8_t net_proto_standard_ver_t;
 typedef uint8_t net_proto_standard_macros_t;
 typedef uint32_t net_proto_standard_unused_t;
 
-#define NET_PROTO_STANDARD_DATA_LENGTH (4+1+1+1+1+4+40)
-
 struct net_proto_standard_data_t{
 private:
 public:

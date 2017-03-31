@@ -97,14 +97,16 @@ void data_id_t::init_gen_id(){
 		PTR_DATA(production_priv_key_id,
 			 encrypt_priv_key_t);
 	if(priv_key == nullptr){
-		print("production_priv_key_id is a nullptr", P_WARN);
+		print("production_priv_key_id is a nullptr",
+		      (running) ? P_WARN : P_NOTE);
 		return;
 	}
 	encrypt_pub_key_t *pub_key =
 		PTR_DATA(priv_key->get_pub_key_id(),
 			 encrypt_pub_key_t);
 	if(pub_key == nullptr){
-		print("production_priv_key_id's public key is a nullptr", P_WARN);
+		print("production_priv_key_id's public key is a nullptr",
+		      (running) ? P_WARN : P_NOTE);
 		return;
 	}
 	set_id_hash(&id,
@@ -336,7 +338,7 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
 			// P_V(trans_i, P_SPAM);
 			// P_V(trans_size, P_SPAM);
 		}
-		P_V(retval.size(), P_NOTE);
+		P_V(retval.size(), P_SPAM);
 		retval =
 			compressor::compress(
 				retval, 9, ID_BLANK_TYPE);

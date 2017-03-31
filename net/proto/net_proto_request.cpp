@@ -70,6 +70,7 @@ net_proto_id_request_t::~net_proto_id_request_t(){}
 net_proto_type_request_t::net_proto_type_request_t() : id(this, __FUNCTION__){
 	list_set_virtual_data(&id);
 	list_bare_virtual_data(&id);
+	id.add_data(&(type[0]), 32);
 	id.noexp_all_data();
 }
 

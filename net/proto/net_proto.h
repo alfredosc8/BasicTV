@@ -20,7 +20,7 @@
 
 #define NET_PROTO_MAX_SOCKET_PER_PEER 16
 
-#define NET_PROTO_ESCAPE 0x11
+#define NET_PROTO_ESCAPE 17
 
 extern void net_proto_init();
 extern void net_proto_loop();

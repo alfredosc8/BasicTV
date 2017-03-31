@@ -21,6 +21,8 @@
   It is possible to disable encryption for certain parts of the stream to allow
   for sending encrypt_pub_key_t along the socket without having to take care
   of SSL or creating an entire non-encrypted connection.
+
+  TODO: re-add stats somehow
  */
 
 #define NET_PROTO_SOCKET_NO_ENCRYPT (1 << 1)

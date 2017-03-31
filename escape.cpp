@@ -51,12 +51,21 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t> > unescape_vector(
 	std::vector<uint8_t> vector,
 	char escape_char){
 	std::pair<std::vector<uint8_t>, std::vector<uint8_t> > retval;
+	// bool fixed = false;
+	// while(!(vector[0] == escape_char &&
+	// 	vector[1] != escape_char) && vector.size() > 2){
+	// 	fixed = true;
+	// 	// can't start on an escaped sequence
+	// 	vector.erase(vector.begin());
+	// }
+	// if(fixed){
+	// 	print("had to adjust block to start on a valid header", P_NOTE);
+	// }
 	if(vector.size() <= 5){ // escape char + 32-bit length
-		print("vector is too small to contain metadata", P_ERR);
-	}
-	if(vector[0] == escape_char){
-		// TODO: get better behavior
-		print("vector to escape doesn't start with escape char, fishy", P_ERR);
+		print("vector is too small to contain metadata", P_NOTE);
+		return std::make_pair(
+			std::vector<uint8_t>({}),
+			vector);
 	}
 	vector.erase(vector.begin());
 	uint32_t escaped_length = 0;
@@ -68,6 +77,8 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t> > unescape_vector(
 	escaped_length = NBO_32(escaped_length);
 	P_V(escaped_length, P_SPAM);
 	if(escaped_length > vector.size()){
+		P_V_B(escaped_length, P_NOTE);
+		P_V_B(vector.size(), P_NOTE);
 		print("escaped_length is longer than actual data, not parsing", P_ERR);
 	}
 	std::vector<uint8_t> payload(

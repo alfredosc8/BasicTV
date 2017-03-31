@@ -162,10 +162,10 @@ static uint8_t encrypt_gen_optimal_encrypt(std::vector<uint8_t> data,
 		print("TODO: (possibly) implement larger than one block headers for unsafe keys", P_ERR);
 	}
 	if(data.size()+13 > key.size()){
-		print("using AES-192 encryption", P_NOTE);
+		print("using AES-192 encryption", P_DEBUG);
 		return ENCRYPT_AES192_SHA256;
 	}else{
-		print("using plain RSA encryption (small payload)", P_NOTE);
+		print("using plain RSA encryption (small payload)", P_DEBUG);
 		return ENCRYPT_RSA;
 	}
 }

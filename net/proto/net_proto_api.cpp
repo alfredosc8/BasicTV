@@ -9,17 +9,37 @@
 #include "net_proto_con_req.h"
 
 static id_t_ self_peer_id = ID_BLANK_ID;
+static std::vector<id_t_> id_request_buffer;
+static std::vector<std::pair<id_t_, int64_t> > linked_list_request_buffer;
+static std::vector<std::array<uint8_t, 32> > type_request_buffer; // ?
 
 void net_proto::request::add_id(id_t_ id){
-	net_proto_id_request_t *id_request_ptr =
-		new net_proto_id_request_t;
-	id_request_ptr->set_peer_id(ID_BLANK_ID); //redundant
-	id_request_ptr->set_ids({id});
-}	
+	// could probably speed this up
+	for(uint64_t i = 0;i < id_request_buffer.size();i++){
+		if(get_id_hash(id) == get_id_hash(id_request_buffer[i])){
+			id_request_buffer.insert(
+				id_request_buffer.begin()+i,
+				id);
+			break;
+		}
+	}
+	id_request_buffer.push_back(id);
+}
 
 void net_proto::request::add_id(std::vector<id_t_> id){
-	for(uint64_t i = 0;i < id.size();i++){
-		add_id(id);
+	// could probably speed this up
+	for(uint64_t c = 0;c < id.size();c++){
+		for(uint64_t i = 0;i < id_request_buffer.size();i++){
+			while(get_id_hash(id[c]) == get_id_hash(id_request_buffer[i])){
+				id_request_buffer.insert(
+					id_request_buffer.begin()+i,
+					id[c]);
+				if(c < id.size()){
+					c++;
+				}
+			}
+		}
+		id_request_buffer.push_back(id[c]);
 	}
 }
 
