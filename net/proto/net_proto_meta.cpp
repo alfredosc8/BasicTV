@@ -3,16 +3,22 @@
 #include "net_proto.h"
 #include "net_proto_meta.h"
 
-#define WRITE_DATA_META(data) retval.insert(retval.end(), &data, &data+sizeof(data))
+#define WRITE_DATA_META(data_) retval.insert(retval.end(), &data_, &data_+1)
 
 std::vector<uint8_t> net_proto_write_packet_metadata(
         net_proto_standard_data_t data){
 	std::vector<uint8_t> retval;
-	retval.insert(retval.end(), &(data.peer_id[0]), &(data.peer_id[0])+data.peer_id.size());
+	convert::nbo::to(
+		data.peer_id.data(), data.peer_id.size());
+	retval.insert(
+		retval.end(),
+		data.peer_id.begin(),
+		data.peer_id.end());
 	WRITE_DATA_META(data.ver_major);
 	WRITE_DATA_META(data.ver_minor);
 	WRITE_DATA_META(data.ver_patch);
 	WRITE_DATA_META(data.macros);
+	data.unused = 0; // defined as always true
 	WRITE_DATA_META(data.unused);
 	return retval;
 }
@@ -20,13 +26,16 @@ std::vector<uint8_t> net_proto_write_packet_metadata(
 
 #define READ_DATA_META(ptr)						\
 	if(ptr != nullptr){						\
-		if(offset + sizeof(*ptr) > data.size()){		\
+		P_V(sizeof(*ptr), P_NOTE);				\
+		P_V(data.size(), P_NOTE);				\
+		if(sizeof(*ptr) > data.size()){				\
 			print("metadata is too short", P_ERR);		\
 		}else{							\
-			memcpy(ptr, ((uint8_t*)&data[0])+offset, sizeof(*ptr));	\
+			memcpy(ptr, data.data(), sizeof(*ptr));		\
+			data.erase(data.begin(),			\
+				   data.begin()+sizeof(*ptr));		\
 		}							\
 	}								\
-	offset += sizeof(*ptr);						\
 
 /*
   New system is using a general escape to encapsulate the standard data and
@@ -36,8 +45,9 @@ std::vector<uint8_t> net_proto_write_packet_metadata(
 
 void net_proto_read_packet_metadata(std::vector<uint8_t> data,
 				    net_proto_standard_data_t *standard_data){
-	uint64_t offset = 0;
 	READ_DATA_META(&(standard_data->peer_id));
+	convert::nbo::to(
+		&(standard_data->peer_id[0]), sizeof(standard_data->peer_id));
 	READ_DATA_META(&(standard_data->ver_major));
 	READ_DATA_META(&(standard_data->ver_minor));
 	READ_DATA_META(&(standard_data->ver_patch));

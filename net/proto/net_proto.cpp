@@ -66,7 +66,7 @@ static void net_proto_verify_bootstrap_nodes(){
 	try{
 		const std::string custom_bootstrap_ip =
 			settings::get_setting(
-				"net_proto_custom_bootstrap_ip");
+				"bootstrap_ip");
 		if(custom_bootstrap_ip != ""){
 			print("adding custom bootstrap ip from settings", P_NOTE);
 			bootstrap_nodes.push_back(
@@ -74,7 +74,7 @@ static void net_proto_verify_bootstrap_nodes(){
 					custom_bootstrap_ip,
 					std::stoi(
 						settings::get_setting(
-							"net_proto_custom_bootstrap_port"))));
+							"bootstrap_port"))));
 		}
 	}catch(...){
 		print("no custom bootstrap node specified", P_NOTE);

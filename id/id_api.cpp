@@ -15,11 +15,13 @@
 #include "../net/proto/net_proto_peer.h"
 #include "../net/proto/net_proto_con_req.h"
 #include "../net/proto/net_proto.h"
+#include "../net/proto/net_proto_socket.h"
 #include "../net/net.h"
 #include "../input/input.h"
 #include "../input/input_ir.h"
 #include "../settings.h"
 #include "../system.h"
+#include "../cryptocurrency.h"
 
 static std::vector<data_id_t*> id_list;
 static std::vector<std::pair<std::vector<id_t_>, std::array<uint8_t, TYPE_LENGTH> > > type_cache;
@@ -292,7 +294,6 @@ std::vector<id_t_> id_api::get_all(){
 // make this less stupid
 
 #define DELETE_TYPE_2(a) if(ptr->get_type() == #a){print("deleting " + (std::string)(#a), P_SPAM);delete (a*)ptr->get_ptr();return;}
-#define DELETE_TYPE(a) if(ptr->get_type() == #a){print("deleting " + (std::string)(#a), P_SPAM);delete (a*)ptr->get_ptr();continue;}
 
 // refactor
 
@@ -363,6 +364,8 @@ static bool id_api_should_write_to_disk_mod_inc(id_t_ id_){
   I start worrying about spreading the load.
  */
 
+// TODO: should probably keep this more updated
+
 void id_api::destroy(id_t_ id){	
 	if(id_api_should_write_to_disk_mod_inc(id) == true &&
 	   settings::get_setting("export_data") == "true"){
@@ -382,6 +385,7 @@ void id_api::destroy(id_t_ id){
 	// net (proto and standard)
 	DELETE_TYPE_2(net_socket_t);
 	DELETE_TYPE_2(net_proto_peer_t);
+	DELETE_TYPE_2(net_proto_socket_t);
 	DELETE_TYPE_2(net_proto_type_request_t);
 	DELETE_TYPE_2(net_proto_id_request_t);
 	DELETE_TYPE_2(net_proto_linked_list_request_t);
@@ -400,7 +404,10 @@ void id_api::destroy(id_t_ id){
 
 	// stats
 	DELETE_TYPE_2(stat_sample_set_t);
+
+	// Count de Monet
 	
+	DELETE_TYPE_2(wallet_set_t);
 	/*
 	  Shouldn't get this far, but if it does, delist it manually
 	 */

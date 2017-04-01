@@ -23,6 +23,12 @@
  */
 
 net_proto_socket_t::net_proto_socket_t() : id(this, __FUNCTION__){
+	id.add_data(&socket_id, 1);
+	id.add_data(&peer_id, 1);
+	id.add_data(&flags, 1);
+	id.add_data(&last_recv_micro_s, 8);
+	id.add_data(&std_data, ~0);
+	id.add_data(&working_buffer, ~0);
 	net_proto_standard_data_t std_data_;
 	std_data_.ver_major = VERSION_MAJOR;
 	std_data_.ver_minor = VERSION_MINOR;
@@ -91,17 +97,6 @@ void net_proto_socket_t::update_block_buffer(){
 	working_buffer = block_data.second;
 }
 
-void net_proto_socket_t::load_blocks_as_data(){
-	/*
-	  Check for encryption
-	  If it doesn't need encryption, remove the request and load it
-	  	TODO: allow accepting data without a request from routine requests
-	  If it does need encryption, fetch the net_peer_t, fetch the pub key,
-	  and work on it from there (not implemented yet)
-	  
-	 */
-}
-
 void net_proto_socket_t::send_id(id_t_ id_){
 	data_id_t *id_tmp =
 		PTR_ID(id_, );
@@ -133,7 +128,58 @@ void net_proto_socket_t::send_id_vector(std::vector<id_t_> id_vector){
 	}
 }
 
+void net_proto_socket_t::load_blocks(){
+	/*
+	  For now, i'm fine with loading this directly into memory and letting
+	  the id_api::destroy take care of exporting it somehow, but I would
+	  like to create an index where information can be stored really
+	  anywhere, and have a more robust intratransport system for this
+	  data (expandable to say giant tape libraries, CD/DVD/BD archvies,
+	  in memory, on disk, etc). However, that is for another day.
+	 */
+	for(uint64_t i = 0;i < block_buffer.size();i++){
+		if(block_buffer[i].first.size() != 0 &&
+		   block_buffer[i].second.size() != 0){
+			/*
+			  They have to at least be complete blocks because of
+			  the encapsulation of the data blocks being sent and
+			  the automatic movement and decapsulation from
+			  working_buffer
+
+			  Since link layer encryption isn't a thing right now,
+			  i'm not worried about implementing decoding code,
+			  although that wouldn't be a bad idea
+			 */
+			net_proto_standard_data_t std_data;
+			net_proto_read_packet_metadata(
+				block_buffer[i].first,
+				&std_data);
+			if(std_data.peer_id != peer_id){
+				print("sent peer ID and current peer ID do not"
+				      " match, assume this is a bootstrap", P_NOTE);
+				/*
+				  TODO: when this new fangled abstract exporter
+				  is created, I should replace all inline calls
+				  to delete with id_api::destroy with special
+				  parameters as to how to destroy it (or perhaps
+				  some macro that can take abstract all that
+				  nonsense away somehow)
+				 */
+				net_proto_peer_t *wrong_peer_ptr =
+					PTR_DATA(peer_id,
+						 net_proto_peer_t);
+				delete wrong_peer_ptr;
+				wrong_peer_ptr = nullptr;
+				peer_id = std_data.peer_id;
+			}
+			id_api::array::add_data(
+				block_buffer[i].second);
+		}
+	}
+}
+
 void net_proto_socket_t::update(){
 	update_working_buffer();
 	update_block_buffer();
+	load_blocks();
 }

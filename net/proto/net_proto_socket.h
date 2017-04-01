@@ -38,7 +38,7 @@ private:
 	std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t> > > block_buffer;
 	void update_working_buffer();
 	void update_block_buffer();
-	void load_blocks_as_data();
+	void load_blocks();
 public:
 	data_id_t id;
 	net_proto_socket_t();

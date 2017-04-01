@@ -3,7 +3,7 @@
 
 
 #default settings
-./basictv --print_level 2 --throw_level 4 --audio false --video false --network_port 58486 &
+valgrind ./basictv --print_level 2 --throw_level 4 --audio false --video false --network_port 58486 &
 
 #clearing not important directories
 
@@ -20,8 +20,8 @@ rm -r TEST_DATA_3
 #of possible slow private key initialization times (especially on Pi, desktop should be fine)
 
 sleep 5
-./basictv --print_level 2 --throw_level 4 --audio false --video false --network_port 58487 --console_port 59001 --data_folder TEST_DATA_1 --net_proto_custom_bootstrap_ip 127.0.0.1 --net_proto_custom_bootstrap_port 58486 &
+valgrind ./basictv --print_level 2 --throw_level 4 --audio false --video false --network_port 58487 --console_port 59001 --data_folder TEST_DATA_1 --net_proto_custom_bootstrap_ip 127.0.0.1 --net_proto_custom_bootstrap_port 58486 &
 sleep 5
-./basictv --print_level 2 --throw_level 4 --audio false --video false --network_port 58487 --console_port 59002 --data_folder TEST_DATA_2 --net_proto_custom_bootstrap_ip 127.0.0.1 --net_proto_custom_bootstrap_port 58486 &
+valgrind ./basictv --print_level 2 --throw_level 4 --audio false --video false --network_port 58487 --console_port 59002 --data_folder TEST_DATA_2 --net_proto_custom_bootstrap_ip 127.0.0.1 --net_proto_custom_bootstrap_port 58486 &
 sleep 5
-./basictv --print_level 2 --throw_level 4 --audio false --video false --network_port 58487 --console_port 59003 --data_folder TEST_DATA_3 --net_proto_custom_bootstrap_ip 127.0.0.1 --net_proto_custom_bootstrap_port 58486 &
+valgrind ./basictv --print_level 2 --throw_level 4 --audio false --video false --network_port 58487 --console_port 59003 --data_folder TEST_DATA_3 --net_proto_custom_bootstrap_ip 127.0.0.1 --net_proto_custom_bootstrap_port 58486 &

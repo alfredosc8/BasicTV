@@ -20,31 +20,44 @@ static void net_proto_initiate_direct_tcp(net_proto_con_req_t *con_req){
 	if(proto_peer == nullptr){
 		print("proto_peer is a nullptr", P_ERR);
 	}
-	net_socket_t *socket_ptr =
-		new net_socket_t;
-	socket_ptr->set_net_ip(
-		proto_peer->get_net_ip_str(),
-		proto_peer->get_net_port());
-	socket_ptr->connect();
-	if(socket_ptr->is_alive() == false){
-		print("couldn't connect to peer", P_NOTE);
-	}else{
-		print("opened connection with peer (IP: " +
-		      proto_peer->get_net_ip_str() + " port:" +
-		      std::to_string(proto_peer->get_net_port()) + ")",
-		      P_NOTE);
-		delete con_req;
-		con_req = nullptr;
+	net_socket_t *socket_ptr = nullptr;
+	net_proto_socket_t *proto_socket_ptr = nullptr;
+	try{
+		socket_ptr =
+			new net_socket_t;
+		socket_ptr->set_net_ip(
+			proto_peer->get_net_ip_str(),
+			proto_peer->get_net_port());
+		socket_ptr->connect();
+		if(socket_ptr->is_alive() == false){
+			print("couldn't connect to peer", P_NOTE);
+		}else{
+			print("opened connection with peer (IP: " +
+			      proto_peer->get_net_ip_str() + " port:" +
+			      std::to_string(proto_peer->get_net_port()) + ")",
+			      P_NOTE);
+			delete con_req;
+			con_req = nullptr;
+		}
+		proto_peer->set_last_attempted_connect_time(
+			get_time_microseconds());
+		proto_socket_ptr =
+			new net_proto_socket_t;
+		proto_socket_ptr->set_peer_id(peer_id);
+		proto_socket_ptr->set_socket_id(socket_ptr->id.get_id());
+		proto_socket_ptr->send_id(
+			net_proto::peer::get_self_as_peer());
+	}catch(...){
+		print("socket is a nullptr (client disconnect), destroying net_proto_socket_t", P_NOTE);
+		if(proto_socket_ptr != nullptr){
+			delete proto_socket_ptr;
+			proto_socket_ptr = nullptr;
+		}
+		if(socket_ptr != nullptr){
+			delete socket_ptr;
+			socket_ptr = nullptr;
+		}
 	}
-	proto_peer->set_last_attempted_connect_time(
-		get_time_microseconds());
-	net_proto_socket_t *proto_socket_ptr =
-		new net_proto_socket_t;
-	proto_socket_ptr->set_peer_id(peer_id);
-	proto_socket_ptr->set_socket_id(socket_ptr->id.get_id());
-	// TODO: return socket and send this in first_id_logic?
-	proto_socket_ptr->send_id(
-		net_proto::peer::get_self_as_peer());
 }
 
 static void net_proto_first_id_logic(net_proto_con_req_t *con_req){

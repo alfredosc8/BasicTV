@@ -123,15 +123,23 @@ static void net_socket_recv_posix_error_checking(int32_t error){
 }
 
 std::vector<uint8_t> net_socket_t::recv(uint64_t byte_count, uint64_t flags){
-	uint8_t tmp_data = 0;
 	// TODO: test to see if the activity() code works
+	uint8_t buffer[512];
 	do{
 		uint64_t data_received = 0;
 		while(activity()){
 			int32_t recv_retval = 0;
-			if((recv_retval = SDLNet_TCP_Recv(socket, &tmp_data, 1)) > 0){
-				local_buffer.push_back(tmp_data);
-				data_received++;
+			if((recv_retval = SDLNet_TCP_Recv(socket, &(buffer[0]), 512)) > 0){
+				if(recv_retval <= 0){
+					disconnect();
+					break;
+				}else{
+					local_buffer.insert(
+						local_buffer.end(),
+						&(buffer[0]),
+						&(buffer[recv_retval]));
+					data_received++;
+				}
 			}else{
 				net_socket_recv_posix_error_checking(recv_retval);
 			}

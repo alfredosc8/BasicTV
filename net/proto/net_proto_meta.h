@@ -13,7 +13,7 @@ typedef id_t_ net_proto_standard_id_t;
 typedef uint32_t net_proto_standard_size_t;
 typedef uint8_t net_proto_standard_ver_t;
 typedef uint8_t net_proto_standard_macros_t;
-typedef uint32_t net_proto_standard_unused_t;
+typedef uint8_t net_proto_standard_unused_t;
 
 struct net_proto_standard_data_t{
 private:
