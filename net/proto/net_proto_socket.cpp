@@ -22,7 +22,7 @@
   is disregarded (TODO: is this good behavior?). 
  */
 
-net_proto_socket_t::net_proto_socket_t() : id(this, __FUNCTION__){
+net_proto_socket_t::net_proto_socket_t() : id(this, TYPE_NET_PROTO_SOCKET_T){
 	id.add_data(&socket_id, 1);
 	id.add_data(&peer_id, 1);
 	id.add_data(&flags, 1);

@@ -115,9 +115,10 @@ void data_id_t::init_gen_id(){
 }
 
 
-data_id_t::data_id_t(void *ptr_, std::string type_){
-	P_V_S(type_, P_SPAM);
-	type = convert::array::type::to(type_);
+data_id_t::data_id_t(void *ptr_, uint8_t type_){
+	// P_V_S(type_, P_SPAM);
+	// P_V_S(convert::type::from(type_), P_SPAM);
+	type = type_;
 	ptr = ptr_;
 	init_list_all_data();
 	init_gen_id();
@@ -167,7 +168,7 @@ void data_id_t::set_id(id_t_ id_){
 }
 
 std::string data_id_t::get_type(){
-	return convert::array::type::from(type);
+	return convert::type::from(type);
 }
 
 /*
@@ -305,7 +306,7 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
 	 */
 	P_V_B(flags_, P_DEBUG);
 	P_V_B(global_flags, P_DEBUG);
-	P_V_S(convert::array::type::from(type), P_DEBUG);
+	P_V_S(convert::type::from(type), P_DEBUG);
 	if(!export_datum_check_type(global_flags, flags_)){
 		print("global flags don't allow exporting, skipping", P_DEBUG);
 		return {};
@@ -375,7 +376,7 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
 		  is the product of naughty doings
 		 */
 		if(!encrypt_blacklist_type(
-			   convert::array::type::from(
+			   convert::type::from(
 				   type))){
 			retval =
 				encrypt_api::encrypt(
@@ -442,17 +443,17 @@ static void id_import_raw(uint8_t* var, uint8_t flags, uint64_t size, std::vecto
 
 void data_id_t::import_data(std::vector<uint8_t> data){
 	id_t_ trans_id = ID_BLANK_ID;
-	std::array<uint8_t, TYPE_LENGTH> trans_type = {{0}};
+	type_t_ trans_type = ID_BLANK_TYPE;
 	ID_IMPORT(trans_id);
 	ID_IMPORT(trans_type);
 	P_V_S(convert::array::id::to_hex(trans_id), P_SPAM);
-	P_V_S(convert::array::type::from(trans_type), P_SPAM);
+	P_V_S(convert::type::from(trans_type), P_SPAM);
 	if(trans_type != type){
 		print("can't import a mis-matched type", P_ERR);
 	}
 	try{
 		if(!encrypt_blacklist_type(
-			   convert::array::type::from(
+			   convert::type::from(
 				   type))){
 			const id_t_ peer_public_key_id =
 				encrypt_api::search::pub_key_from_hash(

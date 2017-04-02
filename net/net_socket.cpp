@@ -5,7 +5,7 @@
 #include "../stats/stats.h"
 #include "../id/id_api.h"
 
-net_socket_t::net_socket_t() : id(this, __FUNCTION__){
+net_socket_t::net_socket_t() : id(this, TYPE_NET_SOCKET_T){
 	id.add_data(&status, 8);
 	id.noexp_all_data();
 	id.nonet_all_data();

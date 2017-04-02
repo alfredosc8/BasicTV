@@ -15,7 +15,7 @@
 
 // type, id, mod_inc
 
-static std::vector<std::tuple<std::array<uint8_t, 32>, id_t_, uint64_t> > disk_index;
+static std::vector<std::tuple<type_t_, id_t_, uint64_t> > disk_index;
 
 static std::string index_from_disk_pull_type(std::string str){
 	size_t end = 
@@ -73,7 +73,7 @@ void id_api::disk::build_index_from_disk(){
 				index_from_disk_pull_mod_inc(raw_index[i]);
 			disk_index.push_back(
 				std::make_tuple(
-					convert::array::type::to(type),
+					convert::type::to(type),
 					id,
 					mod_inc));
 		}catch(...){
@@ -102,7 +102,7 @@ void id_api::disk::load_from_disk(id_t_ id){
 				file::ensure_slash_at_end(
 					settings::get_setting(
 						"data_folder")) +
-				convert::array::type::from(std::get<0>(disk_index[i])) +
+				convert::type::from(std::get<0>(disk_index[i])) +
 				std::string(1, SLASH) +
 				convert::array::id::to_hex(id) +
 				"_" +

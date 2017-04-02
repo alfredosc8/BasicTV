@@ -38,7 +38,7 @@ void tv_frame_audio_t::set_data(std::vector<uint8_t> data_){
 	data = data_;
 }
 
-tv_frame_audio_t::tv_frame_audio_t() : id(this, __FUNCTION__){
+tv_frame_audio_t::tv_frame_audio_t() : id(this, TYPE_TV_FRAME_AUDIO_T){
 	list_virtual_data(&id);
 	// add data
 	ADD_DATA(bit_depth);

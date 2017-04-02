@@ -1,7 +1,7 @@
 #include "net_proxy.h"
 #include "../stats/stats.h"
 
-net_proxy_t::net_proxy_t() : id(this, __FUNCTION__){
+net_proxy_t::net_proxy_t() : id(this, TYPE_NET_PROXY_T){
 }
 
 net_proxy_t::~net_proxy_t(){

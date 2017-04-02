@@ -13,7 +13,7 @@
 
 std::vector<uint8_t> compressor::compress(std::vector<uint8_t> data,
 					  uint8_t compression_level, 
-					  std::array<uint8_t, 32> type){
+					  type_t_ type){
 	std::vector<uint8_t> retval = 
 		compressor::zstd::to(data,
 				     compression_level,

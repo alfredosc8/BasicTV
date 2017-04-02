@@ -57,7 +57,7 @@ std::vector<uint64_t> net_proto_request_set_t::get_mod_inc(){
 
 // IDs
 
-net_proto_id_request_t::net_proto_id_request_t() : id(this, __FUNCTION__){
+net_proto_id_request_t::net_proto_id_request_t() : id(this, TYPE_NET_PROTO_ID_REQUEST_T){
 	list_set_virtual_data(&id);
 	list_bare_virtual_data(&id);
 	id.noexp_all_data();
@@ -67,10 +67,10 @@ net_proto_id_request_t::~net_proto_id_request_t(){}
 
 // Type
 
-net_proto_type_request_t::net_proto_type_request_t() : id(this, __FUNCTION__){
+net_proto_type_request_t::net_proto_type_request_t() : id(this, TYPE_NET_PROTO_TYPE_REQUEST_T){
 	list_set_virtual_data(&id);
 	list_bare_virtual_data(&id);
-	id.add_data(&(type[0]), 32);
+	id.add_data(&type, 1);
 	id.noexp_all_data();
 }
 
@@ -78,7 +78,7 @@ net_proto_type_request_t::~net_proto_type_request_t(){}
 
 // Linked list subscription
 
-net_proto_linked_list_request_t::net_proto_linked_list_request_t() : id(this, __FUNCTION__){
+net_proto_linked_list_request_t::net_proto_linked_list_request_t() : id(this, TYPE_NET_PROTO_LINKED_LIST_REQUEST_T){
 	list_bare_virtual_data(&id);
 	id.noexp_all_data();
 }
@@ -108,10 +108,10 @@ id_t_ net_proto_linked_list_request_t::get_curr_id(){
 	return curr_id;
 }
 
-void net_proto_type_request_t::update_type(std::array<uint8_t, 32> type_){
+void net_proto_type_request_t::update_type(type_t_ type_){
 	type = type_;
 	set_ids(
 		id_api::cache::get(
-			convert::array::type::from(
+			convert::type::from(
 				type_)));
 }

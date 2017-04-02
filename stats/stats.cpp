@@ -1,6 +1,6 @@
 #include "stats.h"
 
-stat_sample_set_t::stat_sample_set_t() : id(this, __FUNCTION__){
+stat_sample_set_t::stat_sample_set_t() : id(this, TYPE_STAT_SAMPLE_SET_T){
 	id.add_data((std::vector<uint8_t>*)&size_set, ~(uint32_t)0);
 	id.add_data((std::vector<uint8_t>*)&set, ~(uint32_t)0);
 	id.add_data(&entry_size, 4);

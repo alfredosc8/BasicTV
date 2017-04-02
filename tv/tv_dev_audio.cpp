@@ -5,7 +5,7 @@
 // SDL_Mixer can't do microphones, so I have to use the full
 // ALSA stack, which is too complex for now
 
-tv_dev_audio_t::tv_dev_audio_t(std::string filename_, uint8_t type_) : id(this, __FUNCTION__){
+tv_dev_audio_t::tv_dev_audio_t(std::string filename_, uint8_t type_) : id(this, TYPE_TV_DEV_AUDIO_T){
 	list_virtual_data(&id);
 	filename = filename_;
 	type = type_;

@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <array>
+// includes type byte vector
 #include "id/id.h"
 
 /*
@@ -78,11 +79,11 @@ namespace convert{
 		namespace id{
 			std::string to_hex(id_t_);
 			id_t_ from_hex(std::string);
-		};
-		namespace type{
-			std::array<uint8_t, 32> to(std::string);
-			std::string from(std::array<uint8_t, 32>);
 		}
+	}
+	namespace type{
+		uint8_t to(std::string);
+		std::string from(uint8_t);
 	}
 	namespace number{
 		std::string to_binary(uint64_t);

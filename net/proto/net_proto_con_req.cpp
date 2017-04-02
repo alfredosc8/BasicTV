@@ -5,7 +5,7 @@
 #include "net_proto_peer.h"
 #include "net_proto_con_req.h"
 
-net_proto_con_req_t::net_proto_con_req_t() : id(this, __FUNCTION__){
+net_proto_con_req_t::net_proto_con_req_t() : id(this, TYPE_NET_PROTO_CON_REQ_T){
 	ADD_DATA(flags);
 	ADD_DATA(first_peer_id);
 	ADD_DATA(second_peer_id);

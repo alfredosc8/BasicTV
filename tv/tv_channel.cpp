@@ -4,7 +4,7 @@
 #include "tv_frame_standard.h"
 #include "tv.h"
 
-tv_channel_t::tv_channel_t() : id(this, __FUNCTION__){
+tv_channel_t::tv_channel_t() : id(this, TYPE_TV_CHANNEL_T){
 	id.add_data(&stream_list, TV_CHAN_FRAME_LIST_SIZE);
 	ADD_DATA(status);
 }

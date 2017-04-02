@@ -85,7 +85,7 @@ void input_close(){
 	SDL_QuitSubSystem(SDL_INIT_EVENTS);
 }
 
-input_dev_standard_t::input_dev_standard_t() : id(this, __FUNCTION__){
+input_dev_standard_t::input_dev_standard_t() : id(this, TYPE_INPUT_DEV_STANDARD_T){
 	ADD_DATA_ARRAY(queue, sizeof(queue[0]), INPUT_DEV_QUEUE_LENGTH);
 }
 

@@ -27,7 +27,7 @@ void net_proto_loop(){
 static void net_proto_init_self_peer(){
 	net_proto::peer::set_self_peer_id(
 		id_api::array::fetch_one_from_hash(
-			convert::array::type::to("net_proto_peer_t"),
+			convert::type::to("net_proto_peer_t"),
 			get_id_hash(production_priv_key_id)));
 	const uint16_t tmp_port =
 		settings::get_setting_unsigned_def(

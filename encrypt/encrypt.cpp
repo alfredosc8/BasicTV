@@ -23,13 +23,13 @@ std::pair<uint8_t, std::vector<uint8_t> >  encrypt_key_t::get_encrypt_key(){
 	return std::make_pair(encryption_scheme, key);
 }
 
-encrypt_pub_key_t::encrypt_pub_key_t() : id(this, __FUNCTION__){
+encrypt_pub_key_t::encrypt_pub_key_t() : id(this, TYPE_ENCRYPT_PUB_KEY_T){
 	list_virtual_data(&id);
 }
 
 encrypt_pub_key_t::~encrypt_pub_key_t(){}
 
-encrypt_priv_key_t::encrypt_priv_key_t() : id(this, __FUNCTION__){
+encrypt_priv_key_t::encrypt_priv_key_t() : id(this, TYPE_ENCRYPT_PRIV_KEY_T){
 	list_virtual_data(&id);
 	id.nonet_all_data();
 }

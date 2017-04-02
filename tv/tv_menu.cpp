@@ -419,7 +419,7 @@ static void init_char_data(){
 	valid_char_data = true;
 }
 
-tv_menu_t::tv_menu_t() : id(this, __FUNCTION__){
+tv_menu_t::tv_menu_t() : id(this, TYPE_TV_MENU_T){
 	id.add_data(&frame_id, sizeof(frame_id), ID_DATA_ID);
 	frame_id = (new tv_frame_video_t)->id.get_id();
 	update_frame();
@@ -563,7 +563,7 @@ id_t_ tv_menu_t::get_frame_id(){
 	return frame_id;
 }
 
-tv_menu_entry_t::tv_menu_entry_t() : id(this, __FUNCTION__){
+tv_menu_entry_t::tv_menu_entry_t() : id(this, TYPE_TV_MENU_ENTRY_T){
 }
 
 tv_menu_entry_t::~tv_menu_entry_t(){}

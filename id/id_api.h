@@ -35,34 +35,34 @@ namespace id_api{
 				  std::string type,
 				  uint8_t flags = 0);
 		data_id_t *ptr_id(id_t_ id,
-				  std::array<uint8_t, TYPE_LENGTH> type,
+				  type_t_ type,
 				  uint8_t flags = 0);
 		void *ptr_data(id_t_ id,
 				  std::string type,
 				  uint8_t flags = 0);
 		void *ptr_data(id_t_ id,
-				  std::array<uint8_t, TYPE_LENGTH> type,
+				  type_t_ type,
 				  uint8_t flags = 0);
 		void add(data_id_t *ptr);
 		void del(id_t_ id); // no type
 		id_t_ add_data(std::vector<uint8_t> data_);
 		// used for quick lookups of my own type (encrypt_priv_key_t,
 		// net_peer_t, etc.)
-		id_t_ fetch_one_from_hash(std::array<uint8_t, TYPE_LENGTH> type,
+		id_t_ fetch_one_from_hash(type_t_ type,
 					  std::array<uint8_t, 32> sha_hash);
 		// TODO: create a version that throws on more than one
 	}
 	namespace cache{
 		// get_type_vector_ptr should never be used outside of id_api.cpp	
 		void add(id_t_ id,
-			 std::array<uint8_t, TYPE_LENGTH> type);
+			 type_t_ type);
 		void add(id_t_ id,
 			 std::string type);
 		void del(id_t_ id,
-			 std::array<uint8_t, TYPE_LENGTH> type);
+			 type_t_ type);
 		void del(id_t_ id,
 			 std::string type);
-		std::vector<id_t_> get(std::array<uint8_t, TYPE_LENGTH> type);
+		std::vector<id_t_> get(type_t_ type);
 		std::vector<id_t_> get(std::string type);
 	}
 	namespace linked_list{
@@ -98,7 +98,7 @@ namespace id_api{
 	// metadata from the raw, unencrypted, and decompressed string
 	namespace metadata{
 		id_t_ get_id_from_data(std::vector<uint8_t> raw_data);
-		std::array<uint8_t, 32> get_type_from_data(std::vector<uint8_t> raw_data);
+		type_t_ get_type_from_data(std::vector<uint8_t> raw_data);
 	};
 	namespace bulk_fetch{
 		std::vector<uint64_t> mod(std::vector<id_t_> vector);

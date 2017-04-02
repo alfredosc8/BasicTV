@@ -7,7 +7,7 @@
 #include "tv_window.h"
 #include "tv_channel.h"
 
-tv_window_t::tv_window_t() : id(this, __FUNCTION__){
+tv_window_t::tv_window_t() : id(this, TYPE_TV_WINDOW_T){
 	id.add_data(&pos, sizeof(pos));
 	id.add_data(&channel_id, sizeof(channel_id), ID_DATA_ID);
 	id.nonet_all_data();

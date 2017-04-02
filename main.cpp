@@ -406,7 +406,7 @@ static void test_break_id_transport(){
 		for(uint64_t i = 0;i < 1024;i++){
 			tmp.push_back(true_rand(0, 255));
 		}
-		data_id_t tmp_id(nullptr, "TEST");
+		data_id_t tmp_id(nullptr, 255);
 		tmp_id.import_data(tmp);
 	}
 	running = false;

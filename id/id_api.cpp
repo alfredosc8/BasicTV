@@ -24,7 +24,7 @@
 #include "../cryptocurrency.h"
 
 static std::vector<data_id_t*> id_list;
-static std::vector<std::pair<std::vector<id_t_>, std::array<uint8_t, TYPE_LENGTH> > > type_cache;
+static std::vector<std::pair<std::vector<id_t_>, type_t_ > > type_cache;
 
 static data_id_t *id_find(id_t_ id){
 	for(uint64_t i = 0;i < id_list.size();i++){
@@ -66,9 +66,9 @@ data_id_t *id_api::array::ptr_id(id_t_ id,
 }
 
 data_id_t *id_api::array::ptr_id(id_t_ id,
-				 std::array<uint8_t, TYPE_LENGTH> type,
+				 type_t_ type,
 				 uint8_t flags){
-	return ptr_id(id, convert::array::type::from(type), flags);
+	return ptr_id(id, convert::type::from(type), flags);
 }
 
 void *id_api::array::ptr_data(id_t_ id,
@@ -82,9 +82,9 @@ void *id_api::array::ptr_data(id_t_ id,
 }
 
 void *id_api::array::ptr_data(id_t_ id,
-			      std::array<uint8_t, TYPE_LENGTH> type,
+			      type_t_ type,
 			      uint8_t flags){
-	return ptr_data(id, convert::array::type::from(type), flags);
+	return ptr_data(id, convert::type::from(type), flags);
 }
 
 void id_api::array::add(data_id_t *ptr){
@@ -101,7 +101,7 @@ void id_api::array::del(id_t_ id){
 	print("cannot find ID in list", P_ERR);
 }
 
-#define CHECK_TYPE(a) if(convert::array::type::from(type) == #a){print("importing data", P_NOTE);a *tmp = new a;tmp->id.import_data(data_);return tmp->id.get_id();}
+#define CHECK_TYPE(a) if(convert::type::from(type) == #a){print("importing data", P_NOTE);a *tmp = new a;tmp->id.import_data(data_);return tmp->id.get_id();}
 
 /*
   General purpose reader, returns the ID of the new information.
@@ -111,12 +111,12 @@ void id_api::array::del(id_t_ id){
 
 id_t_ id_api::array::add_data(std::vector<uint8_t> data_){
 	id_t_ id = ID_BLANK_ID;
-	std::array<uint8_t, TYPE_LENGTH> type;
+	type_t_ type = 0;
 	try{
 		id = id_api::metadata::get_id_from_data(data_);
 		type = id_api::metadata::get_type_from_data(data_);
 		P_V_S(convert::array::id::to_hex(id), P_SPAM);
-		P_V_S(convert::array::type::from(type), P_SPAM);
+		P_V_S(convert::type::from(type), P_SPAM);
 	}catch(std::exception &e){
 		print("can't import id and type from raw data", P_ERR);
 		throw e;
@@ -145,7 +145,7 @@ id_t_ id_api::array::add_data(std::vector<uint8_t> data_){
 
 #undef CHECK_TYPE
 
-id_t_ id_api::array::fetch_one_from_hash(std::array<uint8_t, TYPE_LENGTH> type, std::array<uint8_t, 32> sha_hash){
+id_t_ id_api::array::fetch_one_from_hash(type_t_ type, std::array<uint8_t, 32> sha_hash){
 	std::vector<id_t_> all_of_type =
 		id_api::cache::get(type);
 	for(uint64_t i = 0;i < all_of_type.size();i++){
@@ -163,18 +163,18 @@ std::vector<id_t_> id_api::sort::fingerprint(std::vector<id_t_> tmp){
 
 // Type cache code
 
-static std::vector<id_t_> *get_type_cache_ptr(std::array<uint8_t, TYPE_LENGTH> tmp){
+static std::vector<id_t_> *get_type_cache_ptr(type_t_ tmp){
 	for(uint64_t i = 0;i < type_cache.size();i++){
 		if(unlikely(type_cache[i].second == tmp)){
 			return &type_cache[i].first;
 		}
 	}
 	type_cache.push_back(std::make_pair(std::vector<id_t_>({}), tmp));
-	print("type cache of " + (std::string)(char*)(&tmp[0]) + " is " + std::to_string(type_cache.size()), P_SPAM);
+	print("type cache of " + convert::type::from(tmp) + " is " + std::to_string(type_cache.size()), P_SPAM);
 	return &type_cache[type_cache.size()-1].first;
 }
 
-void id_api::cache::add(id_t_ id, std::array<uint8_t, TYPE_LENGTH> type){
+void id_api::cache::add(id_t_ id, type_t_ type){
 	std::vector<id_t_> *vector =
 		get_type_cache_ptr(type);
 	vector->push_back(id);
@@ -182,10 +182,10 @@ void id_api::cache::add(id_t_ id, std::array<uint8_t, TYPE_LENGTH> type){
 }
 
 void id_api::cache::add(id_t_ id, std::string type){
-	add(id, convert::array::type::to(type));
+	add(id, convert::type::to(type));
 }
 
-void id_api::cache::del(id_t_ id, std::array<uint8_t, TYPE_LENGTH> type){
+void id_api::cache::del(id_t_ id, type_t_ type){
 	std::vector<id_t_> *vector =
 		get_type_cache_ptr(type);
 	for(uint64_t i = 0;i < vector->size();i++){
@@ -200,15 +200,15 @@ void id_api::cache::del(id_t_ id, std::array<uint8_t, TYPE_LENGTH> type){
 }
 
 void id_api::cache::del(id_t_ id, std::string type){
-	del(id, convert::array::type::to(type));
+	del(id, convert::type::to(type));
 }
 
-std::vector<id_t_> id_api::cache::get(std::array<uint8_t, TYPE_LENGTH> type){
+std::vector<id_t_> id_api::cache::get(type_t_ type){
 	return *get_type_cache_ptr(type);
 }
 
 std::vector<id_t_> id_api::cache::get(std::string type){
-	return get(convert::array::type::to(type));
+	return get(convert::type::to(type));
 }
 
 // TODO: make a forwards and backwards function too
@@ -527,7 +527,7 @@ void id_api::import::load_all_of_type(std::string type, uint8_t flags){
 		net_proto_type_request_t *request_ptr =
 			new net_proto_type_request_t;
 		request_ptr->update_type(
-			convert::array::type::to(
+			convert::type::to(
 				type));
 		// flags are not used anymore, remember?
 		/*
@@ -554,12 +554,12 @@ id_t_ id_api::metadata::get_id_from_data(std::vector<uint8_t> raw_data){
 	return retval;
 }
 
-std::array<uint8_t, 32> id_api::metadata::get_type_from_data(std::vector<uint8_t> raw_data){
-	std::array<uint8_t, 32> retval;
+type_t_ id_api::metadata::get_type_from_data(std::vector<uint8_t> raw_data){
+	type_t_ retval;
 	if(unlikely(raw_data.size() < 40+32)){
 		print("don't have enough room to extract type", P_ERR);
 	}
-	memcpy(&(retval[0]), &(raw_data[40]), 32);
+	memcpy(&(retval), &(raw_data[40]), 1);
 	return retval;
 }
 

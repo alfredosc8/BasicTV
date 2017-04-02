@@ -38,7 +38,7 @@ static void net_proto_routine_request_fill(std::vector<std::string> type_vector,
  			net_proto_type_request_t *type_request =
  				new net_proto_type_request_t;
  			type_request->update_type(
- 				convert::array::type::to(
+ 				convert::type::to(
  					type_vector[i]));
  			type_request->set_peer_id(
  				net_proto::peer::get_self_as_peer());

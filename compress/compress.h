@@ -20,7 +20,7 @@ namespace compressor{
 	};
 	std::vector<uint8_t> compress(std::vector<uint8_t> data,
 				      uint8_t compression_level,
-				      std::array<uint8_t, 32> type = ID_BLANK_TYPE);
+				      type_t_ type);
 	std::vector<uint8_t> decompress(std::vector<uint8_t> data);
 };
 #endif

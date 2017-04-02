@@ -11,7 +11,7 @@
 static id_t_ self_peer_id = ID_BLANK_ID;
 static std::vector<id_t_> id_request_buffer;
 static std::vector<std::pair<id_t_, int64_t> > linked_list_request_buffer;
-static std::vector<std::array<uint8_t, 32> > type_request_buffer; // ?
+static std::vector<type_t_ > type_request_buffer; // ?
 
 void net_proto::request::add_id(id_t_ id){
 	// could probably speed this up

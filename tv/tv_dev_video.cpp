@@ -241,7 +241,7 @@ id_t_ tv_dev_video_t::update(){
 
 
 tv_dev_video_t::tv_dev_video_t(std::string filename_) : id(this,
-							   __FUNCTION__){
+							   TYPE_TV_DEV_VIDEO_T){
 	list_virtual_data(&id);
 	open_dev(filename_);
 	try{

@@ -65,27 +65,6 @@ std::vector<uint8_t> convert::nbo::from(std::string data){
 			  data.end()));
 }
 
-// might make more sense to have these functions be the native
-
-std::array<uint8_t, 32> convert::array::type::to(std::string data){
-	std::array<uint8_t, 32> retval = {{0}};
-	for(uint64_t i = 0;i < data.size();i++){
-		retval[i] = data[i];
-	}
-	return retval;
-}
-
-std::string convert::array::type::from(std::array<uint8_t, 32> data){
-	std::string retval;
-	for(uint64_t i = 0;i < data.size();i++){
-		if(data[i] == 0){
-			break;
-		}
-		retval += (char)(data[i]);
-	}
-	return retval;
-}
-
 std::string convert::number::to_binary(uint64_t data){
 	std::string retval;
 	for(uint64_t i = 0;i < 64;i++){
@@ -281,4 +260,93 @@ id_t_ convert::array::id::from_hex(std::string id_){
 		&retval,
 		hash_array);
 	return retval;
+}
+
+#define CONV_CHECK_TYPE(a, b) if(type == a){return b;}
+
+uint8_t convert::type::to(std::string type){
+	CONV_CHECK_TYPE("ir_remote_t", TYPE_IR_REMOTE_T);
+	CONV_CHECK_TYPE("encrypt_priv_key_t", TYPE_ENCRYPT_PRIV_KEY_T);
+	CONV_CHECK_TYPE("encrypt_pub_key_t", TYPE_ENCRYPT_PUB_KEY_T);
+	CONV_CHECK_TYPE("console_t", TYPE_CONSOLE_T);
+	CONV_CHECK_TYPE("wallet_set_t", TYPE_WALLET_SET_T);
+	CONV_CHECK_TYPE("stat_sample_set_t", TYPE_STAT_SAMPLE_SET_T);
+	CONV_CHECK_TYPE("net_proxy_t", TYPE_NET_PROXY_T);
+	CONV_CHECK_TYPE("net_proto_socket_t", TYPE_NET_PROTO_SOCKET_T);
+	CONV_CHECK_TYPE("net_proto_con_req_t", TYPE_NET_PROTO_CON_REQ_T);
+	CONV_CHECK_TYPE("net_proto_linked_list_request_t", TYPE_NET_PROTO_LINKED_LIST_REQUEST_T);
+	CONV_CHECK_TYPE("net_proto_id_request_t", TYPE_NET_PROTO_ID_REQUEST_T);
+	CONV_CHECK_TYPE("net_proto_type_request_t", TYPE_NET_PROTO_TYPE_REQUEST_T);
+	CONV_CHECK_TYPE("net_socket_t", TYPE_NET_SOCKET_T);
+	CONV_CHECK_TYPE("net_proxy_t", TYPE_NET_PROXY_T);
+	CONV_CHECK_TYPE("tv_channel_t", TYPE_TV_CHANNEL_T);
+	CONV_CHECK_TYPE("tv_window_t", TYPE_TV_WINDOW_T);
+	CONV_CHECK_TYPE("tv_menu_entry_t", TYPE_TV_MENU_ENTRY_T);
+	CONV_CHECK_TYPE("tv_menu_t", TYPE_TV_MENU_T);
+	CONV_CHECK_TYPE("tv_dev_audio_t", TYPE_TV_DEV_AUDIO_T);
+	CONV_CHECK_TYPE("tv_dev_video_t", TYPE_TV_DEV_VIDEO_T);
+	CONV_CHECK_TYPE("tv_frame_audio_t", TYPE_TV_FRAME_AUDIO_T);
+	CONV_CHECK_TYPE("tv_frame_video_t", TYPE_TV_FRAME_VIDEO_T);
+	CONV_CHECK_TYPE("tv_frame_caption_t", TYPE_TV_FRAME_CAPTION_T);
+	CONV_CHECK_TYPE("input_dev_standard_t", TYPE_INPUT_DEV_STANDARD_T);
+	print("unknown type has been passed, returning zero", P_WARN);
+}
+
+std::string convert::type::from(uint8_t type){
+	switch(type){
+	case TYPE_IR_REMOTE_T:
+		return "ir_remote_t";
+	case TYPE_ENCRYPT_PRIV_KEY_T:
+		return "encrypt_priv_key_t";
+	case TYPE_ENCRYPT_PUB_KEY_T:
+		return "encrypt_pub_key_t";
+	case TYPE_CONSOLE_T:
+		return "console_t";
+	case TYPE_WALLET_SET_T:
+		return "wallet_set_t";
+	case TYPE_STAT_SAMPLE_SET_T:
+		return "stat_sample_set_t";
+	case TYPE_NET_PROXY_T:
+		return "net_proxy_t";
+	case TYPE_NET_PROTO_SOCKET_T:
+		return "net_proto_socket_t";
+	case TYPE_NET_PROTO_PEER_T:
+		return "net_proto_peer_t";
+	case TYPE_NET_PROTO_CON_REQ_T:
+		return "net_proto_con_req_t";
+	case TYPE_NET_PROTO_LINKED_LIST_REQUEST_T:
+		return "net_proto_linked_list_request_t";
+	case TYPE_NET_PROTO_ID_REQUEST_T:
+		return "net_proto_id_request_t";
+	case TYPE_NET_PROTO_TYPE_REQUEST_T:
+		return "net_proto_type_request_t";
+	case TYPE_NET_SOCKET_T:
+		return "net_socket_t";
+	case TYPE_TV_CHANNEL_T:
+		return "tv_channel_t";
+	case TYPE_TV_WINDOW_T:
+		return "tv_window_t";
+	case TYPE_TV_MENU_ENTRY_T:
+		return "tv_menu_entry_t";
+	case TYPE_TV_MENU_T:
+		return "tv_menu_t";
+	case TYPE_TV_DEV_AUDIO_T:
+		return "tv_dev_audio_t";
+	case TYPE_TV_DEV_VIDEO_T:
+		return "tv_dev_video_t";
+	case TYPE_TV_FRAME_AUDIO_T:
+		return "tv_frame_audio_t";
+	case TYPE_TV_FRAME_VIDEO_T:
+		return "tv_frame_video_t";
+	case TYPE_TV_FRAME_CAPTION_T:
+		return "tv_frame_caption_t";
+	case TYPE_INPUT_DEV_STANDARD_T:
+		return "input_dev_standard_t";
+	case 0:
+		print("zero type, something went wrong earlier", P_WARN);
+		return "";
+	default:
+		print("invalid type, probably malicious (not zero)", P_WARN);
+		return "";
+	}
 }

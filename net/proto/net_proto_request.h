@@ -64,13 +64,13 @@ public:
 
 struct net_proto_type_request_t : public net_proto_request_set_t, public net_proto_request_bare_t{
 private:
-	std::array<uint8_t, 32> type = ID_BLANK_TYPE;
+	type_t_ type = ID_BLANK_TYPE;
 public:
 	data_id_t id;
 	net_proto_type_request_t();
 	~net_proto_type_request_t();
 	void update_type(
-		std::array<uint8_t, 32> type_);
-	std::array<uint8_t, 32> get_type(){return type;}
+		type_t_ type_);
+	type_t_ get_type(){return type;}
 };
 #endif

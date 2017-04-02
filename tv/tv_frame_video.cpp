@@ -45,7 +45,7 @@ static void tv_frame_color_sanity_check(std::tuple<uint64_t, uint64_t, uint64_t,
 	}
 }
 
-tv_frame_video_t::tv_frame_video_t() : id(this, __FUNCTION__){
+tv_frame_video_t::tv_frame_video_t() : id(this, TYPE_TV_FRAME_VIDEO_T){
 	list_virtual_data(&id);
 	ADD_DATA(x_res);
 	ADD_DATA(y_res);

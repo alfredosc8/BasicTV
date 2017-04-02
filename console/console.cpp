@@ -1,7 +1,7 @@
 #include "../settings.h"
 #include "console.h"
 
-console_t::console_t() : id(this, __FUNCTION__){
+console_t::console_t() : id(this, TYPE_CONSOLE_T){
 	id.nonet_all_data();
 	id.noexp_all_data();
 }
