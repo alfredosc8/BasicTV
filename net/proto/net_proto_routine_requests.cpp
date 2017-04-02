@@ -11,7 +11,7 @@ static uint64_t last_request_slow_time_micro_s = 0;
 
 // Interdependent upon other nodes, has a higher priority
 std::vector<std::string> routine_request_fast_vector = {
-	"net_con_req_t"
+	"net_proto_con_req_t"
 };
 
 // Self-serving (most of the time), lower priority

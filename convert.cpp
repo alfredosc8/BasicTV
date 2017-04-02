@@ -272,6 +272,7 @@ uint8_t convert::type::to(std::string type){
 	CONV_CHECK_TYPE("wallet_set_t", TYPE_WALLET_SET_T);
 	CONV_CHECK_TYPE("stat_sample_set_t", TYPE_STAT_SAMPLE_SET_T);
 	CONV_CHECK_TYPE("net_proxy_t", TYPE_NET_PROXY_T);
+	CONV_CHECK_TYPE("net_proto_peer_t", TYPE_NET_PROTO_PEER_T);
 	CONV_CHECK_TYPE("net_proto_socket_t", TYPE_NET_PROTO_SOCKET_T);
 	CONV_CHECK_TYPE("net_proto_con_req_t", TYPE_NET_PROTO_CON_REQ_T);
 	CONV_CHECK_TYPE("net_proto_linked_list_request_t", TYPE_NET_PROTO_LINKED_LIST_REQUEST_T);
@@ -289,7 +290,8 @@ uint8_t convert::type::to(std::string type){
 	CONV_CHECK_TYPE("tv_frame_video_t", TYPE_TV_FRAME_VIDEO_T);
 	CONV_CHECK_TYPE("tv_frame_caption_t", TYPE_TV_FRAME_CAPTION_T);
 	CONV_CHECK_TYPE("input_dev_standard_t", TYPE_INPUT_DEV_STANDARD_T);
-	print("unknown type has been passed, returning zero", P_WARN);
+	print("unknown type has been passed, returning zero", P_CRIT);
+	return 0;
 }
 
 std::string convert::type::from(uint8_t type){
