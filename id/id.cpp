@@ -310,17 +310,6 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
 		print("global flags don't allow exporting, skipping", P_DEBUG);
 		return {};
 	}
-	// bool valid = false;
-	// for(uint64_t i = 3;i < data_vector.size();i++){
-	// 	if(export_datum_check_type(data_vector[i].get_flags(), flags_)){
-	// 		valid = true;
-	// 		break;
-	// 	}
-	// }
-	// if(valid == false){
-	// 	print("cannot export data, set as not exportable", P_DEBUG);
-	// 	return {};
-	// }
 	if(is_owner()){
 		std::vector<uint8_t> preamble;
 		ID_EXPORT(id, preamble);
@@ -336,6 +325,12 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
 			ID_EXPORT(trans_i, retval);
 			uint8_t *ptr_to_export =
 				(uint8_t*)data_vector[i].get_ptr();
+			if(!export_datum_check_type(
+				   data_vector[i].get_flags(),
+				   flags_)){
+				print("skipping, individual datum incompatiable with flags", P_SPAM);
+				continue;
+			}
 			if(ptr_to_export == nullptr){
 				print("ptr_to_export is a nullptr (pre-vector)", P_WARN);
 				continue;
@@ -371,8 +366,14 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
 		P_V(retval.size(), P_SPAM);
 		retval =
 			compressor::compress(
-				retval, 9, ID_BLANK_TYPE);
+				retval, 9, type);
 		// TODO: actually pass a type
+		/*
+		  Only certain types are exempt from encryption (only current
+		  one is public keys). This is the only case that will be
+		  programmed in, so assume any other type that is not encrypted
+		  is the product of naughty doings
+		 */
 		if(!encrypt_blacklist_type(
 			   convert::array::type::from(
 				   type))){
@@ -450,13 +451,13 @@ void data_id_t::import_data(std::vector<uint8_t> data){
 		print("can't import a mis-matched type", P_ERR);
 	}
 	try{
-		const id_t_ peer_public_key_id =
-			encrypt_api::search::pub_key_from_hash(
-				get_id_hash(
-					trans_id));
 		if(!encrypt_blacklist_type(
 			   convert::array::type::from(
 				   type))){
+			const id_t_ peer_public_key_id =
+				encrypt_api::search::pub_key_from_hash(
+					get_id_hash(
+						trans_id));
 			data = encrypt_api::decrypt(
 				data, peer_public_key_id);
 		}
