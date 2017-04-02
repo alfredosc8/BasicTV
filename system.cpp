@@ -2,6 +2,12 @@
 #include "file.h"
 #include "util.h"
 
+static std::string gen_unique_filename(std::string filename){
+	// TODO: get a standard way of determining max
+	// file lengths (65536 is a soft limit)
+	return filename + std::to_string(true_rand(0, 65536));
+}
+
 int system_handler::run(std::string str){
 	str += ";touch finished 2>&1 /dev/null";
 	/*
@@ -9,8 +15,10 @@ int system_handler::run(std::string str){
 	  Speed shouldn't be a problem
 	*/
 	int retval = system(str.c_str());
-	file::wait_for_file("finished");
-	rm("finished");
+	std::string filename =
+		gen_unique_filename("finished");
+	file::wait_for_file(filename);
+	rm(filename);
 	return retval;
 }
 
@@ -24,10 +32,11 @@ void system_handler::mkdir(std::string dir){
 }
 
 std::string system_handler::cmd_output(std::string cmd){
-	
-	write(cmd, "TMP_OUT");
-	const std::string file_data = file::read_file("TMP_OUT");
-	rm("TMP_OUT");
+	std::string filename =
+		gen_unique_filename("TMP_OUT");
+	write(cmd, filename);
+	const std::string file_data = file::read_file(filename);
+	rm(filename);
 	return file_data;
 }
 

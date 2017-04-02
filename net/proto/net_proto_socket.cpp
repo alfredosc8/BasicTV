@@ -27,7 +27,6 @@ net_proto_socket_t::net_proto_socket_t() : id(this, __FUNCTION__){
 	id.add_data(&peer_id, 1);
 	id.add_data(&flags, 1);
 	id.add_data(&last_recv_micro_s, 8);
-	id.add_data(&std_data, ~0);
 	id.add_data(&working_buffer, ~0);
 	net_proto_standard_data_t std_data_;
 	std_data_.ver_major = VERSION_MAJOR;

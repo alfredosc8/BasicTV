@@ -57,7 +57,7 @@ public:
 
 struct data_id_t{
 private:
-	// half UUID, half RSA fingerprint (for verification)
+	// first 8 bytes UUID, last 32-byte SHA-256 hash
 	id_t_ id = ID_BLANK_ID;
        	std::array<uint8_t, TYPE_LENGTH> type = {{0}};
 	void *ptr = nullptr;
@@ -74,6 +74,7 @@ private:
 	// incremented every time a getter or setter is called in either this
 	// function or the parent data type (manually call mod_inc();
 	uint64_t modification_incrementor = 0;
+	uint8_t global_flags = 0;
 public:
 	data_id_t(void *ptr_, std::string type_);
 	~data_id_t();

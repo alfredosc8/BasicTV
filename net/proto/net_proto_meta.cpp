@@ -23,7 +23,6 @@ std::vector<uint8_t> net_proto_write_packet_metadata(
 	return retval;
 }
 
-
 #define READ_DATA_META(ptr)						\
 	if(ptr != nullptr){						\
 		P_V(sizeof(*ptr), P_NOTE);				\

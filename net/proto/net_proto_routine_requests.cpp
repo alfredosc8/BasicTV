@@ -45,8 +45,8 @@ static void net_proto_routine_request_fill(std::vector<std::string> type_vector,
  			// net_request_ts with no bound sockets are assumed to
  			// be outbound, which will always be true
  		}
+		*last_request_time_micro_s = time_micro_s;
  	}
- 	*last_request_time_micro_s = time_micro_s;
 }
 
 void net_proto_routine_requests_loop(){

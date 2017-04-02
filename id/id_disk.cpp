@@ -137,6 +137,12 @@ void id_api::disk::save_to_disk(id_t_ id){
 	//print("move ID exporting code from id_api to id_disk", P_ERR);
 	data_id_t *ptr =
 		PTR_ID(id, );
+	std::vector<uint8_t> exportable_data =
+		ptr->export_data(ID_DATA_NONET);
+	if(exportable_data.size() == 0){
+		print("not going to export blank data", P_DEBUG);
+		return;
+	}
 	const std::string filename =
 		get_filename(id);
 	system_handler::rm(filename);
@@ -145,8 +151,6 @@ void id_api::disk::save_to_disk(id_t_ id){
 	if(out.is_open() == false){
 		print("cannot open file for exporting", P_ERR);
 	}
-	std::vector<uint8_t> exportable_data =
-		ptr->export_data(ID_DATA_NONET);
 	out.write((const char*)exportable_data.data(), exportable_data.size());
 	out.close();
 

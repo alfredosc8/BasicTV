@@ -132,7 +132,6 @@ data_id_t::~data_id_t(){
 	}catch(...){}
 }
 
-
 id_t_ data_id_t::get_id(bool skip){
 	// even with unlikely, this seems pretty slow
 	if(!skip && !id_throw_exception && get_id_hash(id) == ID_BLANK_HASH){
@@ -277,20 +276,51 @@ static void id_export_raw(uint8_t *var, uint64_t size, std::vector<uint8_t> *vec
   flags will be what types to EXCLUDE
  */
 
+/*
+  Don't export on the following conditions:
+  1. flags bit is flipped when param bit is not or
+  2. flags bit is one
+ */
+
+static bool export_datum_check_type(uint8_t flags, uint8_t param){
+	const bool data_nonet = flags & ID_DATA_NONET;
+	const bool data_noexp = flags & ID_DATA_NOEXP;
+	const bool param_nonet = param & ID_DATA_NONET;
+	const bool param_noexp = param & ID_DATA_NOEXP;
+
+	const bool export_nonet =
+		(data_nonet == param_nonet) || (data_nonet == 0);
+	const bool export_noexp =
+		(data_noexp == param_noexp) || (data_noexp == 0);
+	return export_nonet && export_noexp;
+}
+
 std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
 	std::vector<uint8_t> retval;
-	bool valid = false;
-	for(uint64_t i = 3;i < data_vector.size();i++){
-		if(!((data_vector[i].get_flags() & flags_) & ID_DATA_NONET &&
-		     (data_vector[i].get_flags() & flags_) & ID_DATA_NOEXP)){
-			valid = true;
-			break;
-		}
-	}
-	if(valid == false){
-		//print("cannot export data, set as not exportable", P_WARN);
+	/*
+	  0 & 0: include, no preference in second
+	  1 & 0: include, preference doesn't apply here
+	  0 & 1: exclude, preference in second
+	  1 & 1: include, preference is met
+	 */
+	P_V_B(flags_, P_DEBUG);
+	P_V_B(global_flags, P_DEBUG);
+	P_V_S(convert::array::type::from(type), P_DEBUG);
+	if(!export_datum_check_type(global_flags, flags_)){
+		print("global flags don't allow exporting, skipping", P_DEBUG);
 		return {};
 	}
+	// bool valid = false;
+	// for(uint64_t i = 3;i < data_vector.size();i++){
+	// 	if(export_datum_check_type(data_vector[i].get_flags(), flags_)){
+	// 		valid = true;
+	// 		break;
+	// 	}
+	// }
+	// if(valid == false){
+	// 	print("cannot export data, set as not exportable", P_DEBUG);
+	// 	return {};
+	// }
 	if(is_owner()){
 		std::vector<uint8_t> preamble;
 		ID_EXPORT(id, preamble);
@@ -504,17 +534,11 @@ bool data_id_t::is_owner(){
 }
 
 void data_id_t::noexport_all_data(){
-	for(uint64_t i = 0;i < data_vector.size();i++){
-		data_vector[i].set_flags(
-			data_vector[i].get_flags() | ID_DATA_NOEXP);
-	}
+	global_flags |= ID_DATA_NOEXP;
 }
 
 void data_id_t::nonet_all_data(){
-	for(uint64_t i = 0;i < data_vector.size();i++){
-		data_vector[i].set_flags(
-			data_vector[i].get_flags() | ID_DATA_NONET);
-	}
+	global_flags |= ID_DATA_NONET;
 }
 
 data_id_ptr_t::data_id_ptr_t(void *ptr_,
