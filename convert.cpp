@@ -290,6 +290,7 @@ uint8_t convert::type::to(std::string type){
 	CONV_CHECK_TYPE("tv_frame_video_t", TYPE_TV_FRAME_VIDEO_T);
 	CONV_CHECK_TYPE("tv_frame_caption_t", TYPE_TV_FRAME_CAPTION_T);
 	CONV_CHECK_TYPE("input_dev_standard_t", TYPE_INPUT_DEV_STANDARD_T);
+	CONV_CHECK_TYPE("id_disk_index_t", TYPE_ID_DISK_INDEX_T);
 	print("unknown type has been passed, returning zero", P_CRIT);
 	return 0;
 }
@@ -344,6 +345,8 @@ std::string convert::type::from(uint8_t type){
 		return "tv_frame_caption_t";
 	case TYPE_INPUT_DEV_STANDARD_T:
 		return "input_dev_standard_t";
+	case TYPE_ID_DISK_INDEX_T:
+		return "id_disk_index_t";
 	case 0:
 		print("zero type, something went wrong earlier", P_WARN);
 		return "";

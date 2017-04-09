@@ -80,12 +80,14 @@ namespace id_api{
 		 */
 	};
 	namespace disk{
-		void build_index_from_disk();
-		// handled by destroy, but could be independent...
-		void save_to_disk(std::vector<id_t_>);
-		void save_to_disk(id_t_);
-		void load_from_disk(std::vector<id_t_>);
-		void load_from_disk(id_t_);
+		/*
+		  All disks should be abstracted out, lookups and queries into
+		  larger tables should be fine for now and forever
+		 */
+		void save(std::vector<id_t_>);
+		void save(id_t_);
+		void load(std::vector<id_t_>);
+		void load(id_t_);
 		std::string get_filename(id_t_);
 	};
 	namespace import{

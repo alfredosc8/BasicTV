@@ -63,7 +63,7 @@ protected:
 	  and towards only using it for types that can be exported and
 	  not just re-created from settings files
 	 */
-	std::array<uint8_t, INPUT_DEV_QUEUE_LENGTH> queue = {{0}};
+	std::vector<uint8_t> queue;
 public:
 	data_id_t id;
 	input_dev_standard_t();

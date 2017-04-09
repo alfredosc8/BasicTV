@@ -70,13 +70,12 @@ void data_id_t::init_list_all_data(){
 	add_data(&id,
 		 sizeof(id_t_),
 		 ID_DATA_ID);
-	add_data(&linked_list.first,
-		 sizeof(id_t_),
-		 ID_DATA_ID);
-	add_data(&linked_list.second,
-		 sizeof(id_t_),
-		 ID_DATA_ID);
-	
+	add_data_id_vector(
+		&linked_list.first,
+		ID_MAX_LINKED_LIST_SIZE);
+	add_data_id_vector(
+		&linked_list.second,
+		ID_MAX_LINKED_LIST_SIZE);
 }
 
 /*
@@ -296,7 +295,7 @@ static bool export_datum_check_type(uint8_t flags, uint8_t param){
 	return export_nonet && export_noexp;
 }
 
-std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
+std::vector<uint8_t> data_id_t::export_data(uint8_t flags_, uint8_t extra){
 	std::vector<uint8_t> retval;
 	/*
 	  0 & 0: include, no preference in second
@@ -304,7 +303,15 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
 	  0 & 1: exclude, preference in second
 	  1 & 1: include, preference is met
 	 */
+	if(encrypt_blacklist_type(
+		   convert::type::from(type))){
+		print("forcing no encryption on encrypt blacklist type against "
+		      "the given extra parameter", P_WARN);
+		// not really a warning, is fine if this happens
+		extra &= ~ID_EXTRA_ENCRYPT;
+	}
 	P_V_B(flags_, P_DEBUG);
+	P_V_B(extra, P_DEBUG);
 	P_V_B(global_flags, P_DEBUG);
 	P_V_S(convert::type::from(type), P_DEBUG);
 	if(!export_datum_check_type(global_flags, flags_)){
@@ -315,6 +322,7 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
 		std::vector<uint8_t> preamble;
 		ID_EXPORT(id, preamble);
 		ID_EXPORT(type, preamble);
+		ID_EXPORT(extra, preamble);
 		transport_i_t trans_i = 0;
 		transport_size_t trans_size = 0;
 		for(uint64_t i = 0;i < data_vector.size();i++){
@@ -365,9 +373,11 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
 			// P_V(trans_size, P_SPAM);
 		}
 		P_V(retval.size(), P_SPAM);
-		retval =
-			compressor::compress(
-				retval, 9, type);
+		if(extra & ID_EXTRA_COMPRESS){
+			retval =
+				compressor::compress(
+					retval, 9, type);
+		}
 		// TODO: actually pass a type
 		/*
 		  Only certain types are exempt from encryption (only current
@@ -375,9 +385,7 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_){
 		  programmed in, so assume any other type that is not encrypted
 		  is the product of naughty doings
 		 */
-		if(!encrypt_blacklist_type(
-			   convert::type::from(
-				   type))){
+		if(extra & ID_EXTRA_ENCRYPT){
 			retval =
 				encrypt_api::encrypt(
 					retval, production_priv_key_id);
@@ -444,17 +452,18 @@ static void id_import_raw(uint8_t* var, uint8_t flags, uint64_t size, std::vecto
 void data_id_t::import_data(std::vector<uint8_t> data){
 	id_t_ trans_id = ID_BLANK_ID;
 	type_t_ trans_type = ID_BLANK_TYPE;
+	uint8_t extra = 0;
 	ID_IMPORT(trans_id);
 	ID_IMPORT(trans_type);
+	ID_IMPORT(extra);
 	P_V_S(convert::array::id::to_hex(trans_id), P_SPAM);
 	P_V_S(convert::type::from(trans_type), P_SPAM);
+	P_V_B(extra, P_SPAM);
 	if(trans_type != type){
 		print("can't import a mis-matched type", P_ERR);
 	}
 	try{
-		if(!encrypt_blacklist_type(
-			   convert::type::from(
-				   type))){
+		if(extra & ID_EXTRA_ENCRYPT){
 			const id_t_ peer_public_key_id =
 				encrypt_api::search::pub_key_from_hash(
 					get_id_hash(
@@ -462,8 +471,10 @@ void data_id_t::import_data(std::vector<uint8_t> data){
 			data = encrypt_api::decrypt(
 				data, peer_public_key_id);
 		}
-		data = compressor::decompress(
-			data);
+		if(extra & ID_EXTRA_COMPRESS){
+			data = compressor::decompress(
+				data);
+		}
 	}catch(...){
 		print("can't decode information", P_ERR);
 	}
@@ -509,30 +520,36 @@ void data_id_t::rsa_decrypt_backlog(){
 }
 
 id_t_ data_id_t::get_prev_linked_list(){
-	return linked_list.first;
+	if(linked_list.first.size() > 0){
+		return linked_list.first[0];
+	}
+	return ID_BLANK_ID;
 }
 
 id_t_ data_id_t::get_next_linked_list(){
-	return linked_list.second;
+	if(linked_list.second.size() > 0){
+		return linked_list.second[0];
+	}
+	return ID_BLANK_ID;
 }
 
 void data_id_t::set_prev_linked_list(id_t_ data){
-	linked_list.first = data;
+	linked_list.first.clear();
+	linked_list.first.push_back(data);
 }
 
 void data_id_t::set_next_linked_list(id_t_ data){
-	linked_list.second = data;
+	linked_list.second.clear();
+	linked_list.second.push_back(data);
 }
 
-/*
-  THIS IS OBVIOUSLY NOT CORRECT, however it should work for tests. I need
-  to get a legit public-private key system down before I can declare
-  ownership (I can just list private key structus and compare them, but
-  that itself would need more definition).
- */
-
 bool data_id_t::is_owner(){
-	return true;
+	/*
+	  Should always be true, unless networking is disabled (and even then,
+	  a peer ID should still be created, just not used)
+	 */
+	return (get_id_hash(id) ==
+		get_id_hash(net_proto::peer::get_self_as_peer()));
 }
 
 void data_id_t::noexport_all_data(){

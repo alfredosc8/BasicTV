@@ -53,7 +53,7 @@ data_id_t *id_api::array::ptr_id(id_t_ id,
 		if(type != "console_t"){
 			try{
 				print("attempting import from disk", P_SPAM);
-				id_api::disk::load_from_disk(id);
+				id_api::disk::load(id);
 			}catch(...){
 				net_proto::request::add_id(id);
 			}
@@ -369,7 +369,7 @@ static bool id_api_should_write_to_disk_mod_inc(id_t_ id_){
 void id_api::destroy(id_t_ id){	
 	if(id_api_should_write_to_disk_mod_inc(id) == true &&
 	   settings::get_setting("export_data") == "true"){
-		id_api::disk::save_to_disk(id);
+		id_api::disk::save(id);
 	}
 	// TV subsystem
 	data_id_t *ptr =

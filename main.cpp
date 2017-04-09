@@ -27,6 +27,8 @@
 #include "console/console.h"
 #include "system.h"
 #include "escape.h"
+#include "id/id_set.h"
+#include "id/id_disk.h"
 
 /*
   TODO:
@@ -184,7 +186,14 @@ static void init(){
 
 	  TODO: use getuid and that stuff when getenv doesn't work (?)
 	 */
-	settings::set_setting("data_folder", ((std::string)getenv("HOME"))+"/.BasicTV/");
+	//settings::set_setting("data_folder", ((std::string)getenv("HOME"))+"/.BasicTV/");
+	id_disk_index_t *disk_index =
+		new id_disk_index_t;
+	disk_index->set(
+		ID_DISK_MEDIUM_HDD,
+		ID_DISK_TRANS_DIR,
+		{ID_DISK_ENHANCE_UNDEF}, // macro to zero, here for verbosity
+		((std::string)getenv("HOME"))+"/.BasicTV/");
 	system_handler::mkdir(
 		settings::get_setting(
 			"data_folder"));
@@ -600,6 +609,46 @@ static void test_escape_string(){
 	P_V(deconstructed.second.size(), P_NOTE);
 }
 
+static void test_id_set_compression(){
+	std::vector<id_t_> id_set;
+	std::array<uint8_t, 32> hash;
+	for(uint64_t i = 0;i < 8192;i++){
+		// i is the UUID
+		if(true_rand(0, 30) == 0){
+			print("computing new has at iteration " + std::to_string(i), P_NOTE);
+			hash = encrypt_api::hash::sha256::gen_raw(
+				true_rand_byte_vector(64));
+		}
+		id_t_ tmp_id;
+		set_id_uuid(&tmp_id, i);
+		set_id_hash(&tmp_id, hash);
+		id_set.push_back(tmp_id);
+	}
+	std::vector<uint8_t> id_set_compact =
+		compact_id_set(id_set);
+	std::vector<id_t_> id_set_new =
+		expand_id_set(id_set_compact);
+	if(id_set_new == id_set){
+		print("successfully decompressed, checks out", P_NOTE);
+		const long double compression_ratio =
+			(id_set.size()*sizeof(id_t_))/(id_set_compact.size());
+		P_V(compression_ratio, P_NOTE);
+	}else{
+		print("ERROR, COULDN'T PROPERLY DECOMPRESS", P_NOTE);
+		P_V(id_set.size(), P_NOTE);
+		P_V(id_set_new.size(), P_NOTE);
+		// for(uint64_t i = 0;i < (id_set.size() > id_set_new.size()) ? id_set.size() : id_set_new.size();i++){
+		// 	if(id_set.size() > i){
+		// 		P_V_S(convert::array::id::to_hex(id_set[i]), P_NOTE);
+		// 	}
+		// 	if(id_set_new.size() > i){
+		// 		P_V_S(convert::array::id::to_hex(id_set_new[i]), P_NOTE);
+		// 	}
+		// }
+	}
+	running = false;
+}
+
 static void benchmark_encryption(){
 	try{
 		if(settings::get_setting("benchmark_encryption") == "rsa"){
@@ -617,6 +666,7 @@ int main(int argc_, char **argv_){
 	argv = argv_;
 	init();
 	running = true;
+	test_id_set_compression();
 	//test_escape_string();
 	//test_aes();
 	//test_id_hex();

@@ -8,14 +8,11 @@
 #include <random>
 #include <cstdlib>
 
-#define ADD_DATA(x) (id.add_data(&x, sizeof(x)))
-#define ADD_DATA_ARRAY(x, y, z) (id.add_data(&(x[0]), y*z))
-#define ADD_DATA_NONET(x) (id.add_data(&x, sizeof(x), ID_DATA_NONET))
-#define ADD_DATA_PTR(x) (id->add_data(&x, sizeof(x)))
-
 /*
   id_t: ID and pointer system for the networking system
  */
+
+#define ADD_DATA(x) id.add_data_raw((uint8_t*)&x, sizeof(x))
 
 #define ID_LENGTH 40
 typedef std::array<uint8_t, ID_LENGTH> id_t_;
@@ -37,6 +34,12 @@ const std::array<uint8_t, 32> blank_hash = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 
 #define ID_DATA_CACHE ID_DATA_NOEXPORT
 
+// might want to be larger (?)
+#define ID_MAX_LINKED_LIST_SIZE 64
+
+#define ID_EXTRA_ENCRYPT (1 << 0)
+#define ID_EXTRA_COMPRESS (1 << 1)
+
 // pointer added through add_data
 struct data_id_ptr_t{
 private:
@@ -54,6 +57,11 @@ public:
 	void set_flags(uint8_t flags_){flags = flags_;}
 };
 
+/*
+  TODO: rename add_data functions to more easily see how it is stored and used
+  internally (raw pointer vs byte vector, namely)
+ */
+
 struct data_id_t{
 private:
 	// first 8 bytes UUID, last 32-byte SHA-256 hash
@@ -63,7 +71,7 @@ private:
 	id_t_ encrypt_pub_key_id = ID_BLANK_ID;
 	std::vector<std::vector<uint8_t> > rsa_backlog;
 	std::vector<data_id_ptr_t> data_vector;
-	std::pair<id_t_, id_t_> linked_list = {ID_BLANK_ID, ID_BLANK_ID};
+	std::pair<std::vector<id_t_>, std::vector<id_t_> > linked_list;
 	std::vector<uint8_t> imported_data; // encrypted data if imported
 	void init_list_all_data();
 	void init_gen_id();
@@ -120,8 +128,29 @@ public:
 		std::vector<id_t_> *ptr_,
 		uint32_t size_,
 		uint64_t flags = 0);
+	// TODO: should enforce casting
+	void add_data_one_byte_vector(
+		std::vector<uint8_t> *ptr_,
+		uint32_t max_size_elem_,
+		uint64_t flags = 0){add_data(ptr_, max_size_elem_, flags);}
+	void add_data_eight_byte_vector(
+		std::vector<uint64_t> *ptr_,
+		uint32_t max_size_elem_,
+		uint64_t flags = 0){add_data(ptr_, max_size_elem_, flags);}
+	void add_data_id_vector(
+		std::vector<id_t_> *ptr_,
+		uint32_t max_size_elem_,
+		uint64_t flags = 0){add_data(ptr_, max_size_elem_, flags);}
+	void add_data_id(
+		id_t_ *id_,
+		uint32_t const_size_elem_,
+		uint64_t flags = 0){add_data(id_, const_size_elem_, flags);}
+	void add_data_raw(
+		void *ptr_,
+		uint32_t const_size_bytes_,
+		uint64_t flags = 0){add_data(ptr_, const_size_bytes_, flags);}
 	// export and import data
-	std::vector<uint8_t> export_data(uint8_t flags_);
+	std::vector<uint8_t> export_data(uint8_t flags_, uint8_t extra = ID_EXTRA_ENCRYPT | ID_EXTRA_COMPRESS);
 	void import_data(std::vector<uint8_t> data);
 	void rsa_decrypt_backlog();
 	bool is_owner();
@@ -181,5 +210,6 @@ extern void set_id_uuid(id_t_ *id, uint64_t uuid);
 #define TYPE_TV_FRAME_VIDEO_T				22
 #define TYPE_TV_FRAME_CAPTION_T				23
 #define TYPE_INPUT_DEV_STANDARD_T			24
+#define TYPE_ID_DISK_INDEX_T				25
 
 #endif
