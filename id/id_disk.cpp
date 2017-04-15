@@ -157,14 +157,15 @@ static id_t_ optimal_disk_id_save(id_t_ id_){
 	// or I can just randomize it
 	std::vector<id_t_> disk_id_vector =
 		id_api::cache::get(
-			"id_disk_index_t");
+			TYPE_ID_DISK_INDEX_T);
 	if(disk_id_vector.size() >= 1){
 		return disk_id_vector[0];
 	}
+	print("no id_disk_index_t exists", P_CRIT);
 	return ID_BLANK_ID;
 }
 
-void id_api::disk::load(id_t_ id){
+void id_disk_api::load(id_t_ id){
 	id_t_ disk_id =
 		optimal_disk_id_load(id);
 	id_disk_index_t *disk_index_ptr =
@@ -179,7 +180,7 @@ void id_api::disk::load(id_t_ id){
 	disk_index_ptr->import_id(id);
 }
 
-void id_api::disk::load(std::vector<id_t_> ids){
+void id_disk_api::load(std::vector<id_t_> ids){
 	for(uint64_t i = 0;i < ids.size();i++){
 		load(ids[i]);
 	}
@@ -189,7 +190,7 @@ void id_api::disk::load(std::vector<id_t_> ids){
   TODO: see the header file for laundry list
  */
 
-void id_api::disk::save(id_t_ id){
+void id_disk_api::save(id_t_ id){
 	if(PTR_ID(id, ) == nullptr){
 		print("ID to export doesn't exist in memory, aborting", P_WARN);
 		return;
@@ -208,13 +209,13 @@ void id_api::disk::save(id_t_ id){
 
 }
 
-void id_api::disk::save(std::vector<id_t_> id_vector){
+void id_disk_api::save(std::vector<id_t_> id_vector){
 	for(uint64_t i = 0;i < id_vector.size();i++){
 		save(id_vector[i]);
 	}
 }
 
-std::string id_api::disk::get_filename(id_t_ id_){
+std::string id_disk_api::get_filename(id_t_ id_){
 	data_id_t *id = PTR_ID(id_, );
 	if(id == nullptr){
 		// only runs for this check
@@ -231,9 +232,9 @@ std::string id_api::disk::get_filename(id_t_ id_){
 			print("disk_index_ptr is a nullptr", P_WARN);
 			continue;
 		}
-		std::string retval =
-			disk_index_ptr->get_path_of_id(id_);
-		if(retval != "" && disk_index_ptr->id_on_disk(id_)){
+		std::string retval;
+		if(disk_index_ptr->id_on_disk(id_) &&
+		   (retval = disk_index_ptr->get_path_of_id(id_)) != ""){
 			return retval;
 		}
 	}
@@ -246,14 +247,36 @@ id_disk_index_t::id_disk_index_t() : id(this, TYPE_ID_DISK_INDEX_T){
 id_disk_index_t::~id_disk_index_t(){
 }
 
-void id_disk_index_t::set(uint8_t medium_, uint8_t transport_, std::vector<uint8_t> enhance_, std::string path_){
+void id_disk_index_t::update_index_from_disk(){
+	std::vector<std::string> find_output =
+		system_handler::find_all_files(
+			(char*)(path.data()),
+			"_t");
+	uint64_t old_index_size = index.size();
+	index.clear();
+	for(uint64_t i = 0;i < find_output.size();i++){
+		std::string id_hex =
+			find_output[i].substr(
+				find_output[i].find_last_of(SLASH)+1,
+			        find_output[i].find_last_of('_')-find_output[i].find_last_of(SLASH)-1);
+		P_V_S(id_hex, P_SPAM); // checking my work, not important
+		// TODO: might want to store types and other info as well...
+		index.push_back(
+			convert::array::id::from_hex(id_hex));
+	}
+	print("completed a full index refresh (" + std::to_string(old_index_size) + " to " + std::to_string(index.size()) + ")", P_NOTE);
+}
+
+void id_disk_index_t::set(uint8_t medium_, uint8_t tier_, uint8_t transport_, std::vector<uint8_t> enhance_, std::string path_){
 	if(path_.size() > ID_DISK_PATH_LENGTH){
 		print("path is too large, not setting up", P_ERR);
 	}
 	memcpy(path.data(), path_.data(), path_.size());
 	medium = medium_;
+	tier = tier_;
 	transport = transport_;
 	enhance = enhance_;
+	update_index_from_disk();
 }
 
 std::string id_disk_index_t::get_path_of_id(id_t_ id_){
@@ -275,7 +298,8 @@ void id_disk_index_t::export_id(id_t_ id_){
 	data_id_t *ptr =
 		PTR_ID(id_, );
 	std::vector<uint8_t> exportable_data =
-		ptr->export_data(ID_DATA_NONET);
+		ptr->export_data(ID_DATA_NONET,
+				 ID_EXTRA_COMPRESS | ID_EXTRA_ENCRYPT);
 	std::string filename =
 		get_path_of_id(id_);
 	system_handler::rm(filename);

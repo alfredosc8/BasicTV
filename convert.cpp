@@ -351,7 +351,8 @@ std::string convert::type::from(uint8_t type){
 		print("zero type, something went wrong earlier", P_WARN);
 		return "";
 	default:
-		print("invalid type, probably malicious (not zero)", P_WARN);
+		print("invalid type, probably malicious (not zero)", P_CRIT);
+		P_V(type, P_WARN);
 		return "";
 	}
 }

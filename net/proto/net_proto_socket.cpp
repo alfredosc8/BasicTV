@@ -103,7 +103,9 @@ void net_proto_socket_t::send_id(id_t_ id_){
 		print("id to send is a nullptr", P_ERR);
 	}
 	std::vector<uint8_t> payload =
-		id_tmp->export_data(ID_DATA_NOEXP);
+		id_tmp->export_data(
+			ID_DATA_NOEXP,
+			ID_EXTRA_COMPRESS | ID_EXTRA_ENCRYPT);
 	if(payload.size() == 0){
 		print("exported size of ID is zero, not sending", P_NOTE);
 		return;

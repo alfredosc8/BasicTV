@@ -307,8 +307,6 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_, uint8_t extra){
 		   convert::type::from(type))){
 		print("forcing no encryption on encrypt blacklist type against "
 		      "the given extra parameter", P_WARN);
-		// not really a warning, is fine if this happens
-		extra &= ~ID_EXTRA_ENCRYPT;
 	}
 	P_V_B(flags_, P_DEBUG);
 	P_V_B(extra, P_DEBUG);
@@ -320,9 +318,9 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_, uint8_t extra){
 	}
 	if(is_owner()){
 		std::vector<uint8_t> preamble;
+		ID_EXPORT(extra, preamble);
 		ID_EXPORT(id, preamble);
 		ID_EXPORT(type, preamble);
-		ID_EXPORT(extra, preamble);
 		transport_i_t trans_i = 0;
 		transport_size_t trans_size = 0;
 		for(uint64_t i = 0;i < data_vector.size();i++){
@@ -372,28 +370,16 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_, uint8_t extra){
 			// P_V(trans_i, P_SPAM);
 			// P_V(trans_size, P_SPAM);
 		}
-		P_V(retval.size(), P_SPAM);
-		if(extra & ID_EXTRA_COMPRESS){
-			retval =
-				compressor::compress(
-					retval, 9, type);
-		}
-		// TODO: actually pass a type
-		/*
-		  Only certain types are exempt from encryption (only current
-		  one is public keys). This is the only case that will be
-		  programmed in, so assume any other type that is not encrypted
-		  is the product of naughty doings
-		 */
-		if(extra & ID_EXTRA_ENCRYPT){
-			retval =
-				encrypt_api::encrypt(
-					retval, production_priv_key_id);
-		}
 		retval.insert(
 			retval.begin(),
 			preamble.begin(),
 			preamble.end());
+		if(extra & ID_EXTRA_COMPRESS){
+			retval = id_api::raw::compress(retval);
+		}
+		if(extra & ID_EXTRA_ENCRYPT){
+			retval = id_api::raw::encrypt(retval);
+		}
 	}else{
 		/*
 		  can't compress already encrypted data
@@ -453,30 +439,14 @@ void data_id_t::import_data(std::vector<uint8_t> data){
 	id_t_ trans_id = ID_BLANK_ID;
 	type_t_ trans_type = ID_BLANK_TYPE;
 	uint8_t extra = 0;
+	ID_IMPORT(extra);
 	ID_IMPORT(trans_id);
 	ID_IMPORT(trans_type);
-	ID_IMPORT(extra);
 	P_V_S(convert::array::id::to_hex(trans_id), P_SPAM);
 	P_V_S(convert::type::from(trans_type), P_SPAM);
 	P_V_B(extra, P_SPAM);
 	if(trans_type != type){
 		print("can't import a mis-matched type", P_ERR);
-	}
-	try{
-		if(extra & ID_EXTRA_ENCRYPT){
-			const id_t_ peer_public_key_id =
-				encrypt_api::search::pub_key_from_hash(
-					get_id_hash(
-						trans_id));
-			data = encrypt_api::decrypt(
-				data, peer_public_key_id);
-		}
-		if(extra & ID_EXTRA_COMPRESS){
-			data = compressor::decompress(
-				data);
-		}
-	}catch(...){
-		print("can't decode information", P_ERR);
 	}
 	set_id(trans_id);
 	transport_i_t trans_i = 0;

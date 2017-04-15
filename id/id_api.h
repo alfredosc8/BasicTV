@@ -29,6 +29,14 @@
 #define ID_API_IMPORT_FROM_DISK (1 << 0)
 #define ID_API_IMPORT_FROM_NET (1 << 1)
 
+/*
+  TODO: drastically simplify and clarify this section
+
+  I feel like a lot of the code declarations here are better subdivided into 
+  smaller sections that are only public to the ID code itself, like loading
+  data from the disk into memory, and other small stuff
+ */
+
 namespace id_api{
 	namespace array{
 		data_id_t *ptr_id(id_t_ id,
@@ -45,7 +53,7 @@ namespace id_api{
 				  uint8_t flags = 0);
 		void add(data_id_t *ptr);
 		void del(id_t_ id); // no type
-		id_t_ add_data(std::vector<uint8_t> data_);
+		id_t_ add_data(std::vector<uint8_t> data_, bool raw = false);
 		// used for quick lookups of my own type (encrypt_priv_key_t,
 		// net_peer_t, etc.)
 		id_t_ fetch_one_from_hash(type_t_ type,
@@ -64,6 +72,8 @@ namespace id_api{
 			 std::string type);
 		std::vector<id_t_> get(type_t_ type);
 		std::vector<id_t_> get(std::string type);
+		void hint_increment_id(id_t_ id);
+		void hint_decrement_id(id_t_ id);
 	}
 	namespace linked_list{
 		// next and previous are in the id itself, no interdependency
@@ -79,28 +89,13 @@ namespace id_api{
 		  Perhaps sort by last access time (when that gets implemented)?
 		 */
 	};
-	namespace disk{
-		/*
-		  All disks should be abstracted out, lookups and queries into
-		  larger tables should be fine for now and forever
-		 */
-		void save(std::vector<id_t_>);
-		void save(id_t_);
-		void load(std::vector<id_t_>);
-		void load(id_t_);
-		std::string get_filename(id_t_);
-	};
+	// comment out import really soon
 	namespace import{
 		void load_all_of_type(std::string type, uint8_t flags);
 		// used for saving, not needed for network (too slow as well)
 		uint64_t ver_on_disk(id_t_);
 		// used internally, called by id_api::array::ptr_* and others
 		void load_from_net(id_t_);
-	};
-	// metadata from the raw, unencrypted, and decompressed string
-	namespace metadata{
-		id_t_ get_id_from_data(std::vector<uint8_t> raw_data);
-		type_t_ get_type_from_data(std::vector<uint8_t> raw_data);
 	};
 	namespace bulk_fetch{
 		std::vector<uint64_t> mod(std::vector<id_t_> vector);
@@ -109,6 +104,16 @@ namespace id_api{
 	void free_mem();
 	void destroy(id_t_ id);
 	void destroy_all_data();
+	namespace raw{
+		// encryption ID is pulled from ID hash
+		std::vector<uint8_t> encrypt(std::vector<uint8_t>);
+		std::vector<uint8_t> decrypt(std::vector<uint8_t>);
+		std::vector<uint8_t> compress(std::vector<uint8_t>);
+		std::vector<uint8_t> decompress(std::vector<uint8_t>);
+		id_t_ fetch_id(std::vector<uint8_t>);
+		uint8_t fetch_extra(std::vector<uint8_t>);
+		type_t_ fetch_type(std::vector<uint8_t>);
+	};
 };
 
 #endif

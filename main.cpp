@@ -133,6 +133,9 @@ static void bootstrap_production_priv_key_id(){
 		priv_key->set_pub_key_id(key_pair.second);
 		production_priv_key_id = priv_key->id.get_id();
 	}else if(all_private_keys.size() == 1){
+		if(all_public_keys.size() == 0){
+			print("no public keys can possibly match private key, error in loading?", P_CRIT);
+		}
 		production_priv_key_id = all_private_keys[0];
 		P_V_S(convert::array::id::to_hex(all_private_keys[0]), P_SPAM);
 		priv_key = PTR_DATA(all_private_keys[0], encrypt_priv_key_t);
@@ -186,17 +189,16 @@ static void init(){
 
 	  TODO: use getuid and that stuff when getenv doesn't work (?)
 	 */
-	//settings::set_setting("data_folder", ((std::string)getenv("HOME"))+"/.BasicTV/");
 	id_disk_index_t *disk_index =
 		new id_disk_index_t;
+	disk_index->id.noexp_all_data();
+	disk_index->id.nonet_all_data();
 	disk_index->set(
 		ID_DISK_MEDIUM_HDD,
+		2, // Tier 2 is lowest for non-RAM storage
 		ID_DISK_TRANS_DIR,
 		{ID_DISK_ENHANCE_UNDEF}, // macro to zero, here for verbosity
 		((std::string)getenv("HOME"))+"/.BasicTV/");
-	system_handler::mkdir(
-		settings::get_setting(
-			"data_folder"));
 	settings_init();
 
 	bootstrap_production_priv_key_id();
@@ -366,7 +368,8 @@ static void test_id_transport(){
 		new net_proto_peer_t;
 	tmp->set_net_ip("127.0.0.1", 58486);
 	const std::vector<uint8_t> exp =
-		tmp->id.export_data(ID_DATA_NOEXP | ID_DATA_NONET);
+		tmp->id.export_data(ID_DATA_NOEXP | ID_DATA_NONET,
+				    ID_EXTRA_COMPRESS | ID_EXTRA_ENCRYPT);
 	//test_id_transport_print_exp(exp);
 	net_proto_peer_t *tmp_2 =
 		new net_proto_peer_t;
@@ -666,7 +669,7 @@ int main(int argc_, char **argv_){
 	argv = argv_;
 	init();
 	running = true;
-	test_id_set_compression();
+	//test_id_set_compression();
 	//test_escape_string();
 	//test_aes();
 	//test_id_hex();

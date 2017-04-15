@@ -74,6 +74,7 @@
 struct id_disk_index_t{
 private:
 	uint8_t medium = 0;
+	uint8_t tier = 0;
 	uint8_t transport = 0;
 	std::vector<uint8_t> enhance;
 	std::array<uint8_t, ID_DISK_PATH_LENGTH> path = {{0}};
@@ -91,14 +92,18 @@ private:
 	// TODO: create a function that fetches mod_inc (when implemented),
 	// as well as other information about the ID that isn't included by
 	// ID reference
+	void update_index_from_disk();
 public:
 	data_id_t id;
 	id_disk_index_t();
 	~id_disk_index_t();
 	// getters and setters
-	void set(uint8_t medium_, uint8_t transport_, std::vector<uint8_t> enhance_, std::string path_);
+	void set(uint8_t medium_, uint8_t tier_, uint8_t transport_, std::vector<uint8_t> enhance_, std::string path_);
+	
 	std::string get_path(){return (char*)(path.data());}
 	uint8_t get_medium(){return medium;}
+	uint8_t get_tier(){return tier;}
+	uint8_t get_transport(){return transport;}
 	std::vector<id_t_> get_index(){return index;}
 
 	std::string get_path_of_id(id_t_ id_);
@@ -107,6 +112,17 @@ public:
 	// transporting data to and from disk
 	void export_id(id_t_ id_);
 	void import_id(id_t_ id_);
+};
+namespace id_disk_api{
+	/*
+	  All disks should be abstracted out, lookups and queries into
+	  larger tables should be fine for now and forever
+	*/
+	void save(std::vector<id_t_>);
+	void save(id_t_);
+	void load(std::vector<id_t_>);
+	void load(id_t_);
+	std::string get_filename(id_t_);
 };
 
 #endif

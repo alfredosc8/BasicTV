@@ -223,14 +223,21 @@ std::vector<uint8_t> encrypt_api::decrypt(std::vector<uint8_t> data,
 	uint8_t encryption_scheme = ENCRYPT_UNDEFINED;
 	std::vector<uint8_t> key;
 	uint8_t key_type = 0;
-	encrypt_pull_key_info(key_id,
-			      &key,
-			      &encryption_scheme,
-			      &key_type);
 	const uint8_t message_encryption_scheme =
 		data[0];
 	data.erase(
 		data.begin());
+	if(key_id == ID_BLANK_ID){
+		if(data.size() < sizeof(id_t_)){
+			print("size is too small for attached key id", P_NOTE); 
+		}
+		print("key_id supplied is blank (normal), using supplied ID in payload", P_NOTE);
+		memcpy(&(key_id[0]), data.data(), sizeof(id_t_));
+	}
+	encrypt_pull_key_info(key_id,
+			      &key,
+			      &encryption_scheme,
+			      &key_type);
 	switch(message_encryption_scheme){
 	case ENCRYPT_AES192_SHA256:
 		retval = decrypt_aes192_sha256(
@@ -300,6 +307,29 @@ id_t_ encrypt_api::search::pub_key_from_hash(std::array<uint8_t, 32> hash){
 			   get_id_hash(key_id)){
 				return key_id;
 			}
+		}
+	}
+	return ID_BLANK_ID;
+}
+
+id_t_ encrypt_api::search::priv_key_from_hash(std::array<uint8_t, 32> hash){
+	id_t_ pub_key = pub_key_from_hash(hash);
+	std::vector<id_t_> priv_keys =
+		id_api::cache::get(
+			TYPE_ENCRYPT_PRIV_KEY_T);
+	/*
+	  I'm assuming the search area is small enough for this not to be a
+	  performance problem
+	 */
+	for(uint64_t i = 0;i < priv_keys.size();i++){
+		encrypt_priv_key_t *priv_key_ptr =
+			PTR_DATA(priv_keys[i],
+				 encrypt_priv_key_t);
+		if(priv_key_ptr == nullptr){
+			continue;
+		}
+		if(priv_key_ptr->get_pub_key_id() == pub_key){
+			return priv_keys[i];
 		}
 	}
 	return ID_BLANK_ID;

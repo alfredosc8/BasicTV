@@ -1,5 +1,6 @@
 #include "id.h"
 #include "id_api.h"
+#include "id_disk.h"
 
 #include "../tv/tv_dev_audio.h"
 #include "../tv/tv_dev_video.h"
@@ -22,6 +23,7 @@
 #include "../settings.h"
 #include "../system.h"
 #include "../cryptocurrency.h"
+#include "../compress/compress.h"
 
 static std::vector<data_id_t*> id_list;
 static std::vector<std::pair<std::vector<id_t_>, type_t_ > > type_cache;
@@ -53,7 +55,7 @@ data_id_t *id_api::array::ptr_id(id_t_ id,
 		if(type != "console_t"){
 			try{
 				print("attempting import from disk", P_SPAM);
-				id_api::disk::load(id);
+				id_disk_api::load(id);
 			}catch(...){
 				net_proto::request::add_id(id);
 			}
@@ -109,12 +111,12 @@ void id_api::array::del(id_t_ id){
   data requests.
  */
 
-id_t_ id_api::array::add_data(std::vector<uint8_t> data_){
+id_t_ id_api::array::add_data(std::vector<uint8_t> data_, bool raw){
 	id_t_ id = ID_BLANK_ID;
 	type_t_ type = 0;
 	try{
-		id = id_api::metadata::get_id_from_data(data_);
-		type = id_api::metadata::get_type_from_data(data_);
+		id = id_api::raw::fetch_id(data_);
+		type = id_api::raw::fetch_type(data_);
 		P_V_S(convert::array::id::to_hex(id), P_SPAM);
 		P_V_S(convert::type::from(type), P_SPAM);
 	}catch(std::exception &e){
@@ -314,41 +316,42 @@ std::vector<id_t_> id_api::get_all(){
  */
 
 static bool id_api_should_write_to_disk_mod_inc(id_t_ id_){
-	std::string directory =
-		id_api::disk::get_filename(id_);
-	directory =
-		directory.substr(
-			0,
-			directory.find_last_of('/'));
-	P_V_S(directory, P_SPAM);
-	std::vector<std::string> find_output =
-		system_handler::find_all_files(
-			directory,
-			convert::array::id::to_hex(id_));
-	// multiple files might exist for some stupid and very broken reason,
-	// so read the entire vector like this
-	uint64_t largest_mod_inc = 0;
-	for(uint64_t i = 0;i < find_output.size();i++){
-		try{
-			uint64_t mod_inc =
-				std::stoi(
-					find_output[i].substr(
-						find_output[i].find_last_of("_")+1,
-						find_output[i].size()));
-			if(mod_inc > largest_mod_inc){
-				largest_mod_inc = mod_inc;
-			}
-		}catch(...){}
-	}
-	data_id_t *id_tmp =
-		PTR_ID(id_, );
-	if(id_tmp == nullptr){
-		print("id_tmp is a nullptr, probably passing stale info", P_WARN);
-		return false;
-		// not a big deal, but shouldn't happen, probably passing around
-		// stale information at this point
-	}
-	return id_tmp->get_mod_inc() > largest_mod_inc || largest_mod_inc == 0;
+	// std::string directory =
+	// 	id_disk_api::get_filename(id_);
+	// directory =
+	// 	directory.substr(
+	// 		0,
+	// 		directory.find_last_of('/'));
+	// P_V_S(directory, P_SPAM);
+	// std::vector<std::string> find_output =
+	// 	system_handler::find_all_files(
+	// 		directory,
+	// 		convert::array::id::to_hex(id_));
+	// // multiple files might exist for some stupid and very broken reason,
+	// // so read the entire vector like this
+	// uint64_t largest_mod_inc = 0;
+	// for(uint64_t i = 0;i < find_output.size();i++){
+	// 	try{
+	// 		uint64_t mod_inc =
+	// 			std::stoi(
+	// 				find_output[i].substr(
+	// 					find_output[i].find_last_of("_")+1,
+	// 					find_output[i].size()));
+	// 		if(mod_inc > largest_mod_inc){
+	// 			largest_mod_inc = mod_inc;
+	// 		}
+	// 	}catch(...){}
+	// }
+	// data_id_t *id_tmp =
+	// 	PTR_ID(id_, );
+	// if(id_tmp == nullptr){
+	// 	print("id_tmp is a nullptr, probably passing stale info", P_WARN);
+	// 	return false;
+	// 	// not a big deal, but shouldn't happen, probably passing around
+	// 	// stale information at this point
+	// }
+	// return id_tmp->get_mod_inc() > largest_mod_inc || largest_mod_inc == 0;
+	return true;
 }
 
 /*
@@ -369,7 +372,7 @@ static bool id_api_should_write_to_disk_mod_inc(id_t_ id_){
 void id_api::destroy(id_t_ id){	
 	if(id_api_should_write_to_disk_mod_inc(id) == true &&
 	   settings::get_setting("export_data") == "true"){
-		id_api::disk::save(id);
+		id_disk_api::save(id);
 	}
 	// TV subsystem
 	data_id_t *ptr =
@@ -425,12 +428,25 @@ void id_api::destroy_all_data(){
 	std::vector<data_id_t*> list_tmp =
 		id_list;
 	for(uint64_t i = 0;i < list_tmp.size();i++){
-		if(list_tmp[i]->get_id() == production_priv_key_id){
-			// TODO: fix catch-22
+		if(list_tmp[i]->get_type_byte() == TYPE_ENCRYPT_PRIV_KEY_T ||
+		   list_tmp[i]->get_type_byte() == TYPE_ENCRYPT_PUB_KEY_T ||
+		   list_tmp[i]->get_type_byte() == TYPE_ID_DISK_INDEX_T){
+			continue;
+		}
+		P_V(list_tmp[i]->get_type_byte(), P_DEBUG);
+		destroy(list_tmp[i]->get_id());
+		list_tmp[i] = nullptr;
+	}
+	/*
+	  TODO: This works for now, but I need to create a system that allows
+	  exporting of disk information (shouldn't be hard)
+	 */
+	for(uint64_t i = 0;i < list_tmp.size();i++){
+		if(list_tmp[i] != nullptr &&
+		   list_tmp[i]->get_type_byte() == TYPE_ID_DISK_INDEX_T){
 			continue;
 		}
 		destroy(list_tmp[i]->get_id());
-		P_V(list_tmp.size(), P_DEBUG);
 	}
 	destroy(production_priv_key_id);
 }
@@ -500,12 +516,28 @@ void id_api::free_mem(){
 
 void id_api::import::load_all_of_type(std::string type, uint8_t flags){
 	if(flags & ID_API_IMPORT_FROM_DISK){
-		std::vector<std::string> find_out =
-			system_handler::find_all_files(
-				file::ensure_slash_at_end(
-					settings::get_setting(
-						"data_folder")),
-				type);
+		std::vector<std::string> find_out;
+		std::vector<id_t_> all_disks = 
+			id_api::cache::get(
+				TYPE_ID_DISK_INDEX_T);
+		for(uint64_t i = 0;i < all_disks.size();i++){
+			id_disk_index_t *disk_index_ptr =
+				PTR_DATA(all_disks[i],
+					 id_disk_index_t);
+			if(disk_index_ptr == nullptr){
+				continue;
+			}
+			std::string path = disk_index_ptr->get_path();
+			std::vector<std::string> new_ =
+				system_handler::find_all_files(
+					file::ensure_slash_at_end(
+						path),
+					type);
+			find_out.insert(
+				find_out.end(),
+				new_.begin(),
+				new_.end());
+		}
 		for(uint64_t i = 0;i < find_out.size();i++){
 			P_V_S(find_out[i], P_SPAM);
 			std::ifstream in(find_out[i], std::ios::binary);
@@ -545,24 +577,6 @@ void id_api::import::load_all_of_type(std::string type, uint8_t flags){
 	}
 }
 
-id_t_ id_api::metadata::get_id_from_data(std::vector<uint8_t> raw_data){
-	id_t_ retval;
-	if(unlikely(raw_data.size() < 40)){
-		print("don't have enough room to extract ID", P_ERR);
-	}
-	memcpy(&(retval[0]), &(raw_data[0]), 40);
-	return retval;
-}
-
-type_t_ id_api::metadata::get_type_from_data(std::vector<uint8_t> raw_data){
-	type_t_ retval;
-	if(unlikely(raw_data.size() < 40+32)){
-		print("don't have enough room to extract type", P_ERR);
-	}
-	memcpy(&(retval), &(raw_data[40]), 1);
-	return retval;
-}
-
 std::vector<uint64_t> id_api::bulk_fetch::mod(std::vector<id_t_> vector){
 	std::vector<uint64_t> retval;
 	for(uint64_t i = 0;i < vector.size();i++){
@@ -576,4 +590,143 @@ std::vector<uint64_t> id_api::bulk_fetch::mod(std::vector<id_t_> vector){
 		}
 	}
 	return retval;
+}
+
+/*
+  TODO: something here is broken, check over these functions and make sure there
+  aren't any widespread errors
+ */
+
+std::vector<uint8_t> id_api::raw::encrypt(std::vector<uint8_t> data){
+	id_t_ id = fetch_id(data);
+	data_id_t *ptr = PTR_ID(fetch_id(data), );
+	if(ptr == nullptr){
+		print("can't encrypt null id", P_ERR);
+	}
+	if(ptr->get_type_byte() == TYPE_ENCRYPT_PUB_KEY_T){
+		print("can't encrypt public key", P_WARN);
+	}else{
+		data[0] |= ID_EXTRA_ENCRYPT;
+		std::vector<uint8_t> encrypt_chunk =
+			encrypt_api::encrypt(
+				std::vector<uint8_t>(
+					data.begin()+1+sizeof(id_t_)+sizeof(type_t_),
+					data.end()),
+				encrypt_api::search::priv_key_from_hash(
+					get_id_hash(id)));
+		data.erase(
+			data.begin()+1+sizeof(id_t_)+sizeof(type_t_),
+			data.end());
+		data.insert(
+			data.end(),
+			encrypt_chunk.begin(),
+			encrypt_chunk.end());
+	}
+	return data;
+}
+
+std::vector<uint8_t> id_api::raw::decrypt(std::vector<uint8_t> data){
+	id_t_ id = fetch_id(data);
+	if(!(data[0] & ID_EXTRA_ENCRYPT)){
+		print("can't decrypt pre-decrypted data", P_WARN);
+	}else{
+		data[0] &= ~ID_EXTRA_ENCRYPT;
+		std::vector<uint8_t> decrypt_chunk =
+			encrypt_api::decrypt(
+				std::vector<uint8_t>(
+					data.begin()+1+sizeof(id_t_)+sizeof(type_t_),
+					data.end()),
+				encrypt_api::search::pub_key_from_hash(
+					get_id_hash(id)));
+		data.erase(
+			data.begin()+1+sizeof(id_t_)+sizeof(type_t_),
+			data.end());
+		data.insert(
+			data.end(),
+			decrypt_chunk.begin(),
+			decrypt_chunk.end());
+	}
+	return data;
+}
+
+std::vector<uint8_t> id_api::raw::compress(std::vector<uint8_t> data){
+	id_t_ id = fetch_id(data);
+	data_id_t *ptr = PTR_ID(fetch_id(data), );
+	if(ptr == nullptr){
+		print("can't encrypt null id", P_ERR);
+	}
+	if(data[0] & ID_EXTRA_COMPRESS){
+		print("can't compress pre-compressed data", P_WARN);
+		print("TODO: compress pre-compressed data", P_NOTE);
+	}else{
+		data[0] |= ID_EXTRA_COMPRESS;
+		std::vector<uint8_t> compress_chunk =
+			compressor::compress(
+				std::vector<uint8_t>(
+					data.begin()+1+sizeof(id_t_)+sizeof(type_t_),
+					data.end()),
+				9,
+				0); // type isn't used currently
+		data.erase(
+			data.begin()+1+sizeof(id_t_)+sizeof(type_t_),
+			data.end());
+		data.insert(
+			data.end(),
+			compress_chunk.begin(),
+			compress_chunk.end());
+	}
+	return data;
+}
+
+std::vector<uint8_t> id_api::raw::decompress(std::vector<uint8_t> data){
+	id_t_ id = fetch_id(data);
+	data_id_t *ptr = PTR_ID(fetch_id(data), );
+	if(ptr == nullptr){
+		print("can't encrypt null id", P_ERR);
+	}
+	if(!(data[0] & ID_EXTRA_COMPRESS)){
+		print("can't decompress uncompressed data", P_WARN);
+	}else{
+		data[0] &= ~ID_EXTRA_COMPRESS;
+		std::vector<uint8_t> compress_chunk =
+			compressor::decompress(
+				std::vector<uint8_t>(
+					data.begin()+1+sizeof(id_t_)+sizeof(type_t_),
+					data.end()));
+		data.erase(
+			data.begin()+1+sizeof(id_t_)+sizeof(type_t_),
+			data.end());
+		data.insert(
+			data.end(),
+			compress_chunk.begin(),
+			compress_chunk.end());
+	}
+	return data;
+}
+
+/*
+  Following variables are guaranteed to be not encrypted
+ */
+
+id_t_ id_api::raw::fetch_id(std::vector<uint8_t> data){
+	id_t_ retval;
+	if(data.size() < sizeof(id_t_)+1){
+		print("supposed exported ID is too small to contain ID", P_ERR);
+	}
+	memcpy(&(retval[0]), data.data()+1, sizeof(id_t_));
+	return retval;
+}
+
+uint8_t id_api::raw::fetch_extra(std::vector<uint8_t> data){
+	if(data.size() == 0){
+		print("data for extra byte is blank", P_ERR);
+	}
+	return data[0];
+}
+
+type_t_ id_api::raw::fetch_type(std::vector<uint8_t> data){
+	if(data.size() < sizeof(id_t_)+1){
+		print("don't have enough room to extract type", P_ERR);
+	}
+	return *(data.data()+1+sizeof(id_t_));
 }

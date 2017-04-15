@@ -14,8 +14,7 @@
 
 #define ADD_DATA(x) id.add_data_raw((uint8_t*)&x, sizeof(x))
 
-#define ID_LENGTH 40
-typedef std::array<uint8_t, ID_LENGTH> id_t_;
+typedef std::array<uint8_t, 40> id_t_;
 typedef uint8_t type_t_;
 
 const id_t_ blank_id = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
@@ -93,6 +92,7 @@ public:
 	 */
 	void set_id(id_t_ id_);
 	std::string get_type();
+	uint8_t get_type_byte(){return type;}
 	void *get_ptr();
 	void mod_inc(){modification_incrementor++;}
 	uint64_t get_mod_inc(){return modification_incrementor;}
@@ -150,7 +150,10 @@ public:
 		uint32_t const_size_bytes_,
 		uint64_t flags = 0){add_data(ptr_, const_size_bytes_, flags);}
 	// export and import data
-	std::vector<uint8_t> export_data(uint8_t flags_, uint8_t extra = ID_EXTRA_ENCRYPT | ID_EXTRA_COMPRESS);
+	// default on export is unencrypted and uncompressed, but is compressed
+	// and encrypted when it is loaded into the cache (so always, currently,
+	// but just not handled in this function)
+	std::vector<uint8_t> export_data(uint8_t flags_, uint8_t extra);
 	void import_data(std::vector<uint8_t> data);
 	void rsa_decrypt_backlog();
 	bool is_owner();

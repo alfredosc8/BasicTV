@@ -55,6 +55,7 @@ struct tv_channel_t{
 private:
 	std::vector<id_t_> stream_list;
 	uint64_t status = 0;
+	id_t_ wallet_set_id = ID_BLANK_ID;
 public:
 	data_id_t id;
 	tv_channel_t();
@@ -65,6 +66,8 @@ public:
 	bool is_streaming();
 	bool is_audio();
 	bool is_video();
+	id_t_ get_wallet_set_id(){return wallet_set_id;}
+	void set_wallet_set_id(id_t_ wallet_set_id_){wallet_set_id = wallet_set_id_;}
 };
 
 #endif
