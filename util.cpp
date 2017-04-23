@@ -69,6 +69,31 @@ static std::string print_level_text(int level){
 
 static int print_level = P_SPAM;
 
+std::string print_color_text(std::string data, int level){
+	std::string prefix;
+	switch(level){
+	case P_CRIT:
+		prefix = "\033[0;31m";
+		break;
+	case P_ERR:
+		prefix = "\033[1;31m";
+		break;
+	case P_WARN:
+		prefix = "\033[1;36m";
+		break;
+	case P_NOTE:
+		prefix = "";
+		break;
+	case P_DEBUG:
+		prefix = "\033[0;34m";
+		break;
+	case P_SPAM:
+		prefix = "\033[1;32m";
+		break;
+	}
+	return prefix + data + "\033[0m";
+}
+
 void print(std::string data, int level, const char *func){
 	if(print_level == P_SPAM){
 		try{
@@ -83,8 +108,8 @@ void print(std::string data, int level, const char *func){
 		if(func != nullptr){
 			func_ = func;
 		}
-		std::cout << print_level_text(level) << " "
-			  << " " << data << std::endl;
+		std::cout << print_color_text(print_level_text(level), level) << " "
+			  << " " << print_color_text(data, level) << std::endl;
 		if(settings::get_setting_unsigned_def(
 			   "throw_level", P_CRIT) <= level){
 			std::cerr << "CRITICAL ERROR" << std::endl;
@@ -94,6 +119,11 @@ void print(std::string data, int level, const char *func){
 		if(level >= P_ERR){
 			throw std::runtime_error(data);
 		}
+		// if(level >= P_WARN){
+		// 	sleep_ms(1000, true);
+		// }else{
+		// 	sleep_ms(250, true);
+		// }
 	}
 }
 

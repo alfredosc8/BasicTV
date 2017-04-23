@@ -7,10 +7,10 @@ encrypt_key_t::encrypt_key_t(){}
 encrypt_key_t::~encrypt_key_t(){}
 
 void encrypt_key_t::list_virtual_data(data_id_t *id){
-	id->add_data(&key,
-		     65536);
-	id->add_data(&encryption_scheme,
-		     1);
+	id->add_data_one_byte_vector(&key,
+				     65536);
+	id->add_data_raw(&encryption_scheme,
+			 1);
 }
 
 void encrypt_key_t::set_encrypt_key(std::vector<uint8_t> key_,
@@ -54,7 +54,7 @@ static void encrypt_pull_key_info(id_t_ id,
 				  std::vector<uint8_t> *key,
 				  uint8_t *encryption_scheme,
 				  uint8_t *key_type){
-	data_id_t *ptr = PTR_ID_FAST(id, );
+	data_id_t *ptr = PTR_ID(id, );
 	if(ptr == nullptr){
 		print("id is nullptr", P_ERR);
 	}
@@ -292,23 +292,31 @@ id_t_ encrypt_api::search::pub_key_from_hash(std::array<uint8_t, 32> hash){
 	std::vector<id_t_> pub_key_vector =
 		id_api::cache::get(
 			"encrypt_pub_key_t");
+	P_V(pub_key_vector.size(), P_SPAM);
 	for(uint64_t i = 0;i < pub_key_vector.size();i++){
-		const id_t_ key_id = pub_key_vector[i];
-		if(get_id_hash(key_id) == hash){
-			encrypt_pub_key_t *pub_key_ptr =
-				PTR_DATA(
-					key_id,
-					encrypt_pub_key_t);
-			if(pub_key_ptr == nullptr){
-				continue;
-			}
-			if(encrypt_api::hash::sha256::gen_raw(
-				   pub_key_ptr->get_encrypt_key().second) ==
-			   get_id_hash(key_id)){
-				return key_id;
-			}
+		encrypt_pub_key_t *pub_key_ptr =
+			PTR_DATA(
+				pub_key_vector[i],
+				encrypt_pub_key_t);
+		if(pub_key_ptr == nullptr){
+			continue;
+		}
+		std::array<uint8_t, 32> pub_key_hash =
+			encrypt_api::hash::sha256::gen_raw(
+				pub_key_ptr->get_encrypt_key().second);
+		P_V_S(convert::number::to_hex(
+			      std::vector<uint8_t>(
+				      &(hash[0]),
+				      &(hash[0])+32)), P_SPAM);
+		P_V_S(convert::number::to_hex(
+			      std::vector<uint8_t>(
+				      &(pub_key_hash[0]),
+				      &(pub_key_hash[0])+32)), P_SPAM);
+		if(pub_key_hash == hash){
+			return pub_key_vector[i];
 		}
 	}
+	print("couldn't find public key, returning blank id", P_WARN);
 	return ID_BLANK_ID;
 }
 
@@ -328,10 +336,14 @@ id_t_ encrypt_api::search::priv_key_from_hash(std::array<uint8_t, 32> hash){
 		if(priv_key_ptr == nullptr){
 			continue;
 		}
+		P_V_S(convert::array::id::to_hex(pub_key), P_SPAM);
+		P_V_S(convert::array::id::to_hex(
+			      priv_key_ptr->get_pub_key_id()), P_SPAM);
 		if(priv_key_ptr->get_pub_key_id() == pub_key){
 			return priv_keys[i];
 		}
 	}
+	print("couldn't find private key, returning blank id", P_WARN);
 	return ID_BLANK_ID;
 }
 

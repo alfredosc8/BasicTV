@@ -14,7 +14,7 @@
 
 #define ADD_DATA(x) id.add_data_raw((uint8_t*)&x, sizeof(x))
 
-typedef std::array<uint8_t, 40> id_t_;
+typedef std::array<uint8_t, 41> id_t_;
 typedef uint8_t type_t_;
 
 const id_t_ blank_id = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
@@ -61,11 +61,12 @@ public:
   internally (raw pointer vs byte vector, namely)
  */
 
+type_t_ get_id_type(id_t_ id); // tacky
+
 struct data_id_t{
 private:
 	// first 8 bytes UUID, last 32-byte SHA-256 hash
 	id_t_ id = ID_BLANK_ID;
-	uint8_t type = ID_BLANK_TYPE;
 	void *ptr = nullptr;
 	id_t_ encrypt_pub_key_id = ID_BLANK_ID;
 	std::vector<std::vector<uint8_t> > rsa_backlog;
@@ -73,7 +74,7 @@ private:
 	std::pair<std::vector<id_t_>, std::vector<id_t_> > linked_list;
 	std::vector<uint8_t> imported_data; // encrypted data if imported
 	void init_list_all_data();
-	void init_gen_id();
+	void init_gen_id(type_t_);
 	void init_type_cache();
 	// set at get_ptr(), used for selective exporting
 	uint64_t last_access_timestamp_micro_s = 0;
@@ -81,6 +82,7 @@ private:
 	// function or the parent data type (manually call mod_inc();
 	uint64_t modification_incrementor = 0;
 	uint8_t global_flags = 0;
+	void add_data(void *ptr, uint32_t size_, uint64_t flags = 0);
 public:
 	data_id_t(void *ptr_, uint8_t type);
 	~data_id_t();
@@ -92,7 +94,7 @@ public:
 	 */
 	void set_id(id_t_ id_);
 	std::string get_type();
-	uint8_t get_type_byte(){return type;}
+	uint8_t get_type_byte(){return get_id_type(id);}
 	void *get_ptr();
 	void mod_inc(){modification_incrementor++;}
 	uint64_t get_mod_inc(){return modification_incrementor;}
@@ -108,43 +110,43 @@ public:
 	  the size of the ID is referring to just the array size, since the size
 	  is assumed with the pointer type (8 bytes, but maybe more later?)
 	 */
-	void add_data(
-		void *ptr_,
-		uint32_t size_,
-		uint64_t flags = 0);
-	void add_data(
-		id_t_ *ptr_,
-		uint32_t size_,
-		uint64_t flags = 0);
-	void add_data(
-		std::vector<uint8_t> *ptr_,
-		uint32_t size_,
-		uint64_t flags_ = 0);
-	void add_data(
-		std::vector<uint64_t> *ptr_,
-		uint32_t size_,
-		uint64_t flags = 0);
-	void add_data(
-		std::vector<id_t_> *ptr_,
-		uint32_t size_,
-		uint64_t flags = 0);
+	// void add_data(
+	// 	void *ptr_,
+	// 	uint32_t size_,
+	// 	uint64_t flags = 0);
+	// void add_data(
+	// 	id_t_ *ptr_,
+	// 	uint32_t size_,
+	// 	uint64_t flags = 0);
+	// void add_data(
+	// 	std::vector<uint8_t> *ptr_,
+	// 	uint32_t size_,
+	// 	uint64_t flags_ = 0);
+	// void add_data(
+	// 	std::vector<uint64_t> *ptr_,
+	// 	uint32_t size_,
+	// 	uint64_t flags = 0);
+	// void add_data(
+	// 	std::vector<id_t_> *ptr_,
+	// 	uint32_t size_,
+	// 	uint64_t flags = 0);
 	// TODO: should enforce casting
 	void add_data_one_byte_vector(
 		std::vector<uint8_t> *ptr_,
 		uint32_t max_size_elem_,
-		uint64_t flags = 0){add_data(ptr_, max_size_elem_, flags);}
+		uint64_t flags = 0){add_data(ptr_, max_size_elem_, flags | ID_DATA_BYTE_VECTOR);}
 	void add_data_eight_byte_vector(
 		std::vector<uint64_t> *ptr_,
 		uint32_t max_size_elem_,
-		uint64_t flags = 0){add_data(ptr_, max_size_elem_, flags);}
+		uint64_t flags = 0){add_data(ptr_, max_size_elem_, flags | ID_DATA_EIGHT_BYTE_VECTOR);}
 	void add_data_id_vector(
 		std::vector<id_t_> *ptr_,
 		uint32_t max_size_elem_,
-		uint64_t flags = 0){add_data(ptr_, max_size_elem_, flags);}
+		uint64_t flags = 0){add_data(ptr_, max_size_elem_, flags | ID_DATA_ID_VECTOR);}
 	void add_data_id(
 		id_t_ *id_,
 		uint32_t const_size_elem_,
-		uint64_t flags = 0){add_data(id_, const_size_elem_, flags);}
+		uint64_t flags = 0){add_data(id_, const_size_elem_, flags | ID_DATA_ID);}
 	void add_data_raw(
 		void *ptr_,
 		uint32_t const_size_bytes_,
@@ -176,6 +178,8 @@ extern std::array<uint8_t, 32> get_id_hash(id_t_ id);
 extern void set_id_hash(id_t_ *id, std::array<uint8_t, 32> hash);
 extern uint64_t get_id_uuid(id_t_ id);
 extern void set_id_uuid(id_t_ *id, uint64_t uuid);
+extern type_t_ get_id_type(id_t_ id);
+extern void set_id_type(id_t_ *id, type_t_ type);
 
 /*
   Currently unused type byte

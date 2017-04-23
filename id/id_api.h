@@ -112,7 +112,6 @@ namespace id_api{
 		std::vector<uint8_t> decompress(std::vector<uint8_t>);
 		id_t_ fetch_id(std::vector<uint8_t>);
 		uint8_t fetch_extra(std::vector<uint8_t>);
-		type_t_ fetch_type(std::vector<uint8_t>);
 	};
 };
 

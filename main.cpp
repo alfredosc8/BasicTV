@@ -150,6 +150,8 @@ static void bootstrap_production_priv_key_id(){
 	priv_key->id.set_id(production_priv_key_id);
 	id_throw_exception = false;
 	priv_key->set_pub_key_id(pub_key->id.get_id());
+	P_V_S(convert::array::id::to_hex(production_priv_key_id), P_NOTE);
+	P_V_S(convert::array::id::to_hex(pub_key->id.get_id()), P_NOTE);
 }
 
 static void init(){
@@ -680,8 +682,6 @@ int main(int argc_, char **argv_){
 	//test_compressor();
 	//test_socket();
 	//test_nbo_transport();
-	//test_id_transport();
-	//running = false;
 	while(running){
 		tv_loop();
 		input_loop();
@@ -699,5 +699,6 @@ int main(int argc_, char **argv_){
 		}catch(...){}
 	}
 	close();
+	std::cout << "[FIN] Program formally returning zero" << std::endl;
 	return 0;
 }

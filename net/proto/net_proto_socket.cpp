@@ -23,11 +23,11 @@
  */
 
 net_proto_socket_t::net_proto_socket_t() : id(this, TYPE_NET_PROTO_SOCKET_T){
-	id.add_data(&socket_id, 1);
-	id.add_data(&peer_id, 1);
-	id.add_data(&flags, 1);
-	id.add_data(&last_recv_micro_s, 8);
-	id.add_data(&working_buffer, ~0);
+	id.add_data_id(&socket_id, 1);
+	id.add_data_id(&peer_id, 1);
+	id.add_data_raw(&flags, sizeof(flags));
+	id.add_data_raw(&last_recv_micro_s, sizeof(last_recv_micro_s));
+	id.add_data_one_byte_vector(&working_buffer, ~0);
 	net_proto_standard_data_t std_data_;
 	std_data_.ver_major = VERSION_MAJOR;
 	std_data_.ver_minor = VERSION_MINOR;

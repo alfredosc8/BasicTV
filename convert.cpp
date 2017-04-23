@@ -172,9 +172,6 @@ static uint8_t to_byte_char(int8_t hex){
 // TODO: make cross endian
 
 static uint8_t hex_to_byte(std::string hex){
-	uint8_t retval = (to_byte_char(hex[0]) << 4) | to_byte_char(hex[1]);
-	P_V_S(hex, P_SPAM);
-	P_V((int)retval, P_SPAM);
 	return (to_byte_char(hex[0]) << 4) | (to_byte_char(hex[1]));
 }
 
@@ -349,6 +346,7 @@ std::string convert::type::from(uint8_t type){
 		return "id_disk_index_t";
 	case 0:
 		print("zero type, something went wrong earlier", P_WARN);
+		std::raise(SIGINT);
 		return "";
 	default:
 		print("invalid type, probably malicious (not zero)", P_CRIT);

@@ -8,7 +8,7 @@ net_proto_request_bare_t::net_proto_request_bare_t(){}
 net_proto_request_bare_t::~net_proto_request_bare_t(){}
 
 void net_proto_request_bare_t::list_bare_virtual_data(data_id_t *id){
-	id->add_data(&peer_id, 1);
+	id->add_data_id(&peer_id, 1);
 }
 
 id_t_ net_proto_request_bare_t::get_peer_id(){
@@ -24,8 +24,8 @@ net_proto_request_set_t::net_proto_request_set_t(){}
 net_proto_request_set_t::~net_proto_request_set_t(){}
 
 void net_proto_request_set_t::list_set_virtual_data(data_id_t *id){
-	id->add_data(&ids, 65536);
-	id->add_data(&mod_inc, 65536);
+	id->add_data_id_vector(&ids, 65536);
+	id->add_data_eight_byte_vector(&mod_inc, 65536);
 }
 
 void net_proto_request_set_t::set_ids(std::vector<id_t_> ids_){
@@ -70,7 +70,7 @@ net_proto_id_request_t::~net_proto_id_request_t(){}
 net_proto_type_request_t::net_proto_type_request_t() : id(this, TYPE_NET_PROTO_TYPE_REQUEST_T){
 	list_set_virtual_data(&id);
 	list_bare_virtual_data(&id);
-	id.add_data(&type, 1);
+	id.add_data_raw(&type, sizeof(type));
 	id.noexp_all_data();
 }
 

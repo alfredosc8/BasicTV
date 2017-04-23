@@ -64,6 +64,7 @@
 #define ID_DISK_ENHANCE_UNDEF 0
 #define ID_DISK_ENHANCE_MULTIDISK_READ 1
 #define ID_DISK_ENHANCE_MULTIDISK_WRITE 2
+#define ID_DISK_ENHANCE_READ_ONLY 3
 
 #define ID_DISK_PATH_LENGTH 256
 
@@ -86,9 +87,11 @@ private:
 	  create, and archive the exported IDs as large unencrypted and
 	  uncompressed files, but instead of the OS/FS handling that, we
 	  compress it ourselves (since a majority of users don't run BTRFS or
-	  another comparable FS).o
+	  another comparable FS).
 	*/
 	std::vector<id_t_> index;
+	uint64_t kb_used = 0;
+	uint64_t kb_total = 0;
 	// TODO: create a function that fetches mod_inc (when implemented),
 	// as well as other information about the ID that isn't included by
 	// ID reference
@@ -105,7 +108,10 @@ public:
 	uint8_t get_tier(){return tier;}
 	uint8_t get_transport(){return transport;}
 	std::vector<id_t_> get_index(){return index;}
-
+	bool has_enhance(uint8_t enhance_);
+	uint64_t get_kb_used(){return kb_used;}
+	uint64_t get_kb_total(){return kb_total;}
+	
 	std::string get_path_of_id(id_t_ id_);
 	bool id_on_disk(id_t_ id_);
 	
@@ -113,6 +119,7 @@ public:
 	void export_id(id_t_ id_);
 	void import_id(id_t_ id_);
 };
+
 namespace id_disk_api{
 	/*
 	  All disks should be abstracted out, lookups and queries into

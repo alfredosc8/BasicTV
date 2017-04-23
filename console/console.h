@@ -17,6 +17,11 @@
 
 #define CONSOLE_REGISTER_SIZE 64
 
+/*
+  TODO: convert a lot of this over to just using the stack, no longer needing
+  to pass cmd_vector (cleans up compiling output by a lot).
+ */
+
 #define LIST_CMD(x) if(cmd_vector.at(0) == #x){if(cmd_vector.size() > 1){x(std::vector<std::string>(cmd_vector.begin()+1, cmd_vector.end()));}else{x(std::vector<std::string>{});}ran = true;}
 #define DEF_CMD(x) void x(std::vector<std::string> cmd_vector)
 #define DEC_CMD(x) void console_t::x(std::vector<std::string> cmd_vector)

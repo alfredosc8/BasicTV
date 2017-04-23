@@ -24,6 +24,7 @@
 #include "../system.h"
 #include "../cryptocurrency.h"
 #include "../compress/compress.h"
+#include "../encrypt/encrypt.h"
 
 static std::vector<data_id_t*> id_list;
 static std::vector<std::pair<std::vector<id_t_>, type_t_ > > type_cache;
@@ -51,14 +52,17 @@ data_id_t *id_api::array::ptr_id(id_t_ id,
 	}
 	data_id_t *retval = id_find(id);
 	if(retval == nullptr){
-		// TODO: get a list of items to not query the network for
-		if(type != "console_t"){
-			try{
-				print("attempting import from disk", P_SPAM);
-				id_disk_api::load(id);
-			}catch(...){
-				net_proto::request::add_id(id);
-			}
+		if(flags & ID_LOOKUP_FAST){
+			// TODO: add more levels?
+			print("fast lookup, not querying disk", P_NOTE);
+			return nullptr;
+		}
+		print("attempting import from disk", P_SPAM);
+		try{
+			id_disk_api::load(id);
+		}catch(...){
+			print("querying network for data", P_SPAM);
+			net_proto::request::add_id(id);
 		}
 	}else if(retval->get_type() != type && type != ""){
 		print("type-id mismatch", P_SPAM);
@@ -116,7 +120,7 @@ id_t_ id_api::array::add_data(std::vector<uint8_t> data_, bool raw){
 	type_t_ type = 0;
 	try{
 		id = id_api::raw::fetch_id(data_);
-		type = id_api::raw::fetch_type(data_);
+		type = get_id_type(id_api::raw::fetch_id(data_));
 		P_V_S(convert::array::id::to_hex(id), P_SPAM);
 		P_V_S(convert::type::from(type), P_SPAM);
 	}catch(std::exception &e){
@@ -127,7 +131,18 @@ id_t_ id_api::array::add_data(std::vector<uint8_t> data_, bool raw){
 		id_api::cache::get(type);
 	for(uint64_t i = 0;i < tmp_type_cache.size();i++){
 		if(tmp_type_cache[i] == id){
-			ptr_id(tmp_type_cache[i], "")->import_data(data_);
+			if(raw){
+				data_ =
+					encrypt_api::decrypt(
+						data_,
+						encrypt_api::search::pub_key_from_hash(
+							get_id_hash(
+								id)));
+				data_ =
+					compressor::decompress(
+						data_);
+			}
+			PTR_ID(id, )->import_data(data_);
 			return tmp_type_cache[i];
 		}
 	}
@@ -141,7 +156,7 @@ id_t_ id_api::array::add_data(std::vector<uint8_t> data_, bool raw){
 	CHECK_TYPE(net_proto_con_req_t);
 	CHECK_TYPE(encrypt_pub_key_t);
 	CHECK_TYPE(encrypt_priv_key_t);
-	print("type isn't valid", P_WARN);
+	print("type isn't valid", P_CRIT);
 	return id;
 }
 
@@ -377,6 +392,9 @@ void id_api::destroy(id_t_ id){
 	// TV subsystem
 	data_id_t *ptr =
 		PTR_ID(id, );
+	if(ptr == nullptr){
+		return;
+	}
 	DELETE_TYPE_2(tv_frame_video_t);
 	DELETE_TYPE_2(tv_frame_audio_t);
 	DELETE_TYPE_2(tv_frame_caption_t);
@@ -442,11 +460,15 @@ void id_api::destroy_all_data(){
 	  exporting of disk information (shouldn't be hard)
 	 */
 	for(uint64_t i = 0;i < list_tmp.size();i++){
-		if(list_tmp[i] != nullptr &&
-		   list_tmp[i]->get_type_byte() == TYPE_ID_DISK_INDEX_T){
+		if(list_tmp[i] == nullptr){
+			continue;
+		}
+		if(list_tmp[i]->get_type_byte() == TYPE_ID_DISK_INDEX_T ||
+		   list_tmp[i]->get_id() == production_priv_key_id){
 			continue;
 		}
 		destroy(list_tmp[i]->get_id());
+		list_tmp[i] = nullptr;
 	}
 	destroy(production_priv_key_id);
 }
@@ -599,28 +621,34 @@ std::vector<uint64_t> id_api::bulk_fetch::mod(std::vector<id_t_> vector){
 
 std::vector<uint8_t> id_api::raw::encrypt(std::vector<uint8_t> data){
 	id_t_ id = fetch_id(data);
-	data_id_t *ptr = PTR_ID(fetch_id(data), );
-	if(ptr == nullptr){
-		print("can't encrypt null id", P_ERR);
-	}
-	if(ptr->get_type_byte() == TYPE_ENCRYPT_PUB_KEY_T){
+	P_V_S(convert::array::id::to_hex(id), P_SPAM);
+	if(get_id_type(id) == TYPE_ENCRYPT_PUB_KEY_T){
 		print("can't encrypt public key", P_WARN);
+	}else if(get_id_type(id) == TYPE_ENCRYPT_PRIV_KEY_T){
+		print("can't encrypt private key", P_WARN);
 	}else{
-		data[0] |= ID_EXTRA_ENCRYPT;
-		std::vector<uint8_t> encrypt_chunk =
-			encrypt_api::encrypt(
-				std::vector<uint8_t>(
-					data.begin()+1+sizeof(id_t_)+sizeof(type_t_),
-					data.end()),
+		try{
+			id_t_ priv_key_id =
 				encrypt_api::search::priv_key_from_hash(
-					get_id_hash(id)));
-		data.erase(
-			data.begin()+1+sizeof(id_t_)+sizeof(type_t_),
-			data.end());
-		data.insert(
-			data.end(),
-			encrypt_chunk.begin(),
-			encrypt_chunk.end());
+					get_id_hash(id));
+			P_V_S(convert::array::id::to_hex(priv_key_id), P_SPAM);
+			std::vector<uint8_t> encrypt_chunk =
+				encrypt_api::encrypt(
+					std::vector<uint8_t>(
+						data.begin()+1+sizeof(id_t_),
+						data.end()),
+					priv_key_id);
+			data.erase(
+				data.begin()+1+sizeof(id_t_),
+				data.end());
+			data.insert(
+				data.end(),
+				encrypt_chunk.begin(),
+				encrypt_chunk.end());
+			data[0] |= ID_EXTRA_ENCRYPT;
+		}catch(...){
+			print("can't encrypt exported id information, either not owner or a bug", P_ERR);
+		}
 	}
 	return data;
 }
@@ -634,12 +662,12 @@ std::vector<uint8_t> id_api::raw::decrypt(std::vector<uint8_t> data){
 		std::vector<uint8_t> decrypt_chunk =
 			encrypt_api::decrypt(
 				std::vector<uint8_t>(
-					data.begin()+1+sizeof(id_t_)+sizeof(type_t_),
+					data.begin()+1+sizeof(id_t_),
 					data.end()),
 				encrypt_api::search::pub_key_from_hash(
 					get_id_hash(id)));
 		data.erase(
-			data.begin()+1+sizeof(id_t_)+sizeof(type_t_),
+			data.begin()+1+sizeof(id_t_),
 			data.end());
 		data.insert(
 			data.end(),
@@ -650,11 +678,6 @@ std::vector<uint8_t> id_api::raw::decrypt(std::vector<uint8_t> data){
 }
 
 std::vector<uint8_t> id_api::raw::compress(std::vector<uint8_t> data){
-	id_t_ id = fetch_id(data);
-	data_id_t *ptr = PTR_ID(fetch_id(data), );
-	if(ptr == nullptr){
-		print("can't encrypt null id", P_ERR);
-	}
 	if(data[0] & ID_EXTRA_COMPRESS){
 		print("can't compress pre-compressed data", P_WARN);
 		print("TODO: compress pre-compressed data", P_NOTE);
@@ -663,12 +686,12 @@ std::vector<uint8_t> id_api::raw::compress(std::vector<uint8_t> data){
 		std::vector<uint8_t> compress_chunk =
 			compressor::compress(
 				std::vector<uint8_t>(
-					data.begin()+1+sizeof(id_t_)+sizeof(type_t_),
+					data.begin()+1+sizeof(id_t_),
 					data.end()),
 				9,
 				0); // type isn't used currently
 		data.erase(
-			data.begin()+1+sizeof(id_t_)+sizeof(type_t_),
+			data.begin()+1+sizeof(id_t_),
 			data.end());
 		data.insert(
 			data.end(),
@@ -679,11 +702,6 @@ std::vector<uint8_t> id_api::raw::compress(std::vector<uint8_t> data){
 }
 
 std::vector<uint8_t> id_api::raw::decompress(std::vector<uint8_t> data){
-	id_t_ id = fetch_id(data);
-	data_id_t *ptr = PTR_ID(fetch_id(data), );
-	if(ptr == nullptr){
-		print("can't encrypt null id", P_ERR);
-	}
 	if(!(data[0] & ID_EXTRA_COMPRESS)){
 		print("can't decompress uncompressed data", P_WARN);
 	}else{
@@ -691,10 +709,10 @@ std::vector<uint8_t> id_api::raw::decompress(std::vector<uint8_t> data){
 		std::vector<uint8_t> compress_chunk =
 			compressor::decompress(
 				std::vector<uint8_t>(
-					data.begin()+1+sizeof(id_t_)+sizeof(type_t_),
+					data.begin()+1+sizeof(id_t_),
 					data.end()));
 		data.erase(
-			data.begin()+1+sizeof(id_t_)+sizeof(type_t_),
+			data.begin()+1+sizeof(id_t_),
 			data.end());
 		data.insert(
 			data.end(),
@@ -710,23 +728,23 @@ std::vector<uint8_t> id_api::raw::decompress(std::vector<uint8_t> data){
 
 id_t_ id_api::raw::fetch_id(std::vector<uint8_t> data){
 	id_t_ retval;
-	if(data.size() < sizeof(id_t_)+1){
+	if(data.size() < sizeof(id_t_)){
+		P_V(data.size(), P_NOTE);
+		P_V(sizeof(id_t_), P_NOTE);
 		print("supposed exported ID is too small to contain ID", P_ERR);
 	}
-	memcpy(&(retval[0]), data.data()+1, sizeof(id_t_));
+	std::vector<uint8_t> raw_id_data(
+		data.data()+1, data.data()+1+sizeof(id_t_));
+	raw_id_data = convert::nbo::from(raw_id_data);
+	memcpy(&(retval[0]), raw_id_data.data(), sizeof(id_t_));
 	return retval;
 }
+
+// one byte stuff doesn't need endian care
 
 uint8_t id_api::raw::fetch_extra(std::vector<uint8_t> data){
 	if(data.size() == 0){
 		print("data for extra byte is blank", P_ERR);
 	}
 	return data[0];
-}
-
-type_t_ id_api::raw::fetch_type(std::vector<uint8_t> data){
-	if(data.size() < sizeof(id_t_)+1){
-		print("don't have enough room to extract type", P_ERR);
-	}
-	return *(data.data()+1+sizeof(id_t_));
 }

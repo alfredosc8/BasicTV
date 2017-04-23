@@ -11,9 +11,9 @@ net_ip_t::~net_ip_t(){
 }
 
 void net_ip_t::list_virtual_data(data_id_t *id){
-	id->add_data(&(address[0]), 64);
-	id->add_data(&port, 2);
-	id->add_data(&type, 1);
+	id->add_data_raw(&(address[0]), 64);
+	id->add_data_raw(&port, sizeof(port));
+	id->add_data_raw(&type, sizeof(type));
 }
 
 void net_ip_t::set_net_ip(std::string ip_, uint16_t port_){

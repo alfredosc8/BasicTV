@@ -43,6 +43,8 @@ struct tv_window_t{
 private:
 	uint8_t pos = TV_WINDOW_CT;
 	int64_t timestamp_offset = 0;
+	// TODO: possibly make channel_id a vector and create a list of channels
+	// to switch from in that loop
 	id_t_ channel_id = ID_BLANK_ID;
 	/*
 	  I like the idea of using entries instead of IDs (lookup overhead), but

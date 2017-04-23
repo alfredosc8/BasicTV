@@ -420,7 +420,7 @@ static void init_char_data(){
 }
 
 tv_menu_t::tv_menu_t() : id(this, TYPE_TV_MENU_T){
-	id.add_data(&frame_id, sizeof(frame_id), ID_DATA_ID);
+	id.add_data_id(&frame_id, 1);
 	frame_id = (new tv_frame_video_t)->id.get_id();
 	update_frame();
 	if(unlikely(valid_char_data == false)){
