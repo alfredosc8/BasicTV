@@ -426,9 +426,14 @@ void id_api::destroy(id_t_ id){
 	// stats
 	DELETE_TYPE_2(stat_sample_set_t);
 
-	// Count de Monet
+	DELETE_TYPE_2(id_disk_index_t);
 	
-	DELETE_TYPE_2(wallet_set_t);
+	// Count de Monet
+       	DELETE_TYPE_2(wallet_set_t);
+
+	print("No proper type was found for clean deleting, cutting losses "
+	      "and delisting it, memory leak occuring: " + ptr->get_type(), P_WARN);
+
 	/*
 	  Shouldn't get this far, but if it does, delist it manually
 	 */

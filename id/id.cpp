@@ -278,7 +278,7 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_, uint8_t extra){
 	 */
 	if(encrypt_blacklist_type(
 		   convert::type::from(get_id_type(id)))){
-		print("forcing no encryption on basis of encryption blacklist", P_WARN);
+		print("forcing no encryption on basis of encryption blacklist", P_DEBUG);
 		extra &= ~ID_EXTRA_ENCRYPT;
 	}
 	if(!export_datum_check_type(global_flags, flags_)){
@@ -492,12 +492,8 @@ void data_id_t::set_next_linked_list(id_t_ data){
 }
 
 bool data_id_t::is_owner(){
-	/*
-	  Should always be true, unless networking is disabled (and even then,
-	  a peer ID should still be created, just not used)
-	 */
 	return (get_id_hash(id) ==
-		get_id_hash(net_proto::peer::get_self_as_peer()));
+		get_id_hash(production_priv_key_id));
 }
 
 void data_id_t::noexport_all_data(){
