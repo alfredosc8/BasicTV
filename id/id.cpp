@@ -291,6 +291,7 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_, uint8_t extra){
 	uint8_t current_extra = 0;
 	ID_EXPORT(current_extra, retval); // current extra is nothing
 	ID_EXPORT(id, retval);
+	ID_EXPORT(modification_incrementor, retval);
 	transport_i_t trans_i = 0;
 	transport_size_t trans_size = 0;
 	for(uint64_t i = 0;i < data_vector.size();i++){
@@ -416,6 +417,7 @@ void data_id_t::import_data(std::vector<uint8_t> data){
 	uint8_t extra = 0;
 	ID_IMPORT(extra);
 	ID_IMPORT(trans_id);
+	ID_IMPORT(modification_incrementor);
 	P_V_S(convert::array::id::to_hex(trans_id), P_SPAM);
 	P_V_S(convert::type::from(get_id_type(trans_id)), P_SPAM);
 	P_V_B(extra, P_SPAM);

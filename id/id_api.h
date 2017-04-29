@@ -110,8 +110,11 @@ namespace id_api{
 		std::vector<uint8_t> decrypt(std::vector<uint8_t>);
 		std::vector<uint8_t> compress(std::vector<uint8_t>);
 		std::vector<uint8_t> decompress(std::vector<uint8_t>);
+		// only variables that unencrypted IDs can have
 		id_t_ fetch_id(std::vector<uint8_t>);
-		uint8_t fetch_extra(std::vector<uint8_t>);
+		extra_t_ fetch_extra(std::vector<uint8_t>);
+		type_t_ fetch_type(std::vector<uint8_t>);
+		mod_inc_t_ fetch_mod_inc(std::vector<uint8_t>);
 	};
 };
 

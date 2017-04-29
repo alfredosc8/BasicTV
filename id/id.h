@@ -16,6 +16,8 @@
 
 typedef std::array<uint8_t, 41> id_t_;
 typedef uint8_t type_t_;
+typedef uint8_t extra_t_;
+typedef uint64_t mod_inc_t_;
 
 const id_t_ blank_id = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 const std::array<uint8_t, 32> blank_hash = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};

@@ -47,7 +47,12 @@ int main(int argc_, char **argv_){
 	argc = argc_;
 	argv = argv_;
 	init();
-	running = true;
+	try{
+		running =
+			settings::get_setting("init_close_only") == "false";
+	}catch(...){
+		running = true;
+	}
 	while(running){
 		tv_loop();
 		input_loop();

@@ -731,25 +731,52 @@ std::vector<uint8_t> id_api::raw::decompress(std::vector<uint8_t> data){
   Following variables are guaranteed to be not encrypted
  */
 
-id_t_ id_api::raw::fetch_id(std::vector<uint8_t> data){
-	id_t_ retval;
-	if(data.size() < sizeof(id_t_)){
-		P_V(data.size(), P_NOTE);
-		P_V(sizeof(id_t_), P_NOTE);
-		print("supposed exported ID is too small to contain ID", P_ERR);
+static void fetch_size_sanity_check(uint64_t needed_size, uint64_t vector_size){
+	if(needed_size > vector_size){
+		print("vector is not large enough to contain requested information", P_ERR);
+		P_V(needed_size, P_WARN);
+		P_V(vector_size, P_WARN);
 	}
-	std::vector<uint8_t> raw_id_data(
-		data.data()+1, data.data()+1+sizeof(id_t_));
-	raw_id_data = convert::nbo::from(raw_id_data);
-	memcpy(&(retval[0]), raw_id_data.data(), sizeof(id_t_));
+}
+
+static void generic_fetch(uint8_t *ptr, uint64_t start, uint64_t size, uint8_t *byte_vector){
+	if(unlikely(byte_vector == nullptr)){
+		// should have been seen in size sanity check
+		print("byte_vector is a nullptr", P_ERR);
+	}
+	memcpy(ptr, byte_vector+start, size);
+	convert::nbo::from(ptr, size); // checks for one byte length
+}
+
+id_t_ id_api::raw::fetch_id(std::vector<uint8_t> data){
+	id_t_ retval = ID_BLANK_ID;
+	const uint64_t start = sizeof(extra_t_);
+	const uint64_t size = sizeof(retval);
+	fetch_size_sanity_check(start+size, data.size());
+	generic_fetch(&(retval[0]), start, size, data.data());
 	return retval;
 }
 
 // one byte stuff doesn't need endian care
 
-uint8_t id_api::raw::fetch_extra(std::vector<uint8_t> data){
-	if(data.size() == 0){
-		print("data for extra byte is blank", P_ERR);
-	}
-	return data[0];
+extra_t_ id_api::raw::fetch_extra(std::vector<uint8_t> data){
+	extra_t_ retval = 0;
+	const uint64_t start = 0;
+	const uint64_t size = sizeof(retval);
+	fetch_size_sanity_check(start+size, data.size());
+	generic_fetch(&retval, start, size, data.data());
+	return retval;
+}
+
+type_t_ id_api::raw::fetch_type(std::vector<uint8_t> data){
+	return get_id_type(fetch_id(data));
+}
+
+mod_inc_t_ id_api::raw::fetch_mod_inc(std::vector<uint8_t> data){
+	mod_inc_t_ retval = 0;
+	const uint64_t start = sizeof(extra_t_)+sizeof(id_t_);
+	const uint64_t size = sizeof(retval);
+	fetch_size_sanity_check(start+size, data.size());
+	generic_fetch((uint8_t*)&retval, start, size, data.data());
+	return retval;
 }
