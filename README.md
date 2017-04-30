@@ -1,42 +1,59 @@
 Join the IRC chat at #basictv on Freenode [here](http://webchat.freenode.net/?channels=#basictv)
 
-Pretty rough around the edges, not a working testnet yet, but it'll be working okay soon enough (2/11/17)
+Pretty rough around the edges, not a working testnet yet, but it'll be working okay soon enough (4/30/17)
 
 # BasicTV
 
 ## What is it?
 BasicTV is an decentralized and anonymous Internet TV system. The entire protocol can be ran over the Tor network. Anybody can create and stream content to the network, and each node securely sends stream information to other nodes (on an opt-out basis).
 
-## Nomenclature
-An "identity" on the network is a private-public key pair that proves the content came from one person.
+BasicTV channels can have multiple audio, video, text, and numerical streams.
 
-An ID is a pair of two numbers, the UUID (intra-identity) and the SHA-256 hash of the public key (inter-identity). Every piece of information sent over the network has an ID associated with it, through a generally accepted type for transport (data_id_t), referenced through a general purpose, type safe, and versatile "pointer" type (id_t_).
+## Uses of multiple streams
+### Video
+* Different quality video feeds (source, multiple resolutions and bitrates)
+* Live feeds from multiple cameras
+* 3D video streams (red and blue)
+* Commentary video feeds
 
-## How does it work?
-The following is a checklist that a BasicTV node goes through to connect to the network and operate normally:
+### Audio
+* Dubbing in different languages
+* Seperate channel for commentary
+* Different audio bitrates
+* Multiple channel streaming
 
-* Load all private and public keys from the hard disk
-* Query the user for which key to use, or to create a new key
-* Load my network peer information from disk (net_proto_peer_t), create it if it doesn't exist
-* Connect to a node with an advertised open TCP port normally
-* Begin routine requests to peers for useful information (other peers, TV channel metadata, public keys)
-* Keep connecting to new peers until we are within a safe range for reliable and stable performance (using net_con_req_t as needed for TCP holepunching)
+### Text
+* Subbing in different languages
+* "Exploiting the medium" for jokes
+* The deaf
 
-Since all information sent over the network is individual, cryptographically secure chunks, information can be hoarded and dished out to the network at will, allowing the entire network to act as a giant DVR.
+### Numerical
+Numerical streams are streams of data samples, mostly from sensors, that are sent out on the network. Numerical streams can have units associated with them and are grouped by device, giving BasicTV the flexibility to do seamless conversions and statistical functions. Visualizations of the data can be generated on the fly and viewed as a local, non-networked, channel.
+* Live feeds from sensors from satellites and probes
+* Integration with different APIs (GPS)
+* Units associatable with number streams
+* Auto-deriving missing yet calculatable data
+* Math functions (log scale, derivations, integrals, statistical tests)
+* Exporting from the network for more advanced math and archiving
 
-## How would content be streamed?
-A TV channel has to be created (tv_channel_t). A channel can have up to 256 unique streams: audio, video, or captions. These streams are responsible for maintaining different qualities of video, dubbing and subbing in different languages, as well as any future streamable types that might be implemented (Oculus Rift and other VR, 360 degree view (?), and red and blue 3D). Audio channels are handled by the encoding mechanism (Opus).
+## Bitcoin and other Cryptocurrencies
+BasicTV has integration with cryptocurrencies, and planned integration with the Bitcoin blockchain directly. Peers on the network, as well as television channels, can have Bitcoin addresses associated with them. Wallets are stored in cryptocurrency wallet sets, allowing for multiple addresses from multiple different cryptocurrencies to be used.
 
-Currently, the only way to load audio is through WAV/AIFF/OGG files on disk, but live stream transcoding is in the works. There is no compression scheme for video, so broadcasting video is not an option (infrastructure is proven to work through menus and webcam tests).
+## Storage & Network Model
+Everything networked and stored has an ID associated with it, a 41-byte identifier. Containing 8-bytes of UUID, the 32-byte SHA-256 hash of the RSA public key of the owner, and 1 byte for identifying the type of data. 
 
-### Important Information
-* To prevent piracy/freebooting, the public key that is tied to your channel information can list websites that contain your public key. This is verified by the end user and detected conflicts can be solved by using this information.
-* Bitcoin wallets can be tied to encryption public keys as well, to allow for donating to content creators and individual nodes (on a not yet implemented BTC/GB constant). Transactions are not handled by BasicTV directly, but instead payment request QR codes are rendered at will
-* Information can be sent out with a timestamp ahead of the current timestamp, which would allow for extra permeation time
-* It will be possible to allow for "pre-broadcasting" information, encrypting raw frame data with a second key, while keeping the linked list entires and metadata in tact, allowing for downloading large amounts of information ahead of a set "live" time, enforce that live time, and allow slower connections to have relatively nice quality content
-* The frame information and channel information needs to match, otherwise it is assumed to be fraudulent
+Everything but public keys are encrypted and compressed when sent using a hybrid RSA-AES compression scheme. Once sent out to the network, the nodes behave similarly to torrents, multicasting data out to people who ask for it (as well as more complex network functions).
 
-## How would content be watched?
-All channels are downloaded and contained in the tv_window_t type. This type is responsible for syncing time throughout a channel, as well as positioning information, selecting streams, among other ideas.
+A tiered storage model is used, which allows for archiving old and unpopular data onto lower "tiers" of storage, ranked by ease of access and reading/writing restrictions. Most users won't be using tiered storage.
 
-There is only one tv_window_t type allowed currently (will improve to a multiplexer system), and this is interfaced with through the console currently. IR remotes will be added in the future.
+This means, as long as the ID is known to exist, you can rewind indefinitely. You can also take streams off of the network and export them to local files. The age of the file may be taken into account for donations.
+
+## Tor integration
+One major highlight of BasicTV is the capability of using Tor efficiently. Tor conventionally creates one "circuit", or connection to the internet, since multiplexing simple webpages isn't efficient.
+
+BasicTV allows for creating multiple Tor circuits and effectively using them for all peer connections. Tor can allow for more connections than just a clearnet connection, as routers tend to drop TCP connections beyond a certain limit (routers don't see connections made inside of a Tor circuit).
+
+## FAQ
+Nobody asked any questions yet, but feel free to contact me through GitHub or Tox
+
+BasicTV Tox: 531A523A6A13A721E3973E39FA92DC0E799758410AD8A9597260B3C3B6FC9C3C496E611F7665
