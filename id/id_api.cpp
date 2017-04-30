@@ -757,8 +757,6 @@ id_t_ id_api::raw::fetch_id(std::vector<uint8_t> data){
 	return retval;
 }
 
-// one byte stuff doesn't need endian care
-
 extra_t_ id_api::raw::fetch_extra(std::vector<uint8_t> data){
 	extra_t_ retval = 0;
 	const uint64_t start = 0;

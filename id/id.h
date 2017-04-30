@@ -32,6 +32,7 @@ const std::array<uint8_t, 32> blank_hash = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 #define ID_DATA_BYTE_VECTOR (1 << 3)
 #define ID_DATA_EIGHT_BYTE_VECTOR (1 << 4)
 #define ID_DATA_ID_VECTOR (1 << 5)
+#define ID_DATA_BYTE_VECTOR_VECTOR (1 << 6)
 
 #define ID_DATA_CACHE ID_DATA_NOEXPORT
 
@@ -45,15 +46,16 @@ const std::array<uint8_t, 32> blank_hash = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 struct data_id_ptr_t{
 private:
 	void *ptr = nullptr;
-	uint32_t length = 0;
+	std::vector<uint32_t> length;
 	uint8_t flags = 0;
 public:
 	data_id_ptr_t(void *ptr_,
-		      uint32_t length_,
+		      std::vector<uint32_t> length_,
 		      uint8_t flags_);
 	~data_id_ptr_t();
 	void *get_ptr();
 	uint32_t get_length();
+	std::vector<uint32_t> get_length_vector();
 	uint8_t get_flags();
 	void set_flags(uint8_t flags_){flags = flags_;}
 };
@@ -84,7 +86,7 @@ private:
 	// function or the parent data type (manually call mod_inc();
 	uint64_t modification_incrementor = 0;
 	uint8_t global_flags = 0;
-	void add_data(void *ptr, uint32_t size_, uint64_t flags = 0);
+	void add_data(void *ptr_, std::vector<uint32_t> size_, uint64_t flags_ = 0);
 public:
 	data_id_t(void *ptr_, uint8_t type);
 	~data_id_t();
@@ -136,23 +138,28 @@ public:
 	void add_data_one_byte_vector(
 		std::vector<uint8_t> *ptr_,
 		uint32_t max_size_elem_,
-		uint64_t flags = 0){add_data(ptr_, max_size_elem_, flags | ID_DATA_BYTE_VECTOR);}
+		uint64_t flags = 0){add_data(ptr_, {max_size_elem_}, flags | ID_DATA_BYTE_VECTOR);}
+	void add_data_one_byte_vector_vector(
+		std::vector<std::vector<uint8_t> > *ptr_,
+		uint32_t max_size_elem_,
+		uint32_t max_size_elem__,
+		uint64_t flags = 0){add_data(ptr_, {max_size_elem_, max_size_elem__}, flags | ID_DATA_BYTE_VECTOR_VECTOR);}
 	void add_data_eight_byte_vector(
 		std::vector<uint64_t> *ptr_,
 		uint32_t max_size_elem_,
-		uint64_t flags = 0){add_data(ptr_, max_size_elem_, flags | ID_DATA_EIGHT_BYTE_VECTOR);}
+		uint64_t flags = 0){add_data(ptr_, {max_size_elem_}, flags | ID_DATA_EIGHT_BYTE_VECTOR);}
 	void add_data_id_vector(
 		std::vector<id_t_> *ptr_,
 		uint32_t max_size_elem_,
-		uint64_t flags = 0){add_data(ptr_, max_size_elem_, flags | ID_DATA_ID_VECTOR);}
+		uint64_t flags = 0){add_data(ptr_, {max_size_elem_}, flags | ID_DATA_ID_VECTOR);}
 	void add_data_id(
 		id_t_ *id_,
 		uint32_t const_size_elem_,
-		uint64_t flags = 0){add_data(id_, const_size_elem_, flags | ID_DATA_ID);}
+		uint64_t flags = 0){add_data(id_, {const_size_elem_}, flags | ID_DATA_ID);}
 	void add_data_raw(
 		void *ptr_,
 		uint32_t const_size_bytes_,
-		uint64_t flags = 0){add_data(ptr_, const_size_bytes_, flags);}
+		uint64_t flags = 0){add_data(ptr_, {const_size_bytes_}, flags);}
 	// export and import data
 	// default on export is unencrypted and uncompressed, but is compressed
 	// and encrypted when it is loaded into the cache (so always, currently,
@@ -220,5 +227,6 @@ extern void set_id_type(id_t_ *id, type_t_ type);
 #define TYPE_TV_FRAME_CAPTION_T				23
 #define TYPE_INPUT_DEV_STANDARD_T			24
 #define TYPE_ID_DISK_INDEX_T				25
+#define TYPE_TV_FRAME_NUMBER_DEVICE_T			26
 
 #endif

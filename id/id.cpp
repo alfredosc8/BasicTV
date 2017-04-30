@@ -76,14 +76,14 @@ void set_id_type(id_t_ *id, type_t_ type){
 
 void data_id_t::init_list_all_data(){
 	add_data(&id,
-		 sizeof(id_t_),
+		 {sizeof(id_t_)},
 		 ID_DATA_ID);
 	add_data_id_vector(
 		&(linked_list.first),
-		ID_MAX_LINKED_LIST_SIZE);
+		{ID_MAX_LINKED_LIST_SIZE});
 	add_data_id_vector(
 		&(linked_list.second),
-		ID_MAX_LINKED_LIST_SIZE);
+		{ID_MAX_LINKED_LIST_SIZE});
 }
 
 /*
@@ -189,7 +189,7 @@ void *data_id_t::get_ptr(){
 	return ptr;
 }
 
-void data_id_t::add_data(void *ptr_, uint32_t size_, uint64_t flags){
+void data_id_t::add_data(void *ptr_, std::vector<uint32_t> size_, uint64_t flags){
 	if(ptr_ == nullptr){
 		print("ptr_ is a nullptr", P_ERR);
 	}
@@ -234,16 +234,17 @@ std::vector<uint8_t> data_id_t::get_ptr_flags(){
 
  */
 
-static void id_export_raw(uint8_t *var, uint64_t size, std::vector<uint8_t> *vector){
-	if(size == 0){
+static void id_export_raw(std::vector<uint8_t> tmp, std::vector<uint8_t> *vector){
+	if(tmp.size() == 0){
+		print("attempted to export completely blank data set", P_WARN);
 		return;
 	}
-	std::vector<uint8_t> tmp(var, var+size);
 	tmp = convert::nbo::to(tmp);
 	vector->insert(vector->end(), tmp.begin(), tmp.end());
 }
 
-#define ID_EXPORT(var, list) id_export_raw((uint8_t*)&var, sizeof(var), &list)
+//#define ID_EXPORT(var, list) id_export_raw((uint8_t*)&var, sizeof(var), &list)
+#define ID_EXPORT(var, list) id_export_raw(std::vector<uint8_t>((uint8_t*)&var, (uint8_t*)&var+sizeof(var)), &list)
 
 /*
   flags will be what types to EXCLUDE
@@ -292,8 +293,6 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_, uint8_t extra){
 	ID_EXPORT(current_extra, retval); // current extra is nothing
 	ID_EXPORT(id, retval);
 	ID_EXPORT(modification_incrementor, retval);
-	transport_i_t trans_i = 0;
-	transport_size_t trans_size = 0;
 	for(uint64_t i = 0;i < data_vector.size();i++){
 		/*
 		  TODO: ENFORCE EXPORTING RULES
@@ -304,47 +303,93 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_, uint8_t extra){
 			print("skipping, individual datum incompatiable with flags", P_SPAM);
 			continue;
 		}
-		trans_i = i; // not changed, just a standard size
-		trans_size = data_vector[i].get_length();
-		uint8_t *ptr_to_export =
-			(uint8_t*)data_vector[i].get_ptr();
-		if(ptr_to_export == nullptr){
-			print("ptr_to_export is a nullptr (pre-vector)", P_WARN);
-			continue;
-		}
+		std::vector<uint8_t> data_to_export;
 		if(data_vector[i].get_flags() & ID_DATA_BYTE_VECTOR){
 			print("reading in a byte vector", P_SPAM);
 			std::vector<uint8_t> *vector =
-				(std::vector<uint8_t>*)ptr_to_export;
-			ptr_to_export = vector->data();
-			trans_size = vector->size();
+				(std::vector<uint8_t>*)data_vector[i].get_ptr();
+			if(vector->data() == nullptr){
+				print("vector is empty, skipping", P_SPAM);
+				continue;
+			}
+			data_to_export =
+				std::vector<uint8_t>(
+					(uint8_t*)vector->data(),
+					(uint8_t*)vector->data()+
+					(sizeof(uint8_t)*vector->size()));
 		}else if(data_vector[i].get_flags() & ID_DATA_ID_VECTOR){
 			print("reading in an ID vector", P_SPAM);
 			std::vector<id_t_> *vector =
-				(std::vector<id_t_>*)ptr_to_export;
-			ptr_to_export = (uint8_t*)vector->data();
-			trans_size = vector->size()*sizeof(id_t_);
+				(std::vector<id_t_>*)data_vector[i].get_ptr();
+			if(vector->data() == nullptr){
+				print("vector is empty, skipping", P_SPAM);
+				continue;
+			}
+			data_to_export =
+				std::vector<uint8_t>(
+					(uint8_t*)vector->data(),
+					(uint8_t*)vector->data()+
+					(sizeof(id_t_)*vector->size()));
 		}else if(data_vector[i].get_flags() & ID_DATA_EIGHT_BYTE_VECTOR){
 			print("reading in a 64-bit vector", P_SPAM);
 			std::vector<uint64_t> *vector =
-				(std::vector<uint64_t>*)ptr_to_export;
-			ptr_to_export = (uint8_t*)vector->data();
-			trans_size = vector->size()*sizeof(uint64_t);
-		}
-		if(ptr_to_export == nullptr){
-			// if the list is empty, this is normal
-			P_V(trans_size, P_NOTE);
-			P_V_B(data_vector[i].get_flags(), P_NOTE);
-			if(trans_size != 0){
-				print("vector data is lost?", P_WARN);
+				(std::vector<uint64_t>*)data_vector[i].get_ptr();
+			if(vector->data() == nullptr){
+				print("vector is empty, skipping", P_SPAM);
+				continue;
 			}
+			data_to_export =
+				std::vector<uint8_t>(
+					(uint8_t*)vector->data(),
+					(uint8_t*)vector->data()+
+					(sizeof(uint8_t)*vector->size()));
+		}else if(data_vector[i].get_flags() & ID_DATA_BYTE_VECTOR_VECTOR){
+			// nested vectors work a bit differently
+			// this code makes two (safe) assumptions
+			// 1. This data will only be read from a data_vector[i] on
+			// the other side with a BYTE_VECTOR_VECTOR flag
+			// 2. fail-safe
+			std::vector<std::vector<uint8_t> > *vector =
+				(std::vector<std::vector<uint8_t> >*)data_vector[i].get_ptr();
+			if(vector->data() == nullptr){
+				print("vector is empty, skipping", P_SPAM);
+				continue;
+			}
+			for(uint64_t i = 0;i < vector->size();i++){
+				transport_size_t trans_size =
+					(*vector)[i].size();
+				data_to_export.insert(
+					data_to_export.end(),
+					&trans_size,
+					&trans_size+1);
+				if((*vector)[i].data() == nullptr){
+					print("vector is empty, skipping", P_SPAM);
+					continue;
+					// don't export anything
+				}
+				data_to_export.insert(
+					data_to_export.end(),
+					(uint8_t*)(*vector)[i].data(),
+					(uint8_t*)(*vector)[i].data()+trans_size);
+			}
+
+		}else{
+			data_to_export =
+				std::vector<uint8_t>(
+					(uint8_t*)data_vector[i].get_ptr(),
+					(uint8_t*)data_vector[i].get_ptr()+
+					data_vector[i].get_length());
+		}
+		if(data_to_export.size() == 0){
 			continue;
 		}
+		transport_i_t trans_i = i; // size fixing
+		transport_size_t trans_size = data_to_export.size();
 		P_V(trans_i, P_SPAM);
 		P_V(trans_size, P_SPAM);
 		ID_EXPORT(trans_i, retval);
 		ID_EXPORT(trans_size, retval);
-		id_export_raw((uint8_t*)ptr_to_export, trans_size, &retval);
+		id_export_raw(data_to_export, &retval);
 	}
 	if(extra & ID_EXTRA_COMPRESS){
 		retval = id_api::raw::compress(retval);
@@ -438,17 +483,17 @@ void data_id_t::import_data(std::vector<uint8_t> data){
 			trans_i < data_vector.size();
 		if(unlikely(!valid_entry)){
 			P_V(trans_i, P_SPAM);
-			print("invalid i entry, probably came from a new version", P_WARN);
+			print("invalid i entry, probably came from a new version", P_ERR);
 			return;
 		}else if(unlikely(data_vector[trans_i].get_ptr() == nullptr)){
 			print("cannot write to nullptr entry", P_WARN);
 			return;
 		}
 		if(unlikely(trans_size > data.size())){
-			print("fetched size is greater than working data", P_WARN);
+			print("fetched size is greater than working data", P_ERR);
 			return;
 		}else if(unlikely(trans_size > data_vector[trans_i].get_length())){
-			print("fetched size is greater than the local version", P_WARN);
+			print("fetched size is greater than the local version", P_ERR);
 			return;
 		}
 		id_import_raw((uint8_t*)data_vector[trans_i].get_ptr(),
@@ -507,7 +552,7 @@ void data_id_t::nonet_all_data(){
 }
 
 data_id_ptr_t::data_id_ptr_t(void *ptr_,
-			     uint32_t length_,
+			     std::vector<uint32_t> length_,
 			     uint8_t flags_){
 	ptr = ptr_;
 	length = length_;
@@ -522,6 +567,15 @@ void *data_id_ptr_t::get_ptr(){
 }
 
 uint32_t data_id_ptr_t::get_length(){
+	if(length.size() == 1){
+		return length[0];
+	}else{
+		print("invalid size of length", P_ERR);
+		return 0; // redunant
+	}
+}
+
+std::vector<uint32_t> data_id_ptr_t::get_length_vector(){
 	return length;
 }
 

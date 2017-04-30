@@ -137,6 +137,7 @@ void init(){
 	// throw level
 	settings::set_setting("throw_level", std::to_string(P_CRIT));
 	// shouldn't need to disable other stuff
+	settings::set_setting("run_tests", "true");
 	/*
 	  Using "~" doesn't work with C++, so get the information from getenv()
 

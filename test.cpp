@@ -32,6 +32,9 @@
 
 #include "test.h"
 
+/*
+  Run as many tests as possible (that make sense)
+ */
 
 static void test_compressor(){
 	std::vector<uint8_t> input_data;
@@ -261,28 +264,30 @@ static void test_rsa_key_gen(){
 }
 
 static void test_rsa_encryption(){
-	print("Bit length of RSA key:", P_NOTE);
+	print("using an RSA key length of 4096", P_NOTE);
 	uint64_t key_len = 4096;
-	std::cin >> key_len;
+	std::vector<uint8_t> test_data;
 	std::pair<id_t_, id_t_> rsa_key_pair =
 		rsa::gen_key_pair(key_len);
-	std::vector<uint8_t> test_data;
-	for(uint64_t i = 0;i < 65536;i++){
-		for(uint64_t x = 0;x < 1024;x++){
-			test_data.push_back(
-				(uint8_t)true_rand(0, 255));
-		}
-		std::vector<uint8_t> test_data_output =
-			encrypt_api::decrypt(
-				encrypt_api::encrypt(
-					test_data,
-					rsa_key_pair.first),
-				rsa_key_pair.second);
-		if(test_data == test_data_output){
-			print("it worked with " + std::to_string((long double)test_data.size()/(1024.0*1024.0)) + " MB", P_NOTE);
-		}else{
-			print("FAILED", P_ERR);
-		}
+	print("generating RSA test data", P_NOTE);
+	for(uint64_t x = 0;x < 1024;x++){
+		test_data.push_back(
+			(uint8_t)true_rand(0, 255));
+	}
+	print("encrypting RSA test data", P_NOTE);
+	std::vector<uint8_t> test_data_output =
+		encrypt_api::encrypt(
+			test_data,
+			rsa_key_pair.first);
+	print("decrypting RSA test data", P_NOTE);
+	test_data_output =
+		encrypt_api::decrypt(
+			test_data_output,
+			rsa_key_pair.second);
+	if(test_data == test_data_output){
+		print("it worked with " + std::to_string((long double)test_data.size()/(1024.0*1024.0)) + " MB", P_NOTE);
+	}else{
+		print("FAILED", P_ERR);
 	}
 }
 
@@ -293,7 +298,7 @@ static void test_aes(){
 		   aes::encrypt(
 			   data, key),
 		   key) == data){
-		print("it works", P_CRIT);
+		print("it works", P_NOTE);
 	}else{
 		print("it does not work", P_CRIT);
 	}
@@ -424,10 +429,10 @@ static void test_escape_string(){
 static void test_id_set_compression(){
 	std::vector<id_t_> id_set;
 	std::array<uint8_t, 32> hash;
-	for(uint64_t i = 0;i < 8192;i++){
+	for(uint64_t i = 0;i < 256;i++){
 		// i is the UUID
 		if(true_rand(0, 30) == 0){
-			print("computing new has at iteration " + std::to_string(i), P_NOTE);
+			print("computing new hash at iteration " + std::to_string(i), P_NOTE);
 			hash = encrypt_api::hash::sha256::gen_raw(
 				true_rand_byte_vector(64));
 		}
@@ -473,5 +478,14 @@ static void benchmark_encryption(){
 	}catch(...){} // don't expect it to be set unless it is true
 }
 
-void test(){}
+void test(){
+	test_escape_string();
+	//test_max_tcp_sockets();
+	test_id_transport();
+	test_nbo_transport();
+	test_rsa_key_gen();
+	test_rsa_encryption();
+	test_aes();
+	test_id_set_compression();
+}
 
