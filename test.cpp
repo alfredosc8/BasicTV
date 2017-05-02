@@ -29,6 +29,7 @@
 #include "escape.h"
 #include "id/id_set.h"
 #include "id/id_disk.h"
+#include "tv/tv_frame_numbers.h"
 
 #include "test.h"
 
@@ -478,7 +479,37 @@ static void benchmark_encryption(){
 	}catch(...){} // don't expect it to be set unless it is true
 }
 
+/*
+  tv_frame_number_device_t is just a dummy holder of std::vector, so there's no
+  point in testing that right now (I might when there is a more sophisticated 
+  setup).
+ */
+
+#define TV_NUMBER_CHECK_VALUE(x) if(number_api::get::x(device_sensor) != x){print((std::string)#x + " doesn't match", P_WARN);P_V(number_api::get::x(device_sensor), P_WARN);P_V(x, P_WARN);}
+
+static void test_tv_number_frames(){
+	for(uint64_t i = 0;i < 128;i++){
+		const uint16_t device = 0xAABB;
+		const long double number = i*3.1415;
+		const uint64_t unit = TV_FRAME_NUMBER_USE_NONE;
+		const uint64_t timestamp = get_time_microseconds();
+		std::vector<uint8_t> device_sensor =
+			number_api::create(
+				device,
+				number,
+				unit,
+				timestamp);
+		TV_NUMBER_CHECK_VALUE(device);
+		TV_NUMBER_CHECK_VALUE(number);
+		TV_NUMBER_CHECK_VALUE(unit);
+		TV_NUMBER_CHECK_VALUE(timestamp);
+	}
+}
+
+#undef TV_NUMBER_CHECK_VALUE
+
 void test(){
+	test_tv_number_frames();
 	test_escape_string();
 	//test_max_tcp_sockets();
 	test_id_transport();
@@ -487,5 +518,6 @@ void test(){
 	test_rsa_encryption();
 	test_aes();
 	test_id_set_compression();
+	test_tv_number_frames();
 }
 
