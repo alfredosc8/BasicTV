@@ -1,5 +1,7 @@
 #include "tv_frame_numbers.h"
 
+#define MINOR_SPECIES_MULTIPLIER (pow(10, 20))
+
 /*
   reads and writes are directly to the frame, don't bother with loading
   to an intermediary right now
@@ -73,14 +75,12 @@ long double number_api::get::number(std::vector<uint8_t> data){
 	uint64_t major_int = 0, minor_int = 0;
 	memcpy(&major_int, major.data(), 8);
 	memcpy(&minor_int, minor.data(), 8);
-	retval = (long double)(major_int) + (long double)(minor_int/LONG_MAX);
+	P_V(major_int, P_SPAM);
+	P_V(minor_int, P_SPAM);
+	retval = (long double)(major_int) + (long double)((long double)minor_int/(long double)MINOR_SPECIES_MULTIPLIER);
 	P_V(retval, P_SPAM);
 	return retval;
 }
-
-// log10((2^64)-1)
-
-#define MINOR_SPECIES_MULTIPLIER 20
 
 #define NUMBER_CREATE_ADD(x) retval.insert(retval.end(), (uint8_t*)&x, (uint8_t*)&x+sizeof(x))
 
@@ -92,10 +92,14 @@ std::vector<uint8_t> number_api::create(uint16_t device,
 	device = NBO_16(device);
 	unit = NBO_64(unit);
 	timestamp = NBO_64(timestamp);
-	uint64_t major_int = NBO_64((uint64_t)(long double)(number));
-	uint32_t major_size = NBO_32(8);
-	uint64_t minor_int = NBO_64((uint64_t)(((long double)((uint64_t)(number)-number)*MINOR_SPECIES_MULTIPLIER)+(long double)0.5));
-	uint32_t minor_size = NBO_32(8);
+	uint64_t major_int =
+		NBO_64((uint64_t)(long double)(number));
+	uint32_t major_size =
+		NBO_32(8);
+	uint64_t minor_int =
+		NBO_64((((long double)number-(long double)major_int)*MINOR_SPECIES_MULTIPLIER));
+	uint32_t minor_size =
+		NBO_32(8);
 	// doesn't bother with endian stuff, assumed to have been done
 	NUMBER_CREATE_ADD(device);
 	NUMBER_CREATE_ADD(unit);
