@@ -23,30 +23,30 @@
  */
 
 uint64_t tv::chan::count(uint64_t flags){
-	uint64_t retval = 0;
-	std::vector<id_t_> channel_id_list =
-		id_api::cache::get("tv_channel_t");
-	for(uint64_t i = 0;i < channel_id_list.size();i++){
-		try{
-			tv_channel_t *channel =
-				PTR_DATA(channel_id_list[i], tv_channel_t);
-			if(flags & TV_CHAN_STREAMING && channel->is_streaming()){
-				retval++;
-				continue;
-			}
-			if((flags & TV_CHAN_AUDIO) && channel->is_audio()){
-				retval++;
-				continue;
-			}
-			if((flags & TV_CHAN_VIDEO) && channel->is_video()){
-				retval++;
-				continue;
-			}
-		}catch(std::runtime_error e){
-			continue;
-		}
-	}
-	return retval;
+	// uint64_t retval = 0;
+	// std::vector<id_t_> channel_id_list =
+	// 	id_api::cache::get("tv_channel_t");
+	// for(uint64_t i = 0;i < channel_id_list.size();i++){
+	// 	try{
+	// 		tv_channel_t *channel =
+	// 			PTR_DATA(channel_id_list[i], tv_channel_t);
+	// 		if(flags & TV_CHAN_STREAMING && channel->is_streaming()){
+	// 			retval++;
+	// 			continue;
+	// 		}
+	// 		if((flags & TV_CHAN_AUDIO) && channel->is_audio()){
+	// 			retval++;
+	// 			continue;
+	// 		}
+	// 		if((flags & TV_CHAN_VIDEO) && channel->is_video()){
+	// 			retval++;
+	// 			continue;
+	// 		}
+	// 	}catch(std::runtime_error e){
+	// 		continue;
+	// 	}
+	// }
+	// return retval;
 }
 
 id_t_ tv::chan::next_id(id_t_ id, uint64_t flags){

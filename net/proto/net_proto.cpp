@@ -129,15 +129,7 @@ static void net_proto_verify_bootstrap_nodes(){
 	print("starting with " + std::to_string(start_node_count) + " unique nodes", P_NOTE);
 }
 
-void net_proto_init(){
-	id_api::import::load_all_of_type(
-		"net_proto_peer_t",
-		ID_API_IMPORT_FROM_DISK);
-	net_proto_init_self_peer();
-	net_proto_verify_bootstrap_nodes();
-	/*
-	  TODO: connect net_proxy_t to net_socket_t somehow (default setting)
-	 */
+static void net_proto_init_proxy(){
 	if(settings::get_setting("socks_enable") == "true"){
 		try{
 			std::string socks_proxy_ip = settings::get_setting("socks_proxy_ip");
@@ -152,6 +144,7 @@ void net_proto_init(){
 			proxy_ptr->set_net_ip(
 				socks_proxy_ip,
 				socks_proxy_port);
+			print("added a proxy of " + convert::net::ip::to_string(socks_proxy_ip, socks_proxy_port), P_NOTE);
 		}catch(std::exception e){
 			const bool strict =
 				settings::get_setting("socks_strict") == "true";
@@ -161,6 +154,15 @@ void net_proto_init(){
 	}else{
 	 	print("SOCKS has been disabled", P_NOTE);
 	}
+}
+
+void net_proto_init(){
+	id_api::import::load_all_of_type(
+		"net_proto_peer_t",
+		ID_API_IMPORT_FROM_DISK);
+	net_proto_init_self_peer();	
+	net_proto_init_proxy();
+	net_proto_verify_bootstrap_nodes();
 }
 
 void net_proto_close(){

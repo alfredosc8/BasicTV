@@ -6,10 +6,11 @@
 #include "tv_frame_audio.h"
 #include "tv_window.h"
 #include "tv_channel.h"
+#include "tv_item.h"
 
 tv_window_t::tv_window_t() : id(this, TYPE_TV_WINDOW_T){
 	id.add_data_raw(&pos, sizeof(pos));
-	id.add_data_id(&channel_id, 1);
+	id.add_data_id(&item_id, 1);
 	id.nonet_all_data();
 	id.noexp_all_data();
 }
@@ -17,12 +18,12 @@ tv_window_t::tv_window_t() : id(this, TYPE_TV_WINDOW_T){
 tv_window_t::~tv_window_t(){
 }
 
-id_t_ tv_window_t::get_channel_id(){
-	return channel_id;
+id_t_ tv_window_t::get_item_id(){
+	return item_id;
 }
 
-void tv_window_t::set_channel_id(id_t_ channel_id_){
-	channel_id = channel_id_;
+void tv_window_t::set_item_id(id_t_ item_id_){
+	item_id = item_id_;
 }
 
 void tv_window_t::set_pos(uint8_t pos_){

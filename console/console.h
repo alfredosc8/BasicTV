@@ -118,7 +118,8 @@ private:
 	DEF_CMD(tv_window_set_timestamp_offset);
 	DEF_CMD(tv_window_set_channel_id);
 	DEF_CMD(tv_channel_create);
-	DEF_CMD(tv_channel_get_stream_list);
+	DEF_CMD(tv_item_create);
+	DEF_CMD(tv_item_get_stream_list);
 	DEF_CMD(tv_audio_load_wav);
 
 	// tester functions

@@ -2,8 +2,8 @@
 #include "../util.h"
 #include "net.h"
 #include "net_socket.h"
-#include "../stats/stats.h"
 #include "../id/id_api.h"
+#include "../math/math.h"
 
 net_socket_t::net_socket_t() : id(this, TYPE_NET_SOCKET_T){
 	id.add_data_raw(&status, sizeof(status));

@@ -227,6 +227,7 @@ extern void set_id_type(id_t_ *id, type_t_ type);
 #define TYPE_TV_FRAME_CAPTION_T				23
 #define TYPE_INPUT_DEV_STANDARD_T			24
 #define TYPE_ID_DISK_INDEX_T				25
-#define TYPE_TV_FRAME_NUMBER_DEVICE_T			26
+#define TYPE_MATH_NUMBER_SET_T				26
+#define TYPE_TV_ITEM_T					27
 
 #endif

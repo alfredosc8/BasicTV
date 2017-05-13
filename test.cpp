@@ -29,32 +29,36 @@
 #include "escape.h"
 #include "id/id_set.h"
 #include "id/id_disk.h"
-#include "tv/tv_frame_numbers.h"
+#include "math/math.h"
 
 #include "test.h"
 
 /*
-  Run as many tests as possible (that make sense)
+  Since these tests are being ran all of the time, there are a few formatting
+  requriements I have to follow for my own sake:
+  1. No printing on non-errors
+  2. Ideally, make each test last under a second, but make sure they are well
+  tested
+  3. Run as many tests as possible (that make sense)
+  4. All data created inside of these tests MUST be set as non-exportable and
+  non-networkable, unless doing so goes against what is being tested (but
+  needs to be set after testing is done, at a minimum)
+
+  Any test that requires more complicated code (coordination with another
+  running instance, user input, etc.) is prefixed with test_nc (non-compliant)
+*/
+
+/*
+  NON-COMPLIANT TESTS
+
+  Not actually ran inside of the main testing function for one of a few reaons
+  1. They require more advanced coordination/another node (networking mostly)
+  2. They are performance tests that export data, not a functionality test
+  3. They require user input to work properly
+  4. I said so
  */
 
-static void test_compressor(){
-	std::vector<uint8_t> input_data;
-	for(uint64_t i = 0;i < 1024*1024;i++){
-		input_data.push_back(i&0xFF);
-	}
-	std::vector<uint8_t> output_data =
-		compressor::xz::from(
-			compressor::xz::to(
-				input_data,
-				0));
-	if(std::equal(input_data.begin(), input_data.end(), output_data.begin())){
-		print("Compressor works", P_NOTE);
-	}else{
-		print("input != output", P_ERR);
-	}
-}
-
-static void test_socket(){
+static void test_nc_socket(){
 	/*
 	  I cannot locally connect to this computer without using another IP
 	  address (breaking 4-tuple), so just test this with laptop
@@ -88,20 +92,10 @@ static void test_socket(){
 }
 
 /*
-  BasicTV works best when there are many open TCP connections at one
-  time, because there isn't an overhead for connecting to a new client.
-  However, consumer grade routers are terrible at this, so this is an
-  automatic test to see how much the router can actually handle.
-
-  UPDATE: Linux's internal TCP socket limit was reached, and the following
-  source code doesn't actually test the router's capabilities.
-
-  TODO: check to see if this information makes it to the router, or if
-  it is just stuck locally (which makes sense, but defeats the purpose
-  of the test).
+  Technically this is fine, but it only runs with nc-dependent parameters
  */
 
-static void test_socket_array(std::vector<std::pair<id_t_, id_t_> > socket_array){
+static void test_nc_socket_array(std::vector<std::pair<id_t_, id_t_> > socket_array){
 	for(uint64_t i = 0;i < socket_array.size();i++){
 		net_socket_t *first =
 			PTR_DATA(socket_array[i].first,
@@ -124,13 +118,56 @@ static void test_socket_array(std::vector<std::pair<id_t_, id_t_> > socket_array
 	}
 }
 
+
+
+/*
+  COMPLIANT TESTS
+
+  These tests are all ran automatically on startup, should be under one second
+  each, and don't break the standrad rules
+ */
+
+
+static void test_compressor(){
+	std::vector<uint8_t> input_data;
+	for(uint64_t i = 0;i < 1024*1024;i++){
+		input_data.push_back(i&0xFF);
+	}
+	std::vector<uint8_t> output_data =
+		compressor::xz::from(
+			compressor::xz::to(
+				input_data,
+				0));
+	if(!std::equal(input_data.begin(), input_data.end(), output_data.begin())){
+		print("input isn't equal to output in compressor", P_ERR);
+	}
+}
+
+/*
+  BasicTV works best when there are many open TCP connections at one
+  time, because there isn't an overhead for connecting to a new client.
+  However, consumer grade routers are terrible at this, so this is an
+  automatic test to see how much the router can actually handle.
+
+  UPDATE: Linux's internal TCP socket limit was reached, and the following
+  source code doesn't actually test the router's capabilities.
+
+  TODO: check to see if this information makes it to the router, or if
+  it is just stuck locally (which makes sense, but defeats the purpose
+  of the test).
+ */
+
 /*
   This works up until 537 (stack smashing), and I can't find the problem. If
   you are stuck at a lower number, make sure you set the file descriptor limit
   high enough (ulimit -n 65536 works for me).
-*/
 
-static void test_max_tcp_sockets(){
+  Meant as a measure of local performance and API/Linux limits. A global one
+  with tables has the test_nc distinction because of coordination with another
+  node (when it is created).
+ */
+
+static void test_max_tcp_sockets_local(){
 	print("Local IP address:", P_NOTE);
 	std::string ip;
 	std::cin >> ip;
@@ -161,7 +198,7 @@ static void test_max_tcp_sockets(){
 					first->id.get_id(),
 					second->id.get_id()));
 		}
-		test_socket_array(socket_pair);
+		test_nc_socket_array(socket_pair);
 	}
 }
 
@@ -247,6 +284,8 @@ static void test_rsa_key_gen(){
 	encrypt_priv_key_t *priv =
 		PTR_DATA(rsa_key_pair.first,
 			 encrypt_priv_key_t);
+	priv->id.noexp_all_data();
+	priv->id.nonet_all_data();
 	if(priv == nullptr){
 		print("priv key is a nullptr", P_ERR);
 	}
@@ -485,28 +524,26 @@ static void benchmark_encryption(){
   setup).
  */
 
-#define TV_NUMBER_CHECK_VALUE(x) if(number_api::get::x(device_sensor) != x){print((std::string)#x + " doesn't match", P_WARN);P_V(number_api::get::x(device_sensor), P_WARN);P_V(x, P_WARN);}
+#define TV_NUMBER_CHECK_VALUE(x) if(math::number::get::x(device_sensor) != x){print((std::string)#x + " doesn't match", P_WARN);P_V(math::number::get::x(device_sensor), P_WARN);P_V(x, P_WARN);}
 
 static void test_tv_number_frames(){
 	for(uint64_t i = 0;i < 128;i++){
-		const uint16_t device = 0xAABB;
 		const long double number = i*3.1415;
-		const uint64_t unit = TV_FRAME_NUMBER_USE_NONE;
-		const uint64_t timestamp = get_time_microseconds();
+		const uint64_t unit = MATH_NUMBER_USE_NONE;
 		std::vector<uint8_t> device_sensor =
-			number_api::create(
-				device,
+			math::number::create(
 				number,
-				unit,
-				timestamp);
-		TV_NUMBER_CHECK_VALUE(device);
+				unit);
 		TV_NUMBER_CHECK_VALUE(number);
 		TV_NUMBER_CHECK_VALUE(unit);
-		TV_NUMBER_CHECK_VALUE(timestamp);
 	}
 }
 
 #undef TV_NUMBER_CHECK_VALUE
+
+void test_nc(){
+	test_nc_socket();
+}
 
 void test(){
 	test_tv_number_frames();

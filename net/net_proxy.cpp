@@ -1,5 +1,5 @@
 #include "net_proxy.h"
-#include "../stats/stats.h"
+#include "../math/math.h"
 
 net_proxy_t::net_proxy_t() : id(this, TYPE_NET_PROXY_T){
 }

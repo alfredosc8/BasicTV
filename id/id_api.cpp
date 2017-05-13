@@ -10,6 +10,7 @@
 #include "../tv/tv_channel.h"
 #include "../tv/tv_window.h"
 #include "../tv/tv_menu.h"
+#include "../tv/tv_item.h"
 #include "../net/proto/inbound/net_proto_inbound_data.h"
 #include "../net/proto/outbound/net_proto_outbound_data.h"
 #include "../net/proto/net_proto_con_req.h"
@@ -402,7 +403,8 @@ void id_api::destroy(id_t_ id){
 	DELETE_TYPE_2(tv_channel_t);
 	DELETE_TYPE_2(tv_menu_entry_t);
 	DELETE_TYPE_2(tv_menu_t);
-
+	DELETE_TYPE_2(tv_item_t);
+	
 	// net (proto and standard)
 	DELETE_TYPE_2(net_socket_t);
 	DELETE_TYPE_2(net_proto_peer_t);

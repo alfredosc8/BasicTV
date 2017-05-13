@@ -7,6 +7,8 @@
 
   This assumes that at least two IDs are from the same client (and thus, the
   same hash), and it just lists this down
+
+  Order of the list needs to be preserved as well
  */
 
 std::vector<id_t_> expand_id_set(std::vector<uint8_t> id_set);

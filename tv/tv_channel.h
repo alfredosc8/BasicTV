@@ -3,71 +3,34 @@
 #ifndef TV_CHANNEL_H
 #define TV_CHANNEL_H
 /*
-  tv_channel_t: channel information. contains information about the stream
-  and frames (video only, audio only, etc.)
+  tv_channel_t:
+  TV channel is a description of what a channel is. The actual stream
+  content has been offset to tv_item_t.
+
+  It has a description of the channel, a reference to a wallet set, 
+  official website, thumbnail image (?), and other stuff as well.
+
+  TV window NO LONGER NEEDS to directly refer tv_channel_t. Instead, refer
+  TV item directly to TV window, and load TV channel's data just inside of
+  the 'info' button or description or whatever
  */
 
-#define TV_CHAN_FRAME_LIST_SIZE 256
-
 /*
-  For simplicity, we can do this. However, I'm thinking about creating
-  a ternay system so 1.5 bits are used for three values instead of two.
-  Great for expansion, but I can never get a round value
-*/
-
-#define TV_CHAN_STREAMING (1 << 0)
-#define TV_CHAN_CHECKED_AUDIO (1 << 1)
-#define TV_CHAN_AUDIO (1 << 2)
-#define TV_CHAN_CHECKED_VIDEO (1 << 3)
-#define TV_CHAN_VIDEO (1 << 4)
-#define TV_CHAN_CHECKED_GUIDE (1 << 5)
-#define TV_CHAN_GUIDE (1 << 6)
-
-// no reason why these are needed
-#define TV_CHAN_PLAYBACK_SPEED_PAUSE 0
-#define TV_CHAN_PLAYBACK_SPEED_PLAY 1
-
-// When data is added to the stream_list, then just change the
-// status to reflect the types of data that were added (assuming
-// we have that information offhand)
-
-/*
-  There are actually two different types of "broadcast delay":
-
-  tv_channel_t broadcast delay, typically in the seconds, which is
-  meant to ensure that enough data has been received to recreate the
-  stream in part. If this is too low, then blank screens, choppy audio,
-  and out of sync AV might happen. However, that variable should be set
-  dynamically to match the network, so no two sets are guaranteed to be
-  perfectly in-sync with each other. 
-
-  Encrypted broadcast delay: the ID is encrypted with a second
-  key that is sent out a certain time before the live time for
-  that set of frames. Encrypting a minute of frames with one key,
-  and sending the key out a minute in advance seems fair. 
-
-  People can press a record button and the information for that slot will
-  be received from the network. Of course, if the event is happening
-  live, this isn't practical.
+  TODO: make sure this works with all Unicode stuff
  */
 
 struct tv_channel_t{
 private:
-	std::vector<id_t_> stream_list;
-	uint64_t status = 0;
+	std::vector<uint8_t> description;
 	id_t_ wallet_set_id = ID_BLANK_ID;
 public:
 	data_id_t id;
 	tv_channel_t();
 	~tv_channel_t();
-	std::vector<id_t_> get_stream_list();
-	void add_stream_id(id_t_ id_);
-	void del_stream_id(id_t_ id_);
-	bool is_streaming();
-	bool is_audio();
-	bool is_video();
 	id_t_ get_wallet_set_id(){return wallet_set_id;}
 	void set_wallet_set_id(id_t_ wallet_set_id_){wallet_set_id = wallet_set_id_;}
+	void set_desc(std::string desc);
+	std::string get_desc();
 };
 
 #endif

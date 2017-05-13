@@ -1,0 +1,30 @@
+MATH
+1. Move over numbers code entirely
+2. Make a standardized unit converter/generator/extractor, based on the information given and some definition of what we want
+   a. That definition is probably sane local units in the settings.cfg file
+3. Allow for higher and lower precision than 64-bit (8-bytes and 4-bytes size is pretty wack)
+
+TV
+1. Audio compression (Opus)
+2. Video compression (VP9)
+3. Intuitive UI
+4. Finish webcam recording (not a priority)
+
+NETWORKING
+1. Actually get peer connections working
+2. Hoard as much data as possible
+   a. Ping time from a ping program
+   b. Ping time from time of request being sent to response
+   c. Packet sizes sent off at what times (offloaded to buffer, remember)
+   d. Packet sizes received at what times (download speed)
+   e. Log of all IDs received from a peer
+   f. List of linked list requests they are subscribed to (effectively creating a fasttrack pipeline of data)
+   g. List of all failed queries (successful queries are in IDs received)
+   h. Query peers about a content storage distribution over different storage tiers
+3. Do the following with the hoarded data
+   a. Get a distribution of hashes successfully received, use those in prioritizing queries
+   b. Get a "reliability" rating of a timely response, generated from variance of ping time of requests
+   c. Find the probablility that a node has a given ID, based on linked list references and the hash
+   d. Sum all instantaneous download speeds on a proxy, reorganize if the sums are constant and they are flat
+   e. Create a nice breakdown of nework growth as a function of all data storage, not only peers (spoofing peers is a problem for multi-proxy setups)
+

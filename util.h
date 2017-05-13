@@ -28,6 +28,10 @@
 #define likely(x)      __builtin_expect(!!(x), 1)
 #define unlikely(x)    __builtin_expect(!!(x), 0)
 
+#define GET_SET_ID(x) \
+	void set_##x(id_t_ id_){x = id_;}\
+	id_t_ get_##x(){return x;}\
+
 #ifdef __GNUC__
 // This can be used somewhere
 #define prefetch(addr, rw, locality) __builtin_prefetch(addr, rw, locality)

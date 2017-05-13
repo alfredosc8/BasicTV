@@ -205,7 +205,8 @@ std::vector<id_t_> tv_audio_load_wav(id_t_ channel_id, uint64_t start_time_micro
 	if(channel == nullptr){
 		print("channel is a nullptr", P_ERR);
 	}
-	channel->add_stream_id(audio_frame_vector[0]);
+	print("fix tv channel implementation", P_ERR);
+	//channel->add_stream_id(audio_frame_vector[0]);
 	Mix_FreeChunk(chunk);
 	chunk = nullptr;
 	return audio_frame_vector;

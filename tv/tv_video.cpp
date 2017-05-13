@@ -10,6 +10,7 @@
 #include "../convert.h"
 #include "tv.h"
 #include "tv_channel.h"
+#include "tv_item.h"
 #include "tv_frame_video.h"
 #include "tv_frame_audio.h"
 #include "tv_window.h"
@@ -267,14 +268,22 @@ static void tv_render_frame_to_screen_surface(tv_frame_video_t *frame,
 	frame_surface = nullptr;
 }
 
-static id_t_ tv_render_get_preferable_frame_list(tv_channel_t *channel){
+static id_t_ tv_render_get_preferable_frame_list(tv_item_t *item){
 	id_t_ retval = ID_BLANK_ID;
-	std::vector<id_t_> stream_list =
-		channel->get_stream_list();
+	std::vector<std::vector<id_t_> > stream_list =
+		item->get_frame_id_vector();
 	for(uint64_t i = 0;i < stream_list.size();i++){
+		/*
+		  TODO: rewrite this so it can more effectively used
+		  longer vectors of IDs
+		 */
+		if(stream_list[i].size() == 0){
+			print("skipping empty stream_list vector entry", P_WARN);
+			continue;
+		}
 		data_id_t *tmp =
 			id_api::array::ptr_id(
-				stream_list[i],
+				stream_list[i][0],
 				"tv_frame_video_t");
 		// TODO: actually do some work here
 		if(tmp != nullptr){
@@ -294,19 +303,19 @@ static void tv_render_all(){
 	}
 	for(uint64_t i = 0;i < all_windows.size();i++){
 		tv_window_t *window = nullptr;
-		tv_channel_t *channel = nullptr;
+		tv_item_t *item = nullptr;
 		tv_frame_video_t *frame_video = nullptr;
 		// TODO: restructure this
 		window = PTR_DATA(all_windows[i], tv_window_t);
 		CONTINUE_IF_NULL(window);
-		channel = PTR_DATA(window->get_channel_id(), tv_channel_t);
-		CONTINUE_IF_NULL(channel);
+		item = PTR_DATA(window->get_item_id(), tv_item_t);
+		CONTINUE_IF_NULL(item);
 		uint64_t timestamp_micro_s = 
 			get_time_microseconds();
 		frame_video =
 			PTR_DATA(tv_render_id_of_last_valid_frame(
 					 tv_render_get_preferable_frame_list(
-						 channel),
+						 item),
 					 timestamp_micro_s),
 				 tv_frame_video_t);
 		CONTINUE_IF_NULL(frame_video);
@@ -331,8 +340,8 @@ void tv_video_loop(){
 static void tv_init_test_menu(){
 	tv_window_t *window =
 		new tv_window_t;
-	tv_channel_t *channel =
-		new tv_channel_t;
+	tv_item_t *item =
+		new tv_item_t;
 	tv_menu_t *menu =
 		new tv_menu_t;
 	menu->set_menu_entry(0, "*takes a bow*");
@@ -342,8 +351,8 @@ static void tv_init_test_menu(){
 	// menu->set_menu_entry(3, "to");
 	// menu->set_menu_entry(4, "be");
 	// menu->set_menu_entry(5, "great");
-	channel->add_stream_id(menu->get_frame_id());
-	window->set_channel_id(channel->id.get_id());
+	item->add_frame_id({menu->get_frame_id()});
+	window->set_item_id(item->id.get_id());
 }
 
 static void tv_init_test_test_card(uint64_t x_res,
@@ -354,11 +363,15 @@ static void tv_init_test_test_card(uint64_t x_res,
 	tv_channel_t *channel =
 		new tv_channel_t;
 	channel->id.noexp_all_data();
+	tv_item_t *item =
+		new tv_item_t;
+	item->id.noexp_all_data();
 	tv_frame_video_t *frame_video =
 		tv_frame_gen_xor_frame(x_res, y_res, 8);
 	frame_video->id.noexp_all_data();
-	window->set_channel_id(channel->id.get_id());
-	channel->add_stream_id(frame_video->id.get_id());
+	// done initializing
+	window->set_item_id(channel->id.get_id());
+	item->add_frame_id({frame_video->id.get_id()});
 	window->add_active_stream_id(frame_video->id.get_id());
 }
 
@@ -376,6 +389,10 @@ static void tv_init_test_webcam(){
 		new tv_channel_t;
 	tv_dev_video_t *dev =
 	 	new tv_dev_video_t("/dev/video0");
+	tv_item_t *item =
+		new tv_item_t;
+	// anything added to a tv_item_t array needs to have some
+	// linkage through tv_frame_t items anyways
 	std::vector<id_t_> vector_array;
 	// Without an offset, the frames are obsolete before they
 	// are rendered
@@ -391,8 +408,12 @@ static void tv_init_test_webcam(){
 		vector_array.push_back(video->id.get_id());
 	}
 	id_api::linked_list::link_vector(vector_array);
-	channel->add_stream_id(vector_array[0]);
-	window->set_channel_id(channel->id.get_id());
+	channel->set_desc(
+		"BasicTV Webcam Test Channel");
+	// no harm in adding everything
+	item->add_frame_id(vector_array);
+	item->set_tv_channel_id(channel->id.get_id());
+	window->set_item_id(item->id.get_id());
 	window->add_active_stream_id(vector_array[0]);
 }
 

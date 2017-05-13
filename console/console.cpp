@@ -79,7 +79,8 @@ void console_t::execute(std::vector<std::string> cmd_vector){
 		LIST_CMD(tv_window_set_timestamp_offset);
 		LIST_CMD(tv_window_set_channel_id);
 		LIST_CMD(tv_channel_create);
-		LIST_CMD(tv_channel_get_stream_list);
+		LIST_CMD(tv_item_create);
+		LIST_CMD(tv_item_get_stream_list);
 		LIST_CMD(tv_audio_load_wav);
 
 		// "tester" functions for the TV

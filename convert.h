@@ -75,6 +75,13 @@ namespace convert{
 		std::vector<uint8_t> from(std::string);
 		void from(uint8_t *, uint64_t);
 	}
+	namespace net{
+		namespace ip{
+			std::string to_string(std::string ip,
+					      uint16_t port);
+			std::pair<std::string, uint16_t> from_string(std::string);
+		};
+	}
 	namespace array{
 		namespace id{
 			std::string to_hex(id_t_);
