@@ -2,7 +2,7 @@
 #include "stats.h"
 #include "numbers.h"
 
-#define MINOR_SPECIES_MULTIPLIER (pow(10, 20))
+#define MINOR_SPECIES_MULTIPLIER (pow(2, 64)-1)
 
 /*
   reads and writes are directly to the frame, don't bother with loading
@@ -47,7 +47,7 @@ static std::vector<uint8_t> number_sanity_fetch(std::vector<uint8_t> *data){
 
 uint64_t math::number::get::unit(std::vector<uint8_t> data){
 	uint64_t retval;
-	number_sanity_fetch(&retval, sizeof(uint16_t), sizeof(retval), &data);
+	number_sanity_fetch(&retval, 0, sizeof(retval), &data);
 	return retval;
 }
 
@@ -88,7 +88,7 @@ long double math::number::get::number(std::vector<uint8_t> data){
 	memcpy(&minor_int, species.second.data(), species.second.size());
 	P_V(major_int, P_SPAM);
 	P_V(minor_int, P_SPAM);
-	retval = (long double)(major_int) + (long double)((long double)minor_int/(long double)MINOR_SPECIES_MULTIPLIER);
+	retval = (long double)(major_int) + (long double)((long double)(minor_int/MINOR_SPECIES_MULTIPLIER));
 	P_V(retval, P_SPAM);
 	return retval;
 }
@@ -98,17 +98,24 @@ long double math::number::get::number(std::vector<uint8_t> data){
 std::vector<uint8_t> math::number::create(long double number,
 					uint64_t unit){
 	std::vector<uint8_t> retval;
-	unit = NBO_64(unit);
 	uint64_t major_int =
-		NBO_64((uint64_t)(long double)(number));
+		((uint64_t)(long double)(number));
 	uint32_t major_size =
-		NBO_32(8);
+		(8);
 	uint64_t minor_int =
-		NBO_64((((long double)number-(long double)major_int)*MINOR_SPECIES_MULTIPLIER));
+		((((long double)number-(long double)major_int)*(long double)MINOR_SPECIES_MULTIPLIER));
 	uint32_t minor_size =
-		NBO_32(8);
+		(8);
+	P_V(unit, P_SPAM);
+	P_V(major_size, P_SPAM);
 	P_V(major_int, P_SPAM);
+	P_V(minor_size, P_SPAM);
 	P_V(minor_int, P_SPAM);
+	unit = NBO_64(unit);
+	major_int = NBO_64(major_int);
+	major_size = NBO_32(major_size);
+	minor_int = NBO_64(minor_int);
+	minor_size = NBO_32(minor_size);
 	// doesn't bother with endian stuff, assumed to have been done
 	NUMBER_CREATE_ADD(unit);
 	NUMBER_CREATE_ADD(major_size);
