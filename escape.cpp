@@ -37,9 +37,6 @@ static uint64_t pos_of_next_true_escape(std::vector<uint8_t> vector,
 		if(unlikely(vector[i-1] != escape_char &&
 			    vector[i+0] == escape_char &&
 			    vector[i+1] != escape_char)){
-			print("found next true escape at", P_SPAM);
-			// don't use this cross-line sorcery in produciton
-			P_V(i, P_SPAM);
 			return i;
 		}
 	}
@@ -51,16 +48,6 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t> > unescape_vector(
 	std::vector<uint8_t> vector,
 	char escape_char){
 	std::pair<std::vector<uint8_t>, std::vector<uint8_t> > retval;
-	// bool fixed = false;
-	// while(!(vector[0] == escape_char &&
-	// 	vector[1] != escape_char) && vector.size() > 2){
-	// 	fixed = true;
-	// 	// can't start on an escaped sequence
-	// 	vector.erase(vector.begin());
-	// }
-	// if(fixed){
-	// 	print("had to adjust block to start on a valid header", P_NOTE);
-	// }
 	if(vector.size() <= 5){ // escape char + 32-bit length
 		print("vector is too small to contain metadata", P_NOTE);
 		return std::make_pair(
@@ -75,10 +62,10 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t> > unescape_vector(
 	vector.erase(vector.begin(),
 		     vector.begin()+4);
 	escaped_length = NBO_32(escaped_length);
-	P_V(escaped_length, P_SPAM);
+	// P_V(escaped_length, P_SPAM);
 	if(escaped_length > vector.size()){
-		P_V_B(escaped_length, P_NOTE);
-		P_V_B(vector.size(), P_NOTE);
+		// P_V_B(escaped_length, P_NOTE);
+		// P_V_B(vector.size(), P_NOTE);
 		print("escaped_length is longer than actual data, not parsing", P_ERR);
 	}
 	std::vector<uint8_t> payload(

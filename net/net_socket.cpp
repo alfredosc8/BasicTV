@@ -9,10 +9,10 @@ net_socket_t::net_socket_t() : id(this, TYPE_NET_SOCKET_T){
 	id.add_data_raw(&status, sizeof(status));
 	id.noexp_all_data();
 	id.nonet_all_data();
-	stat_sample_set_t *outbound_stat_sample_set_ptr =
-		new stat_sample_set_t;
-	stat_sample_set_t *inbound_stat_sample_set_ptr =
-		new stat_sample_set_t;
+	math_stat_sample_set_t *outbound_stat_sample_set_ptr =
+		new math_stat_sample_set_t;
+	math_stat_sample_set_t *inbound_stat_sample_set_ptr =
+		new math_stat_sample_set_t;
 	// just for speed and usage over time
 	outbound_stat_sample_set_ptr->reset(
 		{8, 8});
@@ -74,9 +74,9 @@ void net_socket_t::send(std::vector<uint8_t> data){
 	// 	std::make_pair(
 	// 		get_time_microseconds(),
 	// 		sent_bytes);
-	// stat_sample_set_t *outbound_sample_set =
+	// math_stat_sample_set_t *outbound_sample_set =
 	// 	PTR_DATA(outbound_stat_sample_set_id,
-	// 		 stat_sample_set_t);
+	// 		 math_stat_sample_set_t);
 	// if(outbound_sample_set != nullptr){
 	// 	outbound_sample_set->add(
 	// 	{std::vector<uint8_t>(&data_point.first, &data_point.first+1),
@@ -145,15 +145,15 @@ std::vector<uint8_t> net_socket_t::recv(uint64_t byte_count, uint64_t flags){
 			}
 		}
 		if(data_received != 0){
-			// stat_sample_set_t *inbound_stat_sample_set =
-			// 	PTR_DATA(inbound_stat_sample_set_id,
-			// 		 stat_sample_set_t);
-			// uint64_t time_microseconds = get_time_microseconds();
-			// if(inbound_stat_sample_set != nullptr){
-			// 	inbound_stat_sample_set->add(
-			// 	{std::vector<uint8_t>(&time_microseconds, &time_microseconds+1),
-			// 	 std::vector<uint8_t>(&time_microseconds, &time_microseconds+1)});
-			// }
+			math_stat_sample_set_t *inbound_stat_sample_set =
+				PTR_DATA(inbound_stat_sample_set_id,
+					 math_stat_sample_set_t);
+			uint64_t time_microseconds = get_time_microseconds();
+			if(inbound_stat_sample_set != nullptr){
+				inbound_stat_sample_set->add(
+				{std::vector<uint8_t>(&time_microseconds, &time_microseconds+1),
+				 std::vector<uint8_t>(&time_microseconds, &time_microseconds+1)});
+			}
 		}
 		if(local_buffer.size() >= byte_count){
 			auto start = local_buffer.begin();
@@ -262,8 +262,16 @@ bool net_socket_t::activity(){
 	return retval;
 }
 
+void net_socket_t::set_inbound_stat_sample_set_id(id_t_ inbound_stat_sample_set_id_){
+	inbound_stat_sample_set_id = inbound_stat_sample_set_id_;
+}
+
 id_t_ net_socket_t::get_inbound_stat_sample_set_id(){
 	return inbound_stat_sample_set_id;
+}
+
+void net_socket_t::set_outbound_stat_sample_set_id(id_t_ outbound_stat_sample_set_id_){
+	outbound_stat_sample_set_id = outbound_stat_sample_set_id_;
 }
 
 id_t_ net_socket_t::get_outbound_stat_sample_set_id(){
@@ -274,10 +282,70 @@ id_t_ net_socket_t::get_proxy_id(){
 	return proxy_id;
 }
 
+/*
+  Honestly, this shouldn't be a function. Just use net_proto_socket_t, create
+  a new socket, and somehow pass proxy information to the connection function
+ */
+
 void net_socket_t::set_proxy_id(id_t_ proxy_id_){
 	if(proxy_id_ != proxy_id){
 		// nothing we can do
 		disconnect();
 	}
 	proxy_id = proxy_id_;
+}
+
+/*
+  Following two functions add received data to socket inbound data and
+  proxy inbound data (if using one), as well as a global throughput stat
+  set (doesn't currently exist, probably shouldn't either).
+ */
+
+void net_socket_t::register_outbound_data(uint32_t bytes){
+	uint64_t time_micro_s = get_time_microseconds();
+	const std::vector<std::vector<uint8_t> > stat_sample =
+		{std::vector<uint8_t>(&time_micro_s,
+				      &time_micro_s+1),
+		 std::vector<uint8_t>(&bytes,
+				      &bytes+1)};
+	try{
+		math_stat_sample_set_t *outbound =
+			PTR_DATA(outbound_stat_sample_set_id,
+				 math_stat_sample_set_t);
+		if(outbound == nullptr){
+			print("there is no outbound stat sample set, creating one", P_WARN);
+			outbound = new math_stat_sample_set_t;
+			outbound->reset({8, 4}); // 64-bit ID and 32-bit payload
+			set_outbound_stat_sample_set_id(
+				outbound->id.get_id());
+		}
+		outbound->add(stat_sample);
+	}catch(...){
+		print("failed to add stat sample to socket outbound stat set", P_WARN);
+	}
+	try{
+		net_proxy_t *proxy_ptr =
+			PTR_DATA(get_proxy_id(),
+				 net_proxy_t);
+		if(proxy_ptr == nullptr){
+			print("proxy is a nullptr, assuming one is not used", P_NOTE);
+			throw std::runtime_error("proxy stat sample set is a nullptr");
+		}
+		math_stat_sample_set_t *proxy =
+			PTR_DATA(proxy_ptr->get_outbound_stat_sample_set_id(),
+				 math_stat_sample_set_t);
+		if(proxy == nullptr){
+			print("no stat sample set for proxy, creating one", P_NOTE);
+			proxy = new math_stat_sample_set_t;
+			proxy->reset({8, 4});
+			proxy_ptr->set_outbound_stat_sample_set_id(
+				proxy->id.get_id());
+		}
+		proxy->add(stat_sample);
+	}catch(...){
+		print("failed to add stat sample to proxy outbound stat set", P_NOTE);
+	}
+}
+
+void net_socket_t::register_inbound_data(uint32_t bytes){
 }

@@ -305,11 +305,11 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_, uint8_t extra){
 		}
 		std::vector<uint8_t> data_to_export;
 		if(data_vector[i].get_flags() & ID_DATA_BYTE_VECTOR){
-			print("reading in a byte vector", P_SPAM);
+			//print("reading in a byte vector", P_SPAM);
 			std::vector<uint8_t> *vector =
 				(std::vector<uint8_t>*)data_vector[i].get_ptr();
 			if(vector->data() == nullptr){
-				print("vector is empty, skipping", P_SPAM);
+				//print("vector is empty, skipping", P_SPAM);
 				continue;
 			}
 			data_to_export =
@@ -318,11 +318,11 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_, uint8_t extra){
 					(uint8_t*)vector->data()+
 					(sizeof(uint8_t)*vector->size()));
 		}else if(data_vector[i].get_flags() & ID_DATA_ID_VECTOR){
-			print("reading in an ID vector", P_SPAM);
+			//print("reading in an ID vector", P_SPAM);
 			std::vector<id_t_> *vector =
 				(std::vector<id_t_>*)data_vector[i].get_ptr();
 			if(vector->data() == nullptr){
-				print("vector is empty, skipping", P_SPAM);
+				//print("vector is empty, skipping", P_SPAM);
 				continue;
 			}
 			data_to_export =
@@ -331,11 +331,11 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_, uint8_t extra){
 					(uint8_t*)vector->data()+
 					(sizeof(id_t_)*vector->size()));
 		}else if(data_vector[i].get_flags() & ID_DATA_EIGHT_BYTE_VECTOR){
-			print("reading in a 64-bit vector", P_SPAM);
+			//print("reading in a 64-bit vector", P_SPAM);
 			std::vector<uint64_t> *vector =
 				(std::vector<uint64_t>*)data_vector[i].get_ptr();
 			if(vector->data() == nullptr){
-				print("vector is empty, skipping", P_SPAM);
+				//print("vector is empty, skipping", P_SPAM);
 				continue;
 			}
 			data_to_export =
@@ -352,7 +352,7 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_, uint8_t extra){
 			std::vector<std::vector<uint8_t> > *vector =
 				(std::vector<std::vector<uint8_t> >*)data_vector[i].get_ptr();
 			if(vector->data() == nullptr){
-				print("vector is empty, skipping", P_SPAM);
+				//print("vector is empty, skipping", P_SPAM);
 				continue;
 			}
 			for(uint64_t i = 0;i < vector->size();i++){
@@ -363,7 +363,7 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_, uint8_t extra){
 					&trans_size,
 					&trans_size+1);
 				if((*vector)[i].data() == nullptr){
-					print("vector is empty, skipping", P_SPAM);
+					//print("vector is empty, skipping", P_SPAM);
 					continue;
 					// don't export anything
 				}
@@ -385,8 +385,8 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_, uint8_t extra){
 		}
 		transport_i_t trans_i = i; // size fixing
 		transport_size_t trans_size = data_to_export.size();
-		P_V(trans_i, P_SPAM);
-		P_V(trans_size, P_SPAM);
+		//P_V(trans_i, P_SPAM);
+		//P_V(trans_size, P_SPAM);
 		ID_EXPORT(trans_i, retval);
 		ID_EXPORT(trans_size, retval);
 		id_export_raw(data_to_export, &retval);
@@ -431,8 +431,8 @@ static void id_import_raw(uint8_t* var, uint8_t flags, uint64_t size, std::vecto
 		var = (uint8_t*)local_vector->data();
 	}else{
 		// sanity check
-		P_V(flags, P_SPAM);
-		P_V(size, P_SPAM);
+		//P_V(flags, P_SPAM);
+		//P_V(size, P_SPAM);
 		memset(var, 0, size);
 	}
 	if(vector->size() < size){
@@ -463,9 +463,9 @@ void data_id_t::import_data(std::vector<uint8_t> data){
 	ID_IMPORT(extra);
 	ID_IMPORT(trans_id);
 	ID_IMPORT(modification_incrementor);
-	P_V_S(convert::array::id::to_hex(trans_id), P_SPAM);
-	P_V_S(convert::type::from(get_id_type(trans_id)), P_SPAM);
-	P_V_B(extra, P_SPAM);
+	// P_V_S(convert::array::id::to_hex(trans_id), P_SPAM);
+	// P_V_S(convert::type::from(get_id_type(trans_id)), P_SPAM);
+	// P_V_B(extra, P_SPAM);
 	if(get_id_type(trans_id) != get_id_type(id)){
 		P_V(get_id_type(trans_id), P_SPAM);
 		P_V(get_id_type(id), P_SPAM);
@@ -477,12 +477,12 @@ void data_id_t::import_data(std::vector<uint8_t> data){
 	while(data.size() > sizeof(transport_i_t) + sizeof(transport_size_t)){
 		ID_IMPORT(trans_i);
 		ID_IMPORT(trans_size);
-		P_V(trans_i, P_SPAM);
-		P_V(trans_size, P_SPAM);
+		// P_V(trans_i, P_SPAM);
+		// P_V(trans_size, P_SPAM);
 		const bool valid_entry =
 			trans_i < data_vector.size();
 		if(unlikely(!valid_entry)){
-			P_V(trans_i, P_SPAM);
+			// P_V(trans_i, P_SPAM);
 			print("invalid i entry, probably came from a new version", P_ERR);
 			return;
 		}else if(unlikely(data_vector[trans_i].get_ptr() == nullptr)){

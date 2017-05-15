@@ -67,7 +67,6 @@ std::vector<uint8_t> compact_id_set(std::vector<id_t_> id_set){
 std::vector<id_t_> expand_id_set(std::vector<uint8_t> id_set){
 	std::vector<id_t_> retval;
 	while(likely(id_set.size() > 0)){
-		P_V(id_set.size(), P_SPAM);
 		std::vector<uint64_t> uuid_vector;
 		while(likely(id_set.size()-(uuid_vector.size()*8) >= 8 &&
 			     memcmp(seperator.data(), id_set.data()+uuid_vector.size()*8, 8) != 0)){

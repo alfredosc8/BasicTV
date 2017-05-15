@@ -17,7 +17,7 @@
 #include "stats.h"
 #include "numbers.h"
 
-typedef uint32_t math_pval_t;
+
 
 /*
   I REALLY don't want to bother with writing out math::number::calc::add
@@ -101,30 +101,30 @@ namespace math{
 		};
 		// direct access to density curves
 		namespace dist{
-			math_pval_t z(
+			math_stat_pval_t z(
 				std::vector<uint8_t> start,
 				std::vector<uint8_t> end);
-			math_pval_t t(
+			math_stat_pval_t t(
 				std::vector<uint8_t> start,
 				std::vector<uint8_t> end,
 				std::vector<uint8_t> df);
-			math_pval_t chi_squared(
+			math_stat_pval_t chi_squared(
 				std::vector<uint8_t> start,
 				std::vector<uint8_t> end,
 				std::vector<uint8_t> df);
-			math_pval_t f(
+			math_stat_pval_t f(
 				std::vector<uint8_t> start,
 				std::vector<uint8_t> end,
 				std::vector<uint8_t> df);
-			math_pval_t binom(
+			math_stat_pval_t binom(
 				std::vector<uint8_t> start,
 				std::vector<uint8_t> end,
 				std::vector<uint8_t> df);
-			math_pval_t geo(
+			math_stat_pval_t geo(
 				std::vector<uint8_t> start,
 				std::vector<uint8_t> end,
 				std::vector<uint8_t> df);
-			math_pval_t hypergeo(
+			math_stat_pval_t hypergeo(
 				std::vector<uint8_t> start,
 				std::vector<uint8_t> end,
 				std::vector<uint8_t> df);
@@ -132,12 +132,12 @@ namespace math{
 		namespace test{
 			// returns P-values
 			namespace z{
-				math_pval_t one_sample(
+				math_stat_pval_t one_sample(
 					std::vector<uint8_t> mean,
 					std::vector<uint8_t> std_dev,
 					std::vector<uint8_t> value,
 					uint8_t cmp);
-				math_pval_t two_sample(
+				math_stat_pval_t two_sample(
 					std::vector<uint8_t> mean_1,
 					std::vector<uint8_t> std_dev_1,
 					std::vector<uint8_t> mean_2,
@@ -145,12 +145,12 @@ namespace math{
 					uint8_t cmp);
 			};
 			namespace t{
-				math_pval_t one_sample(
+				math_stat_pval_t one_sample(
 					std::vector<uint8_t> mean,
 					std::vector<uint8_t> std_dev,
 					std::vector<uint8_t> value,
 					uint8_t cmp);
-				math_pval_t two_sample(
+				math_stat_pval_t two_sample(
 					std::vector<uint8_t> mean_1,
 					std::vector<uint8_t> std_dev_1,
 					std::vector<uint8_t> mean_2,
@@ -158,14 +158,14 @@ namespace math{
 					uint8_t cmp);
 			};
 			namespace chi_squared{
-				math_pval_t gof(
+				math_stat_pval_t gof(
 				        std::vector<std::vector<uint8_t> > obs,
 					std::vector<std::vector<uint8_t> > exp);
-				math_pval_t two_way(
+				math_stat_pval_t two_way(
 					std::vector<std::vector<std::vector<uint8_t> > > data);
 			};
 			namespace f{
-				math_pval_t anova(
+				math_stat_pval_t anova(
 					std::vector<std::vector<std::vector<uint8_t> > > data);
 			};
 		};

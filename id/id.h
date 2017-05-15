@@ -207,7 +207,7 @@ extern void set_id_type(id_t_ *id, type_t_ type);
 #define TYPE_ENCRYPT_PUB_KEY_T				3
 #define TYPE_CONSOLE_T					4
 #define TYPE_WALLET_SET_T				5
-#define TYPE_STAT_SAMPLE_SET_T				6
+#define TYPE_MATH_STAT_SAMPLE_SET_T			6
 #define TYPE_NET_PROTO_SOCKET_T				7
 #define TYPE_NET_PROTO_PEER_T				8
 #define TYPE_NET_PROTO_CON_REQ_T			9
@@ -229,5 +229,30 @@ extern void set_id_type(id_t_ *id, type_t_ type);
 #define TYPE_ID_DISK_INDEX_T				25
 #define TYPE_MATH_NUMBER_SET_T				26
 #define TYPE_TV_ITEM_T					27
+
+#define ID_NONET(x)				\
+	if(true){				\
+		data_id_t *tmp = PTR_ID(x, );	\
+		if(tmp != nullptr){		\
+			tmp->nonet_all_data();	\
+		}				\
+	}					
+
+#define ID_NOEXP(x)				\
+	if(true){				\
+		data_id_t *tmp = PTR_ID(x, );	\
+		if(tmp != nullptr){		\
+			tmp->nonet_all_data();	\
+		}				\
+	}					
+
+#define ID_NOEXP_NONET(x)				\
+	if(true){					\
+		data_id_t *tmp = PTR_ID(x, );		\
+		if(tmp != nullptr){			\
+			tmp->noexp_all_data();		\
+			tmp->nonet_all_data();		\
+		}					\
+	}					
 
 #endif

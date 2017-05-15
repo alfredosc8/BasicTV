@@ -267,7 +267,7 @@ uint8_t convert::type::to(std::string type){
 	CONV_CHECK_TYPE("encrypt_pub_key_t", TYPE_ENCRYPT_PUB_KEY_T);
 	CONV_CHECK_TYPE("console_t", TYPE_CONSOLE_T);
 	CONV_CHECK_TYPE("wallet_set_t", TYPE_WALLET_SET_T);
-	CONV_CHECK_TYPE("stat_sample_set_t", TYPE_STAT_SAMPLE_SET_T);
+	CONV_CHECK_TYPE("math_stat_sample_set_t", TYPE_MATH_STAT_SAMPLE_SET_T);
 	CONV_CHECK_TYPE("net_proxy_t", TYPE_NET_PROXY_T);
 	CONV_CHECK_TYPE("net_proto_peer_t", TYPE_NET_PROTO_PEER_T);
 	CONV_CHECK_TYPE("net_proto_socket_t", TYPE_NET_PROTO_SOCKET_T);
@@ -306,8 +306,8 @@ std::string convert::type::from(uint8_t type){
 		return "console_t";
 	case TYPE_WALLET_SET_T:
 		return "wallet_set_t";
-	case TYPE_STAT_SAMPLE_SET_T:
-		return "stat_sample_set_t";
+	case TYPE_MATH_STAT_SAMPLE_SET_T:
+		return "math_stat_sample_set_t";
 	case TYPE_NET_PROXY_T:
 		return "net_proxy_t";
 	case TYPE_NET_PROTO_SOCKET_T:

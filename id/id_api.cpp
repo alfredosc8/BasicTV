@@ -426,7 +426,7 @@ void id_api::destroy(id_t_ id){
 	DELETE_TYPE_2(encrypt_pub_key_t);
 
 	// stats
-	DELETE_TYPE_2(stat_sample_set_t);
+	DELETE_TYPE_2(math_stat_sample_set_t);
 
 	DELETE_TYPE_2(id_disk_index_t);
 	

@@ -35,10 +35,12 @@ private:
 	// raw socket for SDL
 	TCPsocket socket = nullptr;
 	void socket_check();
-	id_t_ proxy_id = ID_BLANK_ID;
-	// TODO: actually use these
 	id_t_ outbound_stat_sample_set_id = ID_BLANK_ID;
 	id_t_ inbound_stat_sample_set_id = ID_BLANK_ID;
+	id_t_ proxy_id = ID_BLANK_ID;
+
+	void register_outbound_data(uint32_t bytes);
+	void register_inbound_data(uint32_t bytes);
 public:
 	data_id_t id;
 	net_socket_t();
@@ -59,7 +61,9 @@ public:
 	bool activity();
 
 	// inbound and outbound stats
+	void set_inbound_stat_sample_set_id(id_t_ inbound_stat_sample_set_id_);
 	id_t_ get_inbound_stat_sample_set_id();
+	void set_outbound_stat_sample_set_id(id_t_ outbound_stat_sample_set_id_);
 	id_t_ get_outbound_stat_sample_set_id();
 	void set_proxy_id(id_t_ proxy_id_);
 	id_t_ get_proxy_id();

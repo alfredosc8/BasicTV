@@ -248,12 +248,10 @@ static void test_nbo_transport(){
 		convert::nbo::from(
 			convert::nbo::to(
 				test_2));
-	if(test == test_2){
-		print("it works", P_NOTE);
-	}else{
+	if(test != test_2){
 		for(uint64_t i = 0;i < test.size();i++){
-			P_V_C(test[i], P_NOTE);
-			P_V_C(test_2[i], P_NOTE);
+			P_V_C(test[i], P_WARN);
+			P_V_C(test_2[i], P_WARN);
 		}
 		print("it doesn't work", P_ERR);
 	}
@@ -284,8 +282,8 @@ static void test_rsa_key_gen(){
 	encrypt_priv_key_t *priv =
 		PTR_DATA(rsa_key_pair.first,
 			 encrypt_priv_key_t);
-	priv->id.noexp_all_data();
-	priv->id.nonet_all_data();
+	ID_NOEXP_NONET(rsa_key_pair.first);
+	ID_NOEXP_NONET(rsa_key_pair.second);
 	if(priv == nullptr){
 		print("priv key is a nullptr", P_ERR);
 	}
@@ -304,28 +302,30 @@ static void test_rsa_key_gen(){
 }
 
 static void test_rsa_encryption(){
-	print("using an RSA key length of 4096", P_NOTE);
+	//print("using an RSA key length of 4096", P_NOTE);
 	uint64_t key_len = 4096;
 	std::vector<uint8_t> test_data;
 	std::pair<id_t_, id_t_> rsa_key_pair =
 		rsa::gen_key_pair(key_len);
-	print("generating RSA test data", P_NOTE);
+	ID_NOEXP_NONET(rsa_key_pair.first);
+	ID_NOEXP_NONET(rsa_key_pair.second);
+	//print("generating RSA test data", P_NOTE);
 	for(uint64_t x = 0;x < 1024;x++){
 		test_data.push_back(
 			(uint8_t)true_rand(0, 255));
 	}
-	print("encrypting RSA test data", P_NOTE);
+	//print("encrypting RSA test data", P_NOTE);
 	std::vector<uint8_t> test_data_output =
 		encrypt_api::encrypt(
 			test_data,
 			rsa_key_pair.first);
-	print("decrypting RSA test data", P_NOTE);
+	//print("decrypting RSA test data", P_NOTE);
 	test_data_output =
 		encrypt_api::decrypt(
 			test_data_output,
 			rsa_key_pair.second);
 	if(test_data == test_data_output){
-		print("it worked with " + std::to_string((long double)test_data.size()/(1024.0*1024.0)) + " MB", P_NOTE);
+		//print("it worked with " + std::to_string((long double)test_data.size()/(1024.0*1024.0)) + " MB", P_NOTE);
 	}else{
 		print("FAILED", P_ERR);
 	}
@@ -337,9 +337,7 @@ static void test_aes(){
 	if(aes::decrypt(
 		   aes::encrypt(
 			   data, key),
-		   key) == data){
-		print("it works", P_NOTE);
-	}else{
+		   key) != data){
 		print("it does not work", P_CRIT);
 	}
 		
@@ -366,6 +364,10 @@ static uint64_t benchmark_timed_decryption(std::vector<uint8_t> data, id_t_ key)
 	encrypt_api::decrypt(data, key);
 	return get_time_microseconds()-start_time_micro_s;
 }
+
+/*
+  benchmark stuff doesn't have to follow print rules (yet?)
+ */
 
 static std::pair<uint64_t, uint64_t> encryption_benchmark_datum(std::vector<uint8_t> data,
 								std::pair<id_t_, id_t_> keys,
@@ -403,14 +405,8 @@ static void benchmark_encryption(std::string method){
 	}
 	std::pair<id_t_, id_t_> rsa_key_pair =
 		rsa::gen_key_pair(4096); // TODO: modify encrypt API to not assume this
-	data_id_t *priv_key = PTR_ID(rsa_key_pair.first, );
-	if(priv_key != nullptr){
-		priv_key->noexp_all_data();
-	}
-	data_id_t *pub_key = PTR_ID(rsa_key_pair.second, );
-	if(pub_key != nullptr){
-		pub_key->noexp_all_data();
-	}
+	ID_NOEXP_NONET(rsa_key_pair.first);
+	ID_NOEXP_NONET(rsa_key_pair.second);
 	std::ofstream out(method + ".bench");
 	if(out.is_open() == false){
 		print("can't open benchmark output file", P_ERR);
@@ -472,7 +468,6 @@ static void test_id_set_compression(){
 	for(uint64_t i = 0;i < 256;i++){
 		// i is the UUID
 		if(true_rand(0, 30) == 0){
-			print("computing new hash at iteration " + std::to_string(i), P_NOTE);
 			hash = encrypt_api::hash::sha256::gen_raw(
 				true_rand_byte_vector(64));
 		}
@@ -486,22 +481,21 @@ static void test_id_set_compression(){
 	std::vector<id_t_> id_set_new =
 		expand_id_set(id_set_compact);
 	if(id_set_new == id_set){
-		print("successfully decompressed, checks out", P_NOTE);
 		const long double compression_ratio =
 			(id_set.size()*sizeof(id_t_))/(id_set_compact.size());
 		P_V(compression_ratio, P_NOTE);
 	}else{
-		print("ERROR, COULDN'T PROPERLY DECOMPRESS", P_NOTE);
 		P_V(id_set.size(), P_NOTE);
 		P_V(id_set_new.size(), P_NOTE);
-		// for(uint64_t i = 0;i < (id_set.size() > id_set_new.size()) ? id_set.size() : id_set_new.size();i++){
-		// 	if(id_set.size() > i){
-		// 		P_V_S(convert::array::id::to_hex(id_set[i]), P_NOTE);
-		// 	}
-		// 	if(id_set_new.size() > i){
-		// 		P_V_S(convert::array::id::to_hex(id_set_new[i]), P_NOTE);
-		// 	}
-		// }
+		for(uint64_t i = 0;i < (id_set.size() > id_set_new.size()) ? id_set.size() : id_set_new.size();i++){
+			if(id_set.size() > i){
+				P_V_S(convert::array::id::to_hex(id_set[i]), P_NOTE);
+			}
+			if(id_set_new.size() > i){
+				P_V_S(convert::array::id::to_hex(id_set_new[i]), P_NOTE);
+			}
+		}
+		print("ERROR, COULDN'T PROPERLY DECOMPRESS", P_ERR);
 	}
 	running = false;
 }
@@ -555,6 +549,5 @@ void test(){
 	test_rsa_encryption();
 	test_aes();
 	test_id_set_compression();
-	test_tv_number_frames();
 }
 

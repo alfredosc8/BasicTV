@@ -13,7 +13,6 @@ static void number_sanity_fetch(void *ptr, uint64_t start, uint64_t size, std::v
 	if(data->size() < start+size){
 		print("can't copy, not enough room", P_ERR);
 	}
-	print("reading in " + std::to_string(size) + " bytes, starting at " + std::to_string(start), P_SPAM);
 	memcpy(ptr, data->data()+start, size);
 	convert::nbo::from((uint8_t*)ptr, size);
 }
@@ -27,8 +26,8 @@ static std::vector<uint8_t> number_sanity_fetch(std::vector<uint8_t> *data){
 	memcpy(&size, data->data(), 4);
 	size = NBO_32(size);
 	if(data->size() < 4+size){
-		P_V(size, P_SPAM);
-		P_V(data->size(), P_SPAM);
+		P_V(size, P_WARN);
+		P_V(data->size(), P_WARN);
 		print("invalid size for current number chunk", P_ERR);
 	}
 	retval =
@@ -50,10 +49,6 @@ uint64_t math::number::get::unit(std::vector<uint8_t> data){
 	number_sanity_fetch(&retval, 0, sizeof(retval), &data);
 	return retval;
 }
-
-/*
-  For some reason the minor doesn't want to export right
- */
 
 std::pair<std::vector<uint8_t>,
 	  std::vector<uint8_t> > math::number::get::raw_species(
@@ -81,15 +76,10 @@ long double math::number::get::number(std::vector<uint8_t> data){
 	if(species.first.size() > 8 || species.second.size() > 8){
 		print("I need to expand this beyond 64-bits", P_ERR);
 	}
-	P_V(species.first.size(), P_SPAM);
-	P_V(species.second.size(), P_SPAM);
 	uint64_t major_int = 0, minor_int = 0;
 	memcpy(&major_int, species.first.data(), species.first.size());
 	memcpy(&minor_int, species.second.data(), species.second.size());
-	P_V(major_int, P_SPAM);
-	P_V(minor_int, P_SPAM);
 	retval = (long double)(major_int) + (long double)((long double)(minor_int/MINOR_SPECIES_MULTIPLIER));
-	P_V(retval, P_SPAM);
 	return retval;
 }
 
@@ -106,11 +96,6 @@ std::vector<uint8_t> math::number::create(long double number,
 		((((long double)number-(long double)major_int)*(long double)MINOR_SPECIES_MULTIPLIER));
 	uint32_t minor_size =
 		(8);
-	P_V(unit, P_SPAM);
-	P_V(major_size, P_SPAM);
-	P_V(major_int, P_SPAM);
-	P_V(minor_size, P_SPAM);
-	P_V(minor_int, P_SPAM);
 	unit = NBO_64(unit);
 	major_int = NBO_64(major_int);
 	major_size = NBO_32(major_size);
@@ -122,7 +107,6 @@ std::vector<uint8_t> math::number::create(long double number,
 	NUMBER_CREATE_ADD(major_int);
 	NUMBER_CREATE_ADD(minor_size);
 	NUMBER_CREATE_ADD(minor_int);
-	P_V(retval.size(), P_SPAM);
 	return retval;
 }
 
