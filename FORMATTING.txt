@@ -1,0 +1,51 @@
+I have been tripping over discrepencies for a while now. Writing
+formal formatting rules should help.
+
+Personally, I use Emacs' electric indent mode, so all of the codebase should
+have rather uniform formatting already. 
+
+Follow 80-col, having multiple windows open side by side is wonderful, and
+dealing with truncated lines isn't fun at that stage. It also helps keep
+better mental track of what each line does and needs. If you need to go
+above 80 characters deep with eight spaces or tabs, you are doing something
+wrong already.
+
+If an argument list is too long, break each argument off individually
+or leave it as one line. Don't try and fill each line to 80-col.
+
+Exceptions are thrown on all calls to P_ERR or P_CRIT. All other uses of
+exceptions in-line should be caught inside of the same function (effectively
+a goto for non-optimal paths).
+
+Use try-catch blocks in places where something can be done to solve or
+mitigate the problem (i.e. don't catch and re-throw the same error).
+
+I use structs instead of classes, but that doesn't matter. However, make
+sure to explicitly use private or public tags in your structs/classes.
+
+Every new type created needs to have a dedicated macro (defined at the end of
+id/id.h), conversions to and from the macro to a human readable string, matching
+how it is defined as a struct/class in the code (defined for string to char and
+char to string in convert/convert.cpp), as well as a macro for safe destruction
+(id/id_api.h, id_api::destroy()).
+
+Any ID used to reference a specific type needs to use the full name of the
+type in the ID definition (this is why I am writing the document). For example,
+a network proxy ID (net_proxy_t) referenced by a network socket (net_socket_t),
+needs to be defined as at least net_proxy_id. Statistical sample sets (currently
+stat_sample_set_t, needs to be math_stat_sample_set_t) need to be referenced as
+at least math_stat_sample_set_t. Prefixing it with more information is allowed
+and encouraged, so long as it makes the usage more clear (for example,
+outbound_math_stat_sample_set_id and inbound_math_stat_sample_set_id).
+
+Make sure you are checking return values and being consistent with
+network byte-order (any long vector with individual items within it, like the
+statistics sample sets, needs each individual item in the vector converted to
+NBO in memory and from NBO for the getters).
+
+
+
+There are many places in the source code that don't follow these rules, and they
+all should with reasonable exceptions (exception thrown in print() is fine).
+I'm working on fixing those errors as I'm working, but don't put the source
+code as a de-facto formatting guide before this guide.
