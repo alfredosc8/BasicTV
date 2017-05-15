@@ -50,21 +50,30 @@ int search_for_argv(std::string value){
 }
 
 static std::string print_level_text(int level){
+	std::string retval;
 	switch(level){
 	case P_SPAM:
-		return "[SPAM]";
+		retval = "[SPAM]";
+		break;
 	case P_DEBUG:
-		return "[DEBUG]";
+		retval = "[DEBUG]";
+		break;
 	case P_NOTICE:
-		return "[NOTICE]";
+	        retval = "[NOTICE]";
+		break;
 	case P_WARN:
-		return "[WARN]";
+	        retval = "[WARN]";
+		break;
 	case P_ERR:
-		return "[ERROR]";
+		retval = "[ERROR]";
+		break;
 	case P_CRIT:
-		return "[CRITICAL]";
+		retval = "[CRITICAL]";
+		break;
+	default:
+		throw std::runtime_error("invalid print level");
 	}
-	throw std::runtime_error("invalid print level");
+	return fix_to_length(retval, 12);
 }
 
 static int print_level = P_SPAM;
@@ -93,6 +102,13 @@ std::string print_color_text(std::string data, int level){
 	}
 	return prefix + data + "\033[0m";
 }
+
+/*
+  TODO: I need to optimize this function (pre-load print level, I can
+  assume changes in settings can be reflected in variable changes
+  pretty easily, or offload updating from settings file to another
+  thread).
+ */
 
 void print(std::string data, int level, const char *func){
 	if(print_level == P_SPAM){

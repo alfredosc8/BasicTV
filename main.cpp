@@ -1,4 +1,3 @@
-#include "main.h"
 #include "settings.h"
 #include "file.h"
 #include "util.h"

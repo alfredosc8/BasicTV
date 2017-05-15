@@ -18,24 +18,30 @@ static void number_sanity_fetch(void *ptr, uint64_t start, uint64_t size, std::v
 	convert::nbo::from((uint8_t*)ptr, size);
 }
 
-static std::vector<uint8_t> number_sanity_fetch(uint64_t start, std::vector<uint8_t> *data){
+static std::vector<uint8_t> number_sanity_fetch(std::vector<uint8_t> *data){
 	std::vector<uint8_t> retval;
 	if(data->size() < 4){
 		print("not enough room to possibly encode major/minor size", P_ERR);
 	}
 	uint32_t size;
-	memcpy(&size, data->data()+start, 4);
+	memcpy(&size, data->data(), 4);
 	size = NBO_32(size);
-	if(data->size() < start+4+size){
-		P_V(start+4+size, P_SPAM);
+	if(data->size() < 4+size){
+		P_V(size, P_SPAM);
 		P_V(data->size(), P_SPAM);
 		print("invalid size for current number chunk", P_ERR);
 	}
 	retval =
 		convert::nbo::from(
 			std::vector<uint8_t>(
-				data->begin()+start+4,
-				data->begin()+start+4+size));
+				data->begin()+4,
+				data->begin()+4+size));
+	/*
+	  Read data needs to be truncated
+	 */
+	data->erase(
+		data->begin(),
+		data->begin()+4+size);
 	return retval;
 }
 
@@ -53,15 +59,16 @@ std::pair<std::vector<uint8_t>,
 	  std::vector<uint8_t> > math::number::get::raw_species(
 		  std::vector<uint8_t> data){
 	uint64_t start =
-		sizeof(uint16_t)+sizeof(uint64_t)+sizeof(uint64_t);
+		sizeof(math_number_unit_t);
+	data.erase(
+		data.begin(),
+		data.begin()+start); // truncate unit
 	std::pair<std::vector<uint8_t>, std::vector<uint8_t> > retval;
 	retval.first =
 		number_sanity_fetch(
-			start,
 			&data);
 	retval.second =
 		number_sanity_fetch(
-			start+4+retval.first.size(),
 			&data);
 	return retval;
 }
@@ -74,9 +81,11 @@ long double math::number::get::number(std::vector<uint8_t> data){
 	if(species.first.size() > 8 || species.second.size() > 8){
 		print("I need to expand this beyond 64-bits", P_ERR);
 	}
+	P_V(species.first.size(), P_SPAM);
+	P_V(species.second.size(), P_SPAM);
 	uint64_t major_int = 0, minor_int = 0;
-	memcpy(&major_int, species.first.data(), 8);
-	memcpy(&minor_int, species.second.data(), 8);
+	memcpy(&major_int, species.first.data(), species.first.size());
+	memcpy(&minor_int, species.second.data(), species.second.size());
 	P_V(major_int, P_SPAM);
 	P_V(minor_int, P_SPAM);
 	retval = (long double)(major_int) + (long double)((long double)minor_int/(long double)MINOR_SPECIES_MULTIPLIER);

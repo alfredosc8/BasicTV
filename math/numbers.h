@@ -50,6 +50,9 @@
   Doesn't have to be a set per-se, just is an expandable size
  */
 
+typedef uint64_t math_number_unit_t;
+typedef uint32_t math_number_len_t;
+
 struct math_number_set_t{
 private:
 	std::vector<std::vector<uint8_t> > raw_number_data;
