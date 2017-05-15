@@ -42,7 +42,7 @@ BasicTV has integration with cryptocurrencies, and planned integration with the 
 ## Storage & Network Model
 Everything networked and stored has an ID associated with it, a 41-byte identifier. Containing 8-bytes of UUID, the 32-byte SHA-256 hash of the RSA public key of the owner, and 1 byte for identifying the type of data. 
 
-Everything but public keys are encrypted and compressed when sent using a hybrid RSA-AES compression scheme. Once sent out to the network, the nodes behave similarly to torrents, multicasting data out to people who ask for it (as well as more complex network functions).
+Everything but public keys are encrypted and compressed when sent using a hybrid RSA-AES encryption scheme. Once sent out to the network, the nodes behave similarly to torrents, multicasting data out to people who ask for it (as well as more complex network functions).
 
 A tiered storage model is used, which allows for archiving old and unpopular data onto lower "tiers" of storage, ranked by ease of access and reading/writing restrictions. Most users won't be using tiered storage.
 
@@ -55,5 +55,3 @@ BasicTV allows for creating multiple Tor circuits and effectively using them for
 
 ## FAQ
 Nobody asked any questions yet, but feel free to contact me through GitHub or Tox
-
-BasicTV Tox: 531A523A6A13A721E3973E39FA92DC0E799758410AD8A9597260B3C3B6FC9C3C496E611F7665
