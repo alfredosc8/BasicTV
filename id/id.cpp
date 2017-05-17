@@ -98,6 +98,10 @@ void data_id_t::init_list_all_data(){
   get_id is called without a valid hash)
  */
 
+/*
+  A UUID of 0 is reserved for blank IDs and seperators for id_sets
+ */
+
 void data_id_t::init_gen_id(type_t_ type_){
 	set_id_uuid(&id, true_rand(1, ~(uint64_t)0));
 	set_id_type(&id, type_);

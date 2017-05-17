@@ -465,15 +465,17 @@ static void test_escape_string(){
 static void test_id_set_compression(){
 	std::vector<id_t_> id_set;
 	std::array<uint8_t, 32> hash;
-	for(uint64_t i = 0;i < 256;i++){
+	for(uint64_t i = 1;i < 1024;i++){
 		// i is the UUID
 		if(true_rand(0, 30) == 0){
 			hash = encrypt_api::hash::sha256::gen_raw(
 				true_rand_byte_vector(64));
+
 		}
 		id_t_ tmp_id;
 		set_id_uuid(&tmp_id, i);
 		set_id_hash(&tmp_id, hash);
+		set_id_type(&tmp_id, TYPE_NET_PROTO_PEER_T);
 		id_set.push_back(tmp_id);
 	}
 	std::vector<uint8_t> id_set_compact =
@@ -487,7 +489,11 @@ static void test_id_set_compression(){
 	}else{
 		P_V(id_set.size(), P_NOTE);
 		P_V(id_set_new.size(), P_NOTE);
-		for(uint64_t i = 0;i < (id_set.size() > id_set_new.size()) ? id_set.size() : id_set_new.size();i++){
+		uint64_t greater = id_set.size();
+		if(id_set_new.size() > greater){
+			greater = id_set_new.size();
+		}
+		for(uint64_t i = 0;i < greater;i++){
 			if(id_set.size() > i){
 				P_V_S(convert::array::id::to_hex(id_set[i]), P_NOTE);
 			}
@@ -540,14 +546,14 @@ void test_nc(){
 }
 
 void test(){
-	test_tv_number_frames();
-	test_escape_string();
-	//test_max_tcp_sockets();
-	test_id_transport();
-	test_nbo_transport();
-	test_rsa_key_gen();
-	test_rsa_encryption();
-	test_aes();
+	// test_tv_number_frames();
+	// test_escape_string();
+	// //test_max_tcp_sockets();
+	// test_id_transport();
+	// test_nbo_transport();
+	// test_rsa_key_gen();
+	// test_rsa_encryption();
+	// test_aes();
+	// TODO: re-enable previous functions when I fix ID sets
 	test_id_set_compression();
 }
-

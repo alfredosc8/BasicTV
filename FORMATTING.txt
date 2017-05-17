@@ -32,10 +32,9 @@ char to string in convert/convert.cpp), as well as a macro for safe destruction
 Any ID used to reference a specific type needs to use the full name of the
 type in the ID definition (this is why I am writing the document). For example,
 a network proxy ID (net_proxy_t) referenced by a network socket (net_socket_t),
-needs to be defined as at least net_proxy_id. Statistical sample sets (currently
-stat_sample_set_t, needs to be math_stat_sample_set_t) need to be referenced as
-at least math_stat_sample_set_t. Prefixing it with more information is allowed
-and encouraged, so long as it makes the usage more clear (for example,
+needs to be defined as at least net_proxy_id. Statistical sample sets need to be
+referenced as at least math_stat_sample_set_t. Prefixing it with more information
+is allowed and encouraged, so long as it makes the usage more clear (for example,
 outbound_math_stat_sample_set_id and inbound_math_stat_sample_set_id).
 
 Make sure you are checking return values and being consistent with
@@ -43,7 +42,12 @@ network byte-order (any long vector with individual items within it, like the
 statistics sample sets, needs each individual item in the vector converted to
 NBO in memory and from NBO for the getters).
 
-
+Function macros are completely fine and are used rather often (PTR_DATA and PTR_ID
+for safe casting, appending function name for simple prints of variables, etc).
+Function macros are also used to repeat redundant code in certain functions,
+making it simpler. It is highly recommended to #undef the function macros after
+the function has been declared, to prevent spamming the "namespace" with short
+and non-documented macros.
 
 There are many places in the source code that don't follow these rules, and they
 all should with reasonable exceptions (exception thrown in print() is fine).
