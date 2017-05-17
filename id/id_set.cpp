@@ -30,7 +30,6 @@ std::vector<uint8_t> compact_id_set(std::vector<id_t_> id_set){
 			}
 		}
 		if(!wrote){
-			print("creating a new hash", P_SPAM);
 			id_set_expand.push_back(
 				std::make_tuple(
 					std::vector<std::pair<uint64_t, uint8_t> >({
@@ -74,11 +73,8 @@ std::vector<uint8_t> compact_id_set(std::vector<id_t_> id_set){
 			print("not exporting hash without UUID/types", P_ERR);
 		}
 	}
-	P_V(id_set.size(), P_SPAM);
-	P_V(full_uuid_count, P_SPAM);
-	P_V(retval.size(), P_SPAM);
 	// pretty effective
-	print("compression ratio:" + std::to_string(((long double)retval.size())/((long double)(id_set.size())+(long double)(sizeof(id_t_)))), P_SPAM);
+	// print("compression ratio:" + std::to_string(((long double)retval.size())/((long double)(id_set.size())+(long double)(sizeof(id_t_)))), P_SPAM);
 	if(full_uuid_count != id_set.size()){
 		print("something got lost in translation with compaction", P_ERR);
 	}
@@ -112,7 +108,6 @@ std::vector<id_t_> expand_id_set(std::vector<uint8_t> id_set){
 	std::vector<std::pair<std::vector<uint8_t>, std::array<uint8_t, 32> > > raw_read;
 	uint64_t first_seperator = 0;
 	while((first_seperator = find_first_seperator(id_set)) != ~(uint64_t)0){
-		P_V(id_set.size(), P_SPAM);
 		if(first_seperator != 0){
 			std::vector<uint8_t> raw_uuid_type =
 				std::vector<uint8_t>(
@@ -130,11 +125,9 @@ std::vector<id_t_> expand_id_set(std::vector<uint8_t> id_set){
 				print("can't add hash before first ID, this is wrong", P_ERR);
 				// shouldn't happen
 			}
-			P_V(id_set.size(), P_SPAM);
 			id_set.erase(
 				id_set.begin(),
 				id_set.begin()+8); // seperator
-			// TODO: should I check for a non-empty array ?
 			memcpy(&(raw_read[raw_read.size()-1].second[0]),
 			       &(id_set[0]),
 			       32);

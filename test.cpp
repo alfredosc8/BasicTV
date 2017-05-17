@@ -226,10 +226,10 @@ static void test_id_transport(){
 	net_proto_peer_t *tmp_2 =
 		new net_proto_peer_t;
 	tmp_2->id.import_data(exp);
-	P_V_S(convert::array::id::to_hex(tmp->id.get_id()), P_NOTE);
-	P_V_S(convert::array::id::to_hex(tmp_2->id.get_id()), P_NOTE);
-	P_V(tmp_2->get_net_port(), P_NOTE);
-	P_V_S(tmp_2->get_net_ip_str(), P_NOTE);
+	// P_V_S(convert::array::id::to_hex(tmp->id.get_id()), P_NOTE);
+	// P_V_S(convert::array::id::to_hex(tmp_2->id.get_id()), P_NOTE);
+	// P_V(tmp_2->get_net_port(), P_NOTE);
+	// P_V_S(tmp_2->get_net_ip_str(), P_NOTE);
 	running = false;
 }
 
@@ -250,8 +250,8 @@ static void test_nbo_transport(){
 				test_2));
 	if(test != test_2){
 		for(uint64_t i = 0;i < test.size();i++){
-			P_V_C(test[i], P_WARN);
-			P_V_C(test_2[i], P_WARN);
+			// P_V_C(test[i], P_WARN);
+			// P_V_C(test_2[i], P_WARN);
 		}
 		print("it doesn't work", P_ERR);
 	}
@@ -291,14 +291,14 @@ static void test_rsa_key_gen(){
 	  First is a macro for the encryption type
 	  Second is the DER formatted vector
 	 */
-	P_V(priv->get_encrypt_key().second.size(), P_NOTE);
+	// P_V(priv->get_encrypt_key().second.size(), P_NOTE);
 	encrypt_pub_key_t *pub =
 		PTR_DATA(rsa_key_pair.second,
 			 encrypt_pub_key_t);
 	if(pub == nullptr){
 		print("pub key is a nullptr", P_ERR);
 	}
-	P_V(pub->get_encrypt_key().second.size(), P_NOTE);
+	// P_V(pub->get_encrypt_key().second.size(), P_NOTE);
 }
 
 static void test_rsa_encryption(){
@@ -429,9 +429,9 @@ static void benchmark_encryption(std::string method){
 				payload,
 				rsa_key_pair,
 				method);
-		P_V(size_bytes/(1024*1024), P_NOTE);
-		P_V_S(get_readable_time(datum.first), P_NOTE);
-		P_V_S(get_readable_time(datum.second), P_NOTE);
+		// P_V(size_bytes/(1024*1024), P_NOTE);
+		// P_V_S(get_readable_time(datum.first), P_NOTE);
+		// P_V_S(get_readable_time(datum.second), P_NOTE);
 		out << size_bytes << " " << datum.first << " " << datum.second << std::endl;
 		print(std::to_string(benchmark_data.size()-i-1) + " left to go", P_NOTE);
 	}
@@ -453,13 +453,13 @@ static void test_escape_string(){
 			tmp.begin(),
 			tmp.end());
 	}
-	P_V(all_escaped_stuff.size(), P_NOTE);
+	// P_V(all_escaped_stuff.size(), P_NOTE);
 	std::pair<std::vector<std::vector<uint8_t> >, std::vector<uint8_t> > deconstructed =
 		unescape_all_vectors(
 			all_escaped_stuff,
 			escape_char);
-	P_V(deconstructed.first.size(), P_NOTE);
-	P_V(deconstructed.second.size(), P_NOTE);
+	// P_V(deconstructed.first.size(), P_NOTE);
+	// P_V(deconstructed.second.size(), P_NOTE);
 }
 
 static void test_id_set_compression(){
@@ -485,10 +485,10 @@ static void test_id_set_compression(){
 	if(id_set_new == id_set){
 		const long double compression_ratio =
 			(id_set.size()*sizeof(id_t_))/(id_set_compact.size());
-		P_V(compression_ratio, P_NOTE);
+		// P_V(compression_ratio, P_NOTE);
 	}else{
-		P_V(id_set.size(), P_NOTE);
-		P_V(id_set_new.size(), P_NOTE);
+		// P_V(id_set.size(), P_NOTE);
+		// P_V(id_set_new.size(), P_NOTE);
 		uint64_t greater = id_set.size();
 		if(id_set_new.size() > greater){
 			greater = id_set_new.size();
@@ -546,14 +546,14 @@ void test_nc(){
 }
 
 void test(){
-	// test_tv_number_frames();
-	// test_escape_string();
-	// //test_max_tcp_sockets();
-	// test_id_transport();
-	// test_nbo_transport();
-	// test_rsa_key_gen();
-	// test_rsa_encryption();
-	// test_aes();
+	test_tv_number_frames();
+	test_escape_string();
+	//test_max_tcp_sockets();
+	test_id_transport();
+	test_nbo_transport();
+	test_rsa_key_gen();
+	test_rsa_encryption();
+	test_aes();
 	// TODO: re-enable previous functions when I fix ID sets
 	test_id_set_compression();
 }
