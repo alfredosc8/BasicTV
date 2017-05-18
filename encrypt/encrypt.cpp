@@ -304,15 +304,15 @@ id_t_ encrypt_api::search::pub_key_from_hash(std::array<uint8_t, 32> hash){
 		std::array<uint8_t, 32> pub_key_hash =
 			encrypt_api::hash::sha256::gen_raw(
 				pub_key_ptr->get_encrypt_key().second);
-		P_V_S(convert::number::to_hex(
-			      std::vector<uint8_t>(
-				      &(hash[0]),
-				      &(hash[0])+32)), P_SPAM);
-		P_V_S(convert::number::to_hex(
-			      std::vector<uint8_t>(
-				      &(pub_key_hash[0]),
-				      &(pub_key_hash[0])+32)), P_SPAM);
 		if(pub_key_hash == hash){
+			P_V_S(convert::number::to_hex(
+				      std::vector<uint8_t>(
+					      &(hash[0]),
+					      &(hash[0])+32)), P_SPAM);
+			P_V_S(convert::number::to_hex(
+				      std::vector<uint8_t>(
+					      &(pub_key_hash[0]),
+					      &(pub_key_hash[0])+32)), P_SPAM);
 			return pub_key_vector[i];
 		}
 	}

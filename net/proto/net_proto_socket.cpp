@@ -22,6 +22,10 @@
   is disregarded (TODO: is this good behavior?). 
  */
 
+/*
+  TODO: copy this over to outbound too
+ */
+
 void net_proto_socket_t::add_id_to_inbound_id_set(id_t_ payload_id){
 	math_number_set_t *inbound_ptr =
 		PTR_DATA(inbound_id_set_id,
@@ -115,12 +119,20 @@ void net_proto_socket_t::update_block_buffer(){
 		unescape_all_vectors(
 			working_buffer,
 			NET_PROTO_ESCAPE);
+	working_buffer = block_data.second;
 	/*
 	  This has no out of sync protection. 
 
 	  TODO: Possibly do sanity checks on length of first segment and slide
 	  all buffers left by one to fix?
 	 */
+	if(block_data.first.size() != 0){
+		print("finished reading in an escaped vectors from the socket", P_SPAM);
+		for(uint64_t i = 0;i < block_data.first.size();i++){
+			P_V(i, P_SPAM);
+			P_V(block_data.first[i].size(), P_SPAM);
+		}
+	}
 	if(block_buffer.size() == 0){
 		block_buffer.push_back(
 			std::make_pair(
@@ -141,7 +153,6 @@ void net_proto_socket_t::update_block_buffer(){
 					std::vector<uint8_t>({})));
 		}
 	}
-	working_buffer = block_data.second;
 }
 
 void net_proto_socket_t::send_id(id_t_ id_){
@@ -177,6 +188,10 @@ void net_proto_socket_t::send_id_vector(std::vector<id_t_> id_vector){
 	}
 }
 
+/*
+  LOAD_BLOCKS is somehow breaking it
+ */
+
 void net_proto_socket_t::load_blocks(){
 	/*
 	  For now, i'm fine with loading this directly into memory and letting
@@ -207,12 +222,9 @@ void net_proto_socket_t::load_blocks(){
 				print("sent peer ID and current peer ID do not"
 				      " match, assume this is a bootstrap", P_NOTE);
 				/*
-				  TODO: when this new fangled abstract exporter
-				  is created, I should replace all inline calls
-				  to delete with id_api::destroy with special
-				  parameters as to how to destroy it (or perhaps
-				  some macro that can take abstract all that
-				  nonsense away somehow)
+				  Because bootstrapping is creating a new
+				  peer ID for the other client, one with 
+				  my hash
 				 */
 				net_proto_peer_t *wrong_peer_ptr =
 					PTR_DATA(peer_id,
@@ -221,10 +233,14 @@ void net_proto_socket_t::load_blocks(){
 				wrong_peer_ptr = nullptr;
 				peer_id = std_data.peer_id;
 			}
+			P_V(block_buffer[i].second.size(), P_SPAM); // temporary
 			const id_t_ tmp_id_ =
 				id_api::array::add_data(
 					block_buffer[i].second);
 			add_id_to_inbound_id_set(tmp_id_);
+			block_buffer.erase(
+				block_buffer.begin()+i);
+			i--;
 		}
 	}
 }

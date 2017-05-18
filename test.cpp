@@ -31,6 +31,11 @@
 #include "id/id_disk.h"
 #include "math/math.h"
 
+#include "net/proto/net_proto_socket.h"
+#include "net/net_socket.h"
+
+#include "cryptocurrency.h"
+
 #include "test.h"
 
 /*
@@ -442,26 +447,37 @@ static void benchmark_encryption(std::string method){
 }
 
 static void test_escape_string(){
-	const char escape_char = 0xFF;
-	std::vector<uint8_t> all_escaped_stuff;
-	for(uint64_t i = 0;i < 512;i++){
-		std::vector<uint8_t> tmp =
+	for(uint64_t c = 0;c < 1024;c++){
+		const char escape_char = 0xFF;
+		// doesn't stop, shouldn't make it to Git tree
+		std::vector<std::vector<uint8_t> > unescaped;
+		std::vector<uint8_t> raw =
+			true_rand_byte_vector(
+				true_rand(1, 65536));
+		unescaped.push_back(
+			raw);
+		std::vector<uint8_t> escaped_data =
 			escape_vector(
-				true_rand_byte_vector(
-					8192),
+				raw,
 				escape_char);
-		all_escaped_stuff.insert(
-			all_escaped_stuff.end(),
-			tmp.begin(),
-			tmp.end());
+		std::pair<std::vector<std::vector<uint8_t> >, std::vector<uint8_t> > deconstructed =
+			unescape_all_vectors(
+				escaped_data,
+				escape_char);
+		P_V(deconstructed.first.size(), P_NOTE);
+		P_V(deconstructed.second.size(), P_NOTE);
+		if(deconstructed.first != unescaped){
+			if(deconstructed.first.size() != unescaped.size()){
+				P_V(deconstructed.first.size(), P_SPAM);
+				P_V(unescaped.size(), P_SPAM);
+				print("sizes of escaped vectors don't match", P_ERR);
+			}
+			for(uint64_t i = 0;i < deconstructed.first.size();i++){
+				P_V(deconstructed.first[i].size(), P_SPAM);
+				P_V(unescaped[i].size(), P_SPAM);
+			}
+		}
 	}
-	// P_V(all_escaped_stuff.size(), P_NOTE);
-	std::pair<std::vector<std::vector<uint8_t> >, std::vector<uint8_t> > deconstructed =
-		unescape_all_vectors(
-			all_escaped_stuff,
-			escape_char);
-	// P_V(deconstructed.first.size(), P_NOTE);
-	// P_V(deconstructed.second.size(), P_NOTE);
 }
 
 static void test_id_set_compression(){
@@ -554,6 +570,69 @@ static void test_math_number_set(){
 #undef TV_NUMBER_CHECK_VALUE
 
 /*
+  This is going to be a mess
+ */
+
+void test_net_proto_socket_transcoding(){
+	net_socket_t *intermediate_socket = new net_socket_t;
+	intermediate_socket->set_net_ip("", 60000); // blank means accepts incoming
+	intermediate_socket->connect();
+	std::vector<std::pair<net_proto_socket_t *, net_socket_t *> > socket_vector =
+		{std::make_pair(new net_proto_socket_t,
+				new net_socket_t),
+		 std::make_pair(new net_proto_socket_t,
+				new net_socket_t)};
+	socket_vector[0].first->set_socket_id(
+		socket_vector[0].second->id.get_id());
+	socket_vector[1].first->set_socket_id(
+		socket_vector[1].second->id.get_id());
+	// 0 attempts a connect, intermediate_socket accepts, shifts ownership
+	// to 1, and allows for transmission of data over the proto_socket
+	socket_vector[0].second->set_net_ip("127.0.0.1", 60000);
+	socket_vector[0].second->connect();
+	// accept incoming
+	TCPsocket new_socket = nullptr;
+	print("waiting for connection to myself for net_proto_socket_t", P_NOTE);
+	while((new_socket = SDLNet_TCP_Accept(intermediate_socket->get_tcp_socket())) == nullptr){
+		sleep_ms(1);
+	}
+	print("connection established", P_NOTE);
+	socket_vector[1].second->set_tcp_socket(new_socket);
+
+	for(uint64_t i = 0;i < 1024;i++){
+		/*
+		  Right now, the proto socket directly loads all data coming
+		  in from the socket directly into memory, and from there the
+		  internal memory management based on statistics used will
+		  take care of it. Since it makes no sense to change that
+		  right now, and since we don't have spam filters installed
+		  yet, we can create valid data, set it as unexportable, destroy
+		  it, and push the generated string down the socket
+		 */
+		wallet_set_t *wallet_set_ptr =
+			new wallet_set_t;
+		std::string totally_legit_bitcoin_wallet_please_give_me_money =
+			"13dfmkk84rXyHoiZQmuYfTxGYykug1mDEZ";
+		wallet_set_ptr->add_wallet(
+			std::vector<uint8_t>({'B', 'T', 'C'}),
+			std::vector<uint8_t>(
+				(uint8_t*)&(totally_legit_bitcoin_wallet_please_give_me_money[0]),
+				(uint8_t*)&(totally_legit_bitcoin_wallet_please_give_me_money[0])+
+				totally_legit_bitcoin_wallet_please_give_me_money.size()));
+		socket_vector[0].first->send_id(wallet_set_ptr->id.get_id());
+		// checks for having it are done on read, not send, we're fine
+		const id_t_ old_id = wallet_set_ptr->id.get_id();
+		id_api::destroy(old_id);
+		wallet_set_ptr = nullptr;
+		socket_vector[1].first->update();
+		if(PTR_ID(old_id, wallet_set_t) != nullptr){
+			print("WE DID IT GUYS", P_ERR);
+			// critical success
+		}
+	}
+}
+
+/*
   nc = non-compliant (requires some form of user intervention or breaks some
   other rule)
  */
@@ -580,4 +659,5 @@ void test(){
 	test_rsa_encryption();
 	test_aes();
 	test_id_set_compression();
+	test_net_proto_socket_transcoding();
 }

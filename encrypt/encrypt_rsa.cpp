@@ -74,6 +74,8 @@ static void rsa_encrypt_sanity_check(RSA *rsa, std::vector<uint8_t> data){
 std::vector<uint8_t> rsa::encrypt(std::vector<uint8_t> data,
 				  std::vector<uint8_t> key,
 				  uint8_t type){
+	P_V(data.size(), P_NOTE);
+	sleep_ms(1000);
 	if(key.size() == 0){
 		print("key is blank, can't decode anything", P_ERR);
 	}
@@ -109,9 +111,6 @@ std::vector<uint8_t> rsa::encrypt(std::vector<uint8_t> data,
 
 static std::vector<uint8_t> rsa_decrypt_mod_len(RSA *rsa, std::vector<uint8_t> data, uint8_t type){
 	std::vector<uint8_t> retval(RSA_size(rsa), 0);
-	if(data.size() != RSA_size(rsa)+1){
-		print("invalid size for mod_len decryption", P_ERR);
-	}
 	const uint8_t scheme = data[0];
 	if(scheme != ENCRYPT_RSA){
 		print("invalid scheme", P_ERR);
@@ -138,6 +137,7 @@ static std::vector<uint8_t> rsa_decrypt_mod_len(RSA *rsa, std::vector<uint8_t> d
 		print("invalid key type supplied", P_ERR);
 	}
 	if(encrypt_retval == -1){
+		P_V(data.size(), P_SPAM);
 		print("unable to decrypt RSA string:"+(std::string)ERR_error_string(ERR_get_error(), nullptr), P_ERR);
 	}
 	uint16_t payload_size =
@@ -156,12 +156,6 @@ static void rsa_decrypt_sanity_check(RSA *rsa, std::vector<uint8_t> data){
 	if(rsa == nullptr){
 		print("RSA key is a nullptr", P_ERR);
 	}
-	const uint64_t rsa_mod_len = RSA_size(rsa);
-	if(data.size() % (rsa_mod_len+1) != 0){
-		P_V(data.size(), P_NOTE);
-		P_V(rsa_mod_len+1, P_NOTE);
-		print("invalid length for RSA modulus", P_ERR);
-	}
 	if(data[0] != ENCRYPT_RSA){
 		print("wrong encryption scheme", P_ERR);
 	}
@@ -170,6 +164,8 @@ static void rsa_decrypt_sanity_check(RSA *rsa, std::vector<uint8_t> data){
 std::vector<uint8_t> rsa::decrypt(std::vector<uint8_t> data,
 				  std::vector<uint8_t> key,
 				  uint8_t type){
+	P_V(data.size(), P_SPAM); // just to pause GDB
+	sleep_ms(1000);
 	if(key.size() == 0){
 		print("key is blank, can't decode anything", P_ERR);
 	}

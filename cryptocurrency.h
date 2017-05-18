@@ -18,11 +18,16 @@
 
 struct wallet_set_t{
 private:
+	// BTC, ETH, XMR, etc.
+	std::vector<std::vector<uint8_t> > prefixes;
+	std::vector<std::vector<uint8_t> > wallets;
 public:
 	data_id_t id;
 	wallet_set_t();
 	~wallet_set_t();
-	std::array<std::pair<uint16_t, std::vector<uint8_t> >, 256> wallet_set;
+	void add_wallet(std::vector<uint8_t> prefix_,
+			std::vector<uint8_t> wallet_);
 	
+	std::vector<std::pair<std::vector<uint8_t>, std::vector<uint8_t> > > get_wallet_set();
 };
 #endif

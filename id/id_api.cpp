@@ -157,6 +157,7 @@ id_t_ id_api::array::add_data(std::vector<uint8_t> data_, bool raw){
 	CHECK_TYPE(net_proto_con_req_t);
 	CHECK_TYPE(encrypt_pub_key_t);
 	CHECK_TYPE(encrypt_priv_key_t);
+	CHECK_TYPE(wallet_set_t);
 	print("type isn't valid", P_CRIT);
 	return id;
 }

@@ -99,10 +99,11 @@ std::pair<std::vector<std::vector<uint8_t> >, std::vector<uint8_t> > unescape_al
 			old_size = vector.size();
 			std::pair<std::vector<uint8_t>, std::vector<uint8_t> > tmp =
 				unescape_vector(vector, escape_char);
-			retval.first.push_back(
-				tmp.first);
+			if(tmp.first.size() != 0){
+				retval.first.push_back(
+					tmp.first);
+			}
 			vector = tmp.second;
-
 		}
 	}catch(...){}
 	if(vector.size() != 0){

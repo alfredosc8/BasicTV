@@ -456,12 +456,8 @@ static void id_import_raw(uint8_t* var, uint8_t flags, uint64_t size, std::vecto
 #define ID_IMPORT(var) id_import_raw((uint8_t*)&var, 0, sizeof(var), &data)
 
 void data_id_t::import_data(std::vector<uint8_t> data){
-	try{
-		data = id_api::raw::decrypt(data);
-		data = id_api::raw::decompress(data);
-	}catch(...){
-		// this code isn't koscher at all, but it should work fine
-	}
+	data = id_api::raw::decrypt(data);
+	data = id_api::raw::decompress(data);
 	id_t_ trans_id = ID_BLANK_ID;
 	uint8_t extra = 0;
 	ID_IMPORT(extra);
@@ -486,7 +482,7 @@ void data_id_t::import_data(std::vector<uint8_t> data){
 		const bool valid_entry =
 			trans_i < data_vector.size();
 		if(unlikely(!valid_entry)){
-			// P_V(trans_i, P_SPAM);
+			P_V(trans_i, P_SPAM);
 			print("invalid i entry, probably came from a new version", P_ERR);
 			return;
 		}else if(unlikely(data_vector[trans_i].get_ptr() == nullptr)){
