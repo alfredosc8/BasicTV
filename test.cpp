@@ -218,6 +218,7 @@ static void test_id_transport(){
 	settings::set_setting("export_data", "true");
 	net_proto_peer_t *tmp =
 		new net_proto_peer_t;
+	tmp->id.noexp_all_data();
 	tmp->set_net_ip("127.0.0.1", 58486);
 	const std::vector<uint8_t> exp =
 		tmp->id.export_data(ID_DATA_NOEXP | ID_DATA_NONET,
@@ -225,6 +226,7 @@ static void test_id_transport(){
 	//test_id_transport_print_exp(exp);
 	net_proto_peer_t *tmp_2 =
 		new net_proto_peer_t;
+	tmp_2->id.noexp_all_data();
 	tmp_2->id.import_data(exp);
 	// P_V_S(convert::array::id::to_hex(tmp->id.get_id()), P_NOTE);
 	// P_V_S(convert::array::id::to_hex(tmp_2->id.get_id()), P_NOTE);
@@ -526,9 +528,19 @@ static void benchmark_encryption(){
 
 #define TV_NUMBER_CHECK_VALUE(x) if(math::number::get::x(device_sensor) != x){print((std::string)#x + " doesn't match", P_WARN);P_V(math::number::get::x(device_sensor), P_WARN);P_V(x, P_WARN);}
 
-static void test_tv_number_frames(){
+static void test_math_number_set(){
 	for(uint64_t i = 0;i < 128;i++){
 		const long double number = i*3.1415;
+		const uint64_t unit = MATH_NUMBER_USE_NONE;
+		std::vector<uint8_t> device_sensor =
+			math::number::create(
+				number,
+				unit);
+		TV_NUMBER_CHECK_VALUE(number);
+		TV_NUMBER_CHECK_VALUE(unit);
+	}
+	for(uint64_t i = 0;i < 65536;i++){
+		const uint64_t number = i;
 		const uint64_t unit = MATH_NUMBER_USE_NONE;
 		std::vector<uint8_t> device_sensor =
 			math::number::create(
@@ -541,12 +553,25 @@ static void test_tv_number_frames(){
 
 #undef TV_NUMBER_CHECK_VALUE
 
+/*
+  nc = non-compliant (requires some form of user intervention or breaks some
+  other rule)
+ */
+
 void test_nc(){
 	test_nc_socket();
 }
 
+/*
+  Ran with --run_tests
+ */
+
+/*
+  Might be able to multithread (?)
+ */
+
 void test(){
-	test_tv_number_frames();
+	test_math_number_set();
 	test_escape_string();
 	//test_max_tcp_sockets();
 	test_id_transport();
@@ -554,6 +579,5 @@ void test(){
 	test_rsa_key_gen();
 	test_rsa_encryption();
 	test_aes();
-	// TODO: re-enable previous functions when I fix ID sets
 	test_id_set_compression();
 }

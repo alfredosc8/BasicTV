@@ -35,7 +35,7 @@ const std::array<uint8_t, 32> blank_hash = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 #define ID_DATA_BYTE_VECTOR_VECTOR (1 << 6)
 
 #define ID_DATA_CACHE ID_DATA_NOEXPORT
-
+ 
 // might want to be larger (?)
 #define ID_MAX_LINKED_LIST_SIZE 64
 
@@ -207,28 +207,27 @@ extern void set_id_type(id_t_ *id, type_t_ type);
 #define TYPE_ENCRYPT_PUB_KEY_T				3
 #define TYPE_CONSOLE_T					4
 #define TYPE_WALLET_SET_T				5
-#define TYPE_MATH_STAT_SAMPLE_SET_T			6
-#define TYPE_NET_PROTO_SOCKET_T				7
-#define TYPE_NET_PROTO_PEER_T				8
-#define TYPE_NET_PROTO_CON_REQ_T			9
-#define TYPE_NET_PROTO_LINKED_LIST_REQUEST_T		10
-#define TYPE_NET_PROTO_ID_REQUEST_T		      	11
-#define TYPE_NET_PROTO_TYPE_REQUEST_T			12
-#define TYPE_NET_SOCKET_T				13
-#define TYPE_NET_PROXY_T				14
-#define TYPE_TV_CHANNEL_T				15
-#define TYPE_TV_WINDOW_T				16
-#define TYPE_TV_MENU_ENTRY_T				17
-#define TYPE_TV_MENU_T					18
-#define TYPE_TV_DEV_AUDIO_T				19
-#define TYPE_TV_DEV_VIDEO_T				20
-#define TYPE_TV_FRAME_AUDIO_T				21
-#define TYPE_TV_FRAME_VIDEO_T				22
-#define TYPE_TV_FRAME_CAPTION_T				23
-#define TYPE_INPUT_DEV_STANDARD_T			24
-#define TYPE_ID_DISK_INDEX_T				25
-#define TYPE_MATH_NUMBER_SET_T				26
-#define TYPE_TV_ITEM_T					27
+#define TYPE_NET_PROTO_SOCKET_T				6
+#define TYPE_NET_PROTO_PEER_T				7
+#define TYPE_NET_PROTO_CON_REQ_T			8
+#define TYPE_NET_PROTO_LINKED_LIST_REQUEST_T		9
+#define TYPE_NET_PROTO_ID_REQUEST_T		      	10
+#define TYPE_NET_PROTO_TYPE_REQUEST_T			11
+#define TYPE_NET_SOCKET_T				12
+#define TYPE_NET_PROXY_T				13
+#define TYPE_TV_CHANNEL_T				14
+#define TYPE_TV_WINDOW_T				15
+#define TYPE_TV_MENU_ENTRY_T				16
+#define TYPE_TV_MENU_T					17
+#define TYPE_TV_DEV_AUDIO_T				18
+#define TYPE_TV_DEV_VIDEO_T				19
+#define TYPE_TV_FRAME_AUDIO_T				20
+#define TYPE_TV_FRAME_VIDEO_T				21
+#define TYPE_TV_FRAME_CAPTION_T				22
+#define TYPE_INPUT_DEV_STANDARD_T			23
+#define TYPE_ID_DISK_INDEX_T				24
+#define TYPE_MATH_NUMBER_SET_T				25
+#define TYPE_TV_ITEM_T					26
 
 #define ID_NONET(x)				\
 	if(true){				\
@@ -254,5 +253,9 @@ extern void set_id_type(id_t_ *id, type_t_ type);
 			tmp->nonet_all_data();		\
 		}					\
 	}					
+
+// this should be the only thing on the line, so we can
+// add a ton of garbage to the end if we want
+#define NEW(type, var, global_exp_rules) var = new type;if(global_exp_rules & ID_DATA_NONET){var->id.nonet_all_data();}if(gloabl_exp_rules & ID_DATA_NOEXP){var->id.noexp_all_data();}
 
 #endif

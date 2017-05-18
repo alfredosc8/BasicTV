@@ -5,19 +5,40 @@
 #include "../id/id_api.h"
 #include "../math/math.h"
 
+void net_socket_t::init_create_data_sets(){
+	if(PTR_ID(inbound_stat_sample_set_id, ) == nullptr){
+		math_number_set_t *inbound_ptr =
+			new math_number_set_t;
+		inbound_ptr->id.noexp_all_data();
+		inbound_ptr->set_dim_count(
+			2, {MATH_NUMBER_DIM_NUM, MATH_NUMBER_DIM_NUM});
+		inbound_stat_sample_set_id = inbound_ptr->id.get_id();
+	}
+	if(PTR_ID(outbound_stat_sample_set_id, ) == nullptr){
+		math_number_set_t *outbound_ptr =
+			new math_number_set_t;
+		outbound_ptr->id.noexp_all_data();
+		outbound_ptr->set_dim_count(
+			2, {MATH_NUMBER_DIM_NUM, MATH_NUMBER_DIM_NUM});
+		outbound_stat_sample_set_id = outbound_ptr->id.get_id();
+	}
+}
+
 net_socket_t::net_socket_t() : id(this, TYPE_NET_SOCKET_T){
 	id.add_data_raw(&status, sizeof(status));
 	id.noexp_all_data();
 	id.nonet_all_data();
-	math_stat_sample_set_t *outbound_stat_sample_set_ptr =
-		new math_stat_sample_set_t;
-	math_stat_sample_set_t *inbound_stat_sample_set_ptr =
-		new math_stat_sample_set_t;
-	// just for speed and usage over time
-	outbound_stat_sample_set_ptr->reset(
-		{8, 8});
-	inbound_stat_sample_set_ptr->reset(
-		{8, 8});
+	math_number_set_t *outbound_stat_sample_set_ptr =
+		new math_number_set_t;
+	outbound_stat_sample_set_ptr->id.noexp_all_data();
+	math_number_set_t *inbound_stat_sample_set_ptr =
+		new math_number_set_t;
+	inbound_stat_sample_set_ptr->id.noexp_all_data();
+	// data over time, so both numerical
+	outbound_stat_sample_set_ptr->set_dim_count(
+		2, {MATH_NUMBER_DIM_NUM, MATH_NUMBER_DIM_NUM});
+	inbound_stat_sample_set_ptr->set_dim_count(
+		2, {MATH_NUMBER_DIM_NUM, MATH_NUMBER_DIM_NUM});
 	outbound_stat_sample_set_id = outbound_stat_sample_set_ptr->id.get_id();;
 	inbound_stat_sample_set_id = inbound_stat_sample_set_ptr->id.get_id();;
 }
@@ -138,21 +159,29 @@ std::vector<uint8_t> net_socket_t::recv(uint64_t byte_count, uint64_t flags){
 						local_buffer.end(),
 						&(buffer[0]),
 						&(buffer[recv_retval]));
-					data_received++;
+					data_received += recv_retval;
 				}
 			}else{
 				net_socket_recv_posix_error_checking(recv_retval);
 			}
 		}
 		if(data_received != 0){
-			math_stat_sample_set_t *inbound_stat_sample_set =
+			math_number_set_t *inbound_stat_sample_set =
 				PTR_DATA(inbound_stat_sample_set_id,
-					 math_stat_sample_set_t);
+					 math_number_set_t);
 			uint64_t time_microseconds = get_time_microseconds();
 			if(inbound_stat_sample_set != nullptr){
-				inbound_stat_sample_set->add(
-				{std::vector<uint8_t>(&time_microseconds, &time_microseconds+1),
-				 std::vector<uint8_t>(&time_microseconds, &time_microseconds+1)});
+				inbound_stat_sample_set->add_raw_data(
+				{math::number::create(
+						time_microseconds,
+						UNIT(MATH_NUMBER_USE_SI,
+						     MATH_NUMBER_BASE_SECOND,
+						     MATH_NUMBER_PREFIX_MICRO)),
+				 math::number::create(
+					 data_received,
+					 UNIT(MATH_NUMBER_USE_SI,
+					      MATH_NUMBER_BASE_BYTE,
+					      0))});
 			}
 		}
 		if(local_buffer.size() >= byte_count){
@@ -304,22 +333,17 @@ void net_socket_t::set_proxy_id(id_t_ proxy_id_){
 void net_socket_t::register_outbound_data(uint32_t bytes){
 	uint64_t time_micro_s = get_time_microseconds();
 	const std::vector<std::vector<uint8_t> > stat_sample =
-		{std::vector<uint8_t>(&time_micro_s,
-				      &time_micro_s+1),
-		 std::vector<uint8_t>(&bytes,
-				      &bytes+1)};
+		{math::number::create(time_micro_s, MATH_NUMBER_BASE_SECOND),
+		 math::number::create((uint64_t)bytes, MATH_NUMBER_BASE_BYTE)};
 	try{
-		math_stat_sample_set_t *outbound =
+		math_number_set_t *outbound =
 			PTR_DATA(outbound_stat_sample_set_id,
-				 math_stat_sample_set_t);
+				 math_number_set_t);
 		if(outbound == nullptr){
 			print("there is no outbound stat sample set, creating one", P_WARN);
-			outbound = new math_stat_sample_set_t;
-			outbound->reset({8, 4}); // 64-bit ID and 32-bit payload
-			set_outbound_stat_sample_set_id(
-				outbound->id.get_id());
+			init_create_data_sets();
 		}
-		outbound->add(stat_sample);
+		outbound->add_raw_data(stat_sample);
 	}catch(...){
 		print("failed to add stat sample to socket outbound stat set", P_WARN);
 	}
@@ -331,17 +355,18 @@ void net_socket_t::register_outbound_data(uint32_t bytes){
 			print("proxy is a nullptr, assuming one is not used", P_NOTE);
 			throw std::runtime_error("proxy stat sample set is a nullptr");
 		}
-		math_stat_sample_set_t *proxy =
+		math_number_set_t *proxy =
 			PTR_DATA(proxy_ptr->get_outbound_stat_sample_set_id(),
-				 math_stat_sample_set_t);
+				 math_number_set_t);
 		if(proxy == nullptr){
 			print("no stat sample set for proxy, creating one", P_NOTE);
-			proxy = new math_stat_sample_set_t;
-			proxy->reset({8, 4});
+			proxy = new math_number_set_t;
+			proxy->set_dim_count(
+				2, {MATH_NUMBER_DIM_NUM, MATH_NUMBER_DIM_NUM});
 			proxy_ptr->set_outbound_stat_sample_set_id(
 				proxy->id.get_id());
 		}
-		proxy->add(stat_sample);
+		proxy->add_raw_data(stat_sample);
 	}catch(...){
 		print("failed to add stat sample to proxy outbound stat set", P_NOTE);
 	}

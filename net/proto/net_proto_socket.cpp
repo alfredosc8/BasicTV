@@ -22,12 +22,60 @@
   is disregarded (TODO: is this good behavior?). 
  */
 
+void net_proto_socket_t::add_id_to_inbound_id_set(id_t_ payload_id){
+	math_number_set_t *inbound_ptr =
+		PTR_DATA(inbound_id_set_id,
+			 math_number_set_t);
+	if(inbound_ptr == nullptr){
+		print("number set is a nullptr, creating new one (probably bad GC)", P_NOTE);
+		init_create_id_sets();
+		inbound_ptr =
+			PTR_DATA(inbound_id_set_id,
+				 math_number_set_t);
+	}
+	inbound_ptr->add_raw_data(
+	{std::vector<uint8_t>((&payload_id[0]), (&payload_id[0])+sizeof(id_t_)),
+	 math::number::create(
+		 get_time_microseconds(),
+		 UNIT(MATH_NUMBER_USE_SI,
+		      MATH_NUMBER_BASE_SECOND,
+		      MATH_NUMBER_PREFIX_MICRO))});
+}
+
+void net_proto_socket_t::init_create_id_sets(){
+	/*
+	  1st dim: ID
+	  2nd dim: timestamp
+	 */
+	if(PTR_ID(inbound_id_set_id, ) == nullptr){
+		math_number_set_t *inbound_id_set_ptr =
+			new math_number_set_t;
+		inbound_id_set_ptr->id.noexp_all_data();
+		inbound_id_set_ptr->set_dim_count(
+			2, {MATH_NUMBER_DIM_CAT,
+			    MATH_NUMBER_DIM_NUM});
+		inbound_id_set_id = inbound_id_set_ptr->id.get_id();
+	}
+	if(PTR_ID(outbound_id_set_id, ) == nullptr){
+		math_number_set_t *outbound_id_set_ptr =
+			new math_number_set_t;
+		outbound_id_set_ptr->id.noexp_all_data();
+		outbound_id_set_ptr->set_dim_count(
+			2, {MATH_NUMBER_DIM_CAT,
+			    MATH_NUMBER_DIM_NUM});
+		outbound_id_set_id = outbound_id_set_ptr->id.get_id();
+	}
+}
+
 net_proto_socket_t::net_proto_socket_t() : id(this, TYPE_NET_PROTO_SOCKET_T){
 	id.add_data_id(&socket_id, 1);
 	id.add_data_id(&peer_id, 1);
 	id.add_data_raw(&flags, sizeof(flags));
 	id.add_data_raw(&last_recv_micro_s, sizeof(last_recv_micro_s));
 	id.add_data_one_byte_vector(&working_buffer, ~0);
+	id.add_data_id(&inbound_id_set_id, 1);
+	id.add_data_id(&outbound_id_set_id, 1);
+	init_create_id_sets();
 	net_proto_standard_data_t std_data_;
 	std_data_.ver_major = VERSION_MAJOR;
 	std_data_.ver_minor = VERSION_MINOR;
@@ -173,8 +221,10 @@ void net_proto_socket_t::load_blocks(){
 				wrong_peer_ptr = nullptr;
 				peer_id = std_data.peer_id;
 			}
-			id_api::array::add_data(
-				block_buffer[i].second);
+			const id_t_ tmp_id_ =
+				id_api::array::add_data(
+					block_buffer[i].second);
+			add_id_to_inbound_id_set(tmp_id_);
 		}
 	}
 }

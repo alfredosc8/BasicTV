@@ -17,6 +17,14 @@
 #include "net_proto_api.h"
 #include "net_proto_routine_requests.h"
 
+
+/*
+  Goes through and cleans out network requests that are irrelevant.
+ */
+
+static void net_proto_clean_stale_data(){
+}
+
 void net_proto_loop(){
 	net_proto_handle_inbound_data();
 	net_proto_handle_outbound_requests();
@@ -24,11 +32,19 @@ void net_proto_loop(){
 	net_proto_routine_requests_loop();
 }
 
+/*
+  NEW IDEA:
+  We can mark all of our own net_proto_peer_ts as non-exportable
+  but networkable. Other people can save ours, as they are not
+  configured to be non-exportable (non-exporability and
+  non-networkability only apply to local version, once exported
+  they are reset).
+ */
+
 static void net_proto_init_self_peer(){
-	net_proto::peer::set_self_peer_id(
-		id_api::array::fetch_one_from_hash(
-			convert::type::to("net_proto_peer_t"),
-			get_id_hash(production_priv_key_id)));
+	if(net_proto::peer::get_self_as_peer() != ID_BLANK_ID){
+		print("We already have local peer data (at init), where did it come from?", P_ERR);
+	}
 	const uint16_t tmp_port =
 		settings::get_setting_unsigned_def(
 			"net_port",
@@ -41,14 +57,15 @@ static void net_proto_init_self_peer(){
 	}else{
 		print("assuming the hostname of " + ip_addr, P_NOTE);
 	}
-	if(net_proto::peer::get_self_as_peer() == ID_BLANK_ID){
-		print("can't find old net_proto_peer_t information, generating new", P_NOTE);
-		net_proto::peer::set_self_peer_id(
-			(new net_proto_peer_t)->id.get_id());
-		net_proto::peer::set_self_as_peer(
-			ip_addr,
-			tmp_port);
-	}
+	print("We have no local peer data (at init), creating one normally", P_NOTE);
+	net_proto_peer_t *proto_peer_ptr =
+		new net_proto_peer_t;
+	proto_peer_ptr->id.noexp_all_data();
+	net_proto::peer::set_self_peer_id(
+		proto_peer_ptr->id.get_id());
+	net_proto::peer::set_self_as_peer(
+		ip_addr,
+		tmp_port);
 }
 
 /*
@@ -112,6 +129,7 @@ static void net_proto_verify_bootstrap_nodes(){
 	for(uint64_t i = 0;i < nodes_to_connect.size();i++){
 		net_proto_peer_t *proto_peer_ptr =
 			new net_proto_peer_t;
+		proto_peer_ptr->id.noexp_all_data();
 		// no harm in assuming port is open
 		// WRONG_KEY forces no encryption
 		proto_peer_ptr->set_net_flags(

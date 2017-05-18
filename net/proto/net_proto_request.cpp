@@ -9,6 +9,7 @@ net_proto_request_bare_t::~net_proto_request_bare_t(){}
 
 void net_proto_request_bare_t::list_bare_virtual_data(data_id_t *id){
 	id->add_data_id(&peer_id, 1);
+	id->add_data_raw((uint8_t*)&request_time, 8);
 }
 
 id_t_ net_proto_request_bare_t::get_peer_id(){
@@ -17,6 +18,10 @@ id_t_ net_proto_request_bare_t::get_peer_id(){
 
 void net_proto_request_bare_t::set_peer_id(id_t_ peer_id_){
 	peer_id = peer_id_;
+}
+
+void net_proto_request_bare_t::update_request_time(){
+	request_time = get_time_microseconds();
 }
 
 net_proto_request_set_t::net_proto_request_set_t(){}
@@ -41,6 +46,7 @@ void net_proto_request_set_t::set_ids(std::vector<id_t_> ids_){
 				id_ptr->get_mod_inc());
 		}
 	}
+	update_request_time();
 }
 
 std::vector<id_t_> net_proto_request_set_t::get_ids(){
@@ -114,4 +120,5 @@ void net_proto_type_request_t::update_type(type_t_ type_){
 		id_api::cache::get(
 			convert::type::from(
 				type_)));
+	update_request_time();
 }

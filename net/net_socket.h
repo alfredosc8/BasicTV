@@ -41,6 +41,7 @@ private:
 
 	void register_outbound_data(uint32_t bytes);
 	void register_inbound_data(uint32_t bytes);
+	void init_create_data_sets();
 public:
 	data_id_t id;
 	net_socket_t();

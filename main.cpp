@@ -49,7 +49,6 @@ int main(int argc_, char **argv_){
 	if(settings::get_setting("run_tests") == "true"){
 		test();
 	}
-	test();
 	try{
 		running =
 			settings::get_setting("init_close_only") == "false";

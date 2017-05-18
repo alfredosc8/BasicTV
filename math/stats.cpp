@@ -1,61 +1,9 @@
 #include "stats.h"
 
-math_stat_sample_set_t::math_stat_sample_set_t() : id(this, TYPE_MATH_STAT_SAMPLE_SET_T){
-	id.add_data_one_byte_vector(&size_set, ~(uint32_t)0);
-	id.add_data_one_byte_vector(&set, ~(uint32_t)0);
-	id.add_data_raw(&entry_size, sizeof(entry_size));
-}
-
-math_stat_sample_set_t::~math_stat_sample_set_t(){}
-
-uint32_t math_stat_sample_set_t::get_entry_size(){
-	if(unlikely(entry_size == 0)){
-		for(uint64_t i = 0;i < size_set.size();i++){
-			entry_size += size_set[i];
-		}
-	}
-	return entry_size;
-}
-
-void math_stat_sample_set_t::reset(std::vector<uint8_t> size_set_){
-	// also used to derive dimension count
-	size_set = size_set_;
-	entry_size = 0;
-}
-
 /*
-  Requires all dimensions to be present at one time (although can be worked
-  around, there is no need for that now)
-
-  Also, since this is an advanced vector, everything inside has to be manually
-  stored and recalled in NBO
-
-  MAKE SURE THE GETTER HAS NBO
+  ALL return values that are not P-values are variable length numbers
+  (have to be decoded through math::number::get...). Even though most
+  statistics functions' outputs don't use units, I think that larger sample sets
+  would benefit (namely in intermediate operations).
  */
 
-void math_stat_sample_set_t::add(std::vector<std::vector<uint8_t> > datum){
-	if(unlikely(datum.size() != size_set.size())){
-		print("dimensional size mismatch in stat add", P_ERR);
-	}
-	for(uint64_t i = 0;i < size_set.size();i++){
-		datum[i] = convert::nbo::to(datum[i]);
-		if(likely(datum[i].size() == size_set[i])){
-			set.insert(
-				set.end(),
-				datum[i].begin(),
-				datum[i].end());
-		}else{
-			print("entry size mismatch in stat add", P_ERR);
-		}
-	}
-}
-
-void math_stat_sample_set_t::truncate_to_size(uint64_t size_){
-	const int64_t entries_to_remove =
-		(set.size()/get_entry_size())-size_;
-	if(entries_to_remove > 0){
-		set.erase(
-			set.begin(),
-			set.begin()+(entries_to_remove*get_entry_size()));
-	}
-}

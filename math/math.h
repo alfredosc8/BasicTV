@@ -15,7 +15,7 @@
  */
 #endif
 #include "stats.h"
-#include "numbers.h"
+#include "numbers/math_numbers.h"
 
 
 
@@ -54,6 +54,18 @@ namespace math{
 		}
 		std::vector<uint8_t> create(long double number,
 					    uint64_t unit);
+		std::vector<uint8_t> create(uint64_t number,
+					    uint64_t unit);
+		std::vector<uint8_t> create(int64_t number,
+					    uint64_t unit);
+		/*
+		  TODO: IDs, as they stand now, are the only categorical
+		  statistics category I have to deal with (chi-squared).
+		  There should be things added to the units to ensure that
+		  numerical analysis is not done to the data
+		 */
+		std::vector<uint8_t> create(id_t_ number,
+					    uint64_t unit);
 		namespace calc{
 			std::vector<uint8_t> add(
 				std::vector<std::vector<uint8_t> > data);
@@ -80,7 +92,7 @@ namespace math{
 		};
 	};
 	/*
-	  uint32_t is a measure of P-value, on a scale of 0-1
+	  math_stat_pval_t (uint32_t) is a measure of P-value, on a scale of 0-1
 	 */
 	namespace stat{
 		namespace vars{
