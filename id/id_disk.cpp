@@ -239,7 +239,7 @@ std::string id_disk_index_t::get_path_of_id(id_t_ id_){
 			return "";
 		}
 	}else{
-		print("ID exists in memory already, generating new filename", P_NOTE);
+		print("ID exists in memory already, generating new filename", P_DEBUG);
 		retval += file::ensure_slash_at_end((char*)(path.data()));
 		retval += id->get_type() + "/";
 		retval += convert::array::id::to_hex(id_) + "_" + std::to_string(id->get_mod_inc()); // + _ + id incrementor (if it existed)

@@ -25,8 +25,6 @@ std::vector<uint8_t> net_proto_write_packet_metadata(
 
 #define READ_DATA_META(ptr)						\
 	if(ptr != nullptr){						\
-		P_V(sizeof(*ptr), P_NOTE);				\
-		P_V(data.size(), P_NOTE);				\
 		if(sizeof(*ptr) > data.size()){				\
 			print("metadata is too short", P_ERR);		\
 		}else{							\

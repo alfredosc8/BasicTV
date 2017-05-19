@@ -231,10 +231,19 @@ void net_proto_socket_t::load_blocks(){
 				peer_id = std_data.peer_id;
 			}
 			P_V(block_buffer[i].second.size(), P_SPAM); // temporary
-			const id_t_ tmp_id_ =
-				id_api::array::add_data(
+			/*
+			  NOTE: this doesn't call id_api::array::add_data, this
+			  function calls id_api::cache::add_data, which just
+			  stores the data in memory. Doesn't require the public
+			  key right away, but it does when it is requested
+			 */
+			id_api::add_data(
+				block_buffer[i].second);
+			const id_t_ inbound_id =
+				id_api::raw::fetch_id(
 					block_buffer[i].second);
-			add_id_to_inbound_id_set(tmp_id_);
+			add_id_to_inbound_id_set(
+				inbound_id);
 			block_buffer.erase(
 				block_buffer.begin()+i);
 			i--;

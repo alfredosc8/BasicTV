@@ -74,8 +74,6 @@ static void rsa_encrypt_sanity_check(RSA *rsa, std::vector<uint8_t> data){
 std::vector<uint8_t> rsa::encrypt(std::vector<uint8_t> data,
 				  std::vector<uint8_t> key,
 				  uint8_t type){
-	P_V(data.size(), P_NOTE);
-	sleep_ms(1000);
 	if(key.size() == 0){
 		print("key is blank, can't decode anything", P_ERR);
 	}
@@ -164,8 +162,6 @@ static void rsa_decrypt_sanity_check(RSA *rsa, std::vector<uint8_t> data){
 std::vector<uint8_t> rsa::decrypt(std::vector<uint8_t> data,
 				  std::vector<uint8_t> key,
 				  uint8_t type){
-	P_V(data.size(), P_SPAM); // just to pause GDB
-	sleep_ms(1000);
 	if(key.size() == 0){
 		print("key is blank, can't decode anything", P_ERR);
 	}

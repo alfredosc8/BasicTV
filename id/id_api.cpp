@@ -53,17 +53,21 @@ data_id_t *id_api::array::ptr_id(id_t_ id,
 	}
 	data_id_t *retval = id_find(id);
 	if(retval == nullptr){
-		if(flags & ID_LOOKUP_FAST){
-			// TODO: add more levels?
-			print("fast lookup, not querying disk", P_NOTE);
-			return nullptr;
-		}
-		print("attempting import from disk", P_SPAM);
-		try{
-			id_disk_api::load(id);
-		}catch(...){
-			print("querying network for data", P_SPAM);
-			net_proto::request::add_id(id);
+		id_api::cache::load_id(id);
+		retval = id_find(id);
+		if(retval == nullptr){
+			if(flags & ID_LOOKUP_FAST){
+				// TODO: add more levels?
+				print("fast lookup, not querying disk", P_NOTE);
+				return nullptr;
+			}
+			print("attempting import from disk", P_SPAM);
+			try{
+				id_disk_api::load(id);
+			}catch(...){
+				print("querying network for data", P_SPAM);
+				net_proto::request::add_id(id);
+			}
 		}
 	}else if(retval->get_type() != type && type != ""){
 		print("type-id mismatch", P_SPAM);
@@ -431,6 +435,9 @@ void id_api::destroy(id_t_ id){
 	// Count de Monet
        	DELETE_TYPE_2(wallet_set_t);
 
+	// Math
+	DELETE_TYPE_2(math_number_set_t);
+	
 	print("No proper type was found for clean deleting, cutting losses "
 	      "and delisting it, memory leak occuring: " + ptr->get_type(), P_WARN);
 
@@ -746,6 +753,11 @@ static void generic_fetch(uint8_t *ptr, uint64_t start, uint64_t size, uint8_t *
 	}
 	memcpy(ptr, byte_vector+start, size);
 	convert::nbo::from(ptr, size); // checks for one byte length
+}
+
+void id_api::add_data(std::vector<uint8_t> data){
+	// just add to cache, it's fine...
+	id_api::cache::add_data(data);
 }
 
 id_t_ id_api::raw::fetch_id(std::vector<uint8_t> data){

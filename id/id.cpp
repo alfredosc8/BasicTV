@@ -40,11 +40,12 @@ static bool encrypt_blacklist_type(std::string type_){
 			encrypt_blacklist.begin(),
 			encrypt_blacklist.end(),
 			type_) != encrypt_blacklist.end();
-	if(retval){
-		print("blacklisted " + type_, P_NOTE);
-	}else{
-		print("whitelisted " + type_, P_NOTE);
-	}
+	// doesn't tell us anything useful, at least not at this state
+	// if(retval){
+	// 	print("blacklisted " + type_, P_NOTE);
+	// }else{
+	// 	print("whitelisted " + type_, P_NOTE);
+	// }
 	return retval;
 }
 

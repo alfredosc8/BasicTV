@@ -72,8 +72,12 @@ namespace id_api{
 			 std::string type);
 		std::vector<id_t_> get(type_t_ type);
 		std::vector<id_t_> get(std::string type);
+
+		// really two different things
 		void hint_increment_id(id_t_ id);
 		void hint_decrement_id(id_t_ id);
+		void add_data(std::vector<uint8_t> data);
+		void load_id(id_t_ id);
 	}
 	namespace linked_list{
 		// next and previous are in the id itself, no interdependency
@@ -102,6 +106,7 @@ namespace id_api{
 	};
 	std::vector<id_t_> get_all();
 	void free_mem();
+	void add_data(std::vector<uint8_t> data);
 	void destroy(id_t_ id);
 	void destroy_all_data();
 	namespace raw{

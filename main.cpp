@@ -55,6 +55,7 @@ int main(int argc_, char **argv_){
 	}catch(...){
 		running = true;
 	}
+	print("formally starting BasicTV, entering loop", P_NOTE);
 	while(running){
 		tv_loop();
 		input_loop();

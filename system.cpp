@@ -41,7 +41,8 @@ std::string system_handler::cmd_output(std::string cmd){
 }
 
 void system_handler::rm(std::string file){
-	system(("rm -r " + file).c_str());
+	// TODO: since i'm piping the output, should escape quotes in file
+	system(("rm -r '" + file + "' 2> /dev/null 1> /dev/null").c_str());
 }
 
 /*

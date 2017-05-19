@@ -17,6 +17,10 @@
 // decryptions for information that never leaves disk, as well as
 // various soon-to-be implemented exporting rules).
 
+/*
+  TODO: store this better for faster lookups
+ */
+
 static std::vector<std::vector<uint8_t> > cache_state;
 
 void id_api::cache::hint_increment_id(id_t_ id){
@@ -60,6 +64,36 @@ void id_api::cache::hint_increment_id(id_t_ id){
 		}
 		if(disk_index->id_on_disk(id)){
 			
+		}
+	}
+}
+
+/*
+  Allows storing data we can't decrypt yet safely
+*/
+
+void id_api::cache::add_data(std::vector<uint8_t> data){
+	cache_state.push_back(
+		data);
+}
+
+void id_api::cache::load_id(id_t_ id){
+	// we can assume we only have one ID safely (only harm is not
+	// reading data, it would be self-destructive to recreate UUID)
+	std::raise(SIGINT);
+	for(uint64_t i = 0;i < cache_state.size();i++){
+		const id_t_ cache_state_id =
+			id_api::raw::fetch_id(cache_state[i]);
+		if(unlikely(id_api::raw::fetch_id(cache_state[i]) == id)){
+			print("found ID in cache_state vector", P_SPAM);
+			id_api::array::add_data(cache_state[i]);
+			// throws if it can't load, if we are still running at
+			// this point, just delete it
+			cache_state.erase(
+				cache_state.begin()+i);
+		}else{
+			P_V_S(convert::array::id::to_hex(cache_state_id), P_SPAM);
+			P_V_S(convert::array::id::to_hex(id), P_SPAM);
 		}
 	}
 }

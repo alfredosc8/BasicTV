@@ -232,7 +232,6 @@ id_t_ convert::array::id::from_hex(std::string id_){
 	uint64_t pos_of_hyphen = id_.find_first_of("-");
 	std::string uuid_substr =
 		id_.substr(0, pos_of_hyphen);
-	P_V_S(uuid_substr, P_NOTE);
 	std::vector<uint8_t> uuid_raw =
 		convert::number::from_hex(uuid_substr);
 	if(uuid_raw.size() != 8){
