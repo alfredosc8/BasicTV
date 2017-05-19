@@ -270,6 +270,8 @@ static bool export_datum_check_type(uint8_t flags, uint8_t param){
 		(data_nonet == param_nonet) || (data_nonet == 0);
 	const bool export_noexp =
 		(data_noexp == param_noexp) || (data_noexp == 0);
+	P_V(export_nonet, P_SPAM);
+	P_V(export_noexp, P_SPAM);
 	return export_nonet && export_noexp;
 }
 

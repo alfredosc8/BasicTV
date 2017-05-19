@@ -54,6 +54,27 @@
 */
 
 /*
+  Should be called and used whenever we are testing some integral part of
+  the ID, or otherwise need just a generic ID (i'm making this a function
+  to simplify the escape tests).
+ */
+
+static id_t_ test_create_generic_id(){
+	wallet_set_t *wallet_set_ptr =
+		new wallet_set_t;
+	wallet_set_ptr->id.noexp_all_data();
+	std::string totally_legit_bitcoin_wallet_please_give_me_money =
+		"13dfmkk84rXyHoiZQmuYfTxGYykug1mDEZ";
+	wallet_set_ptr->add_wallet(
+		std::vector<uint8_t>({'B', 'T', 'C'}),
+		std::vector<uint8_t>(
+			(uint8_t*)&(totally_legit_bitcoin_wallet_please_give_me_money[0]),
+			(uint8_t*)&(totally_legit_bitcoin_wallet_please_give_me_money[0])+
+			totally_legit_bitcoin_wallet_please_give_me_money.size()));
+	return wallet_set_ptr->id.get_id();
+}
+
+/*
   NON-COMPLIANT TESTS
 
   Not actually ran inside of the main testing function for one of a few reaons
@@ -445,35 +466,54 @@ static void benchmark_encryption(std::string method){
 }
 
 static void test_escape_string(){
-	const char escape_char = 0xFF;
-	// doesn't stop, shouldn't make it to Git tree
-	std::vector<std::vector<uint8_t> > unescaped;
-	std::vector<uint8_t> raw =
-		true_rand_byte_vector(
-			true_rand(1, 65536));
-	unescaped.push_back(
-		raw);
+	const uint8_t escape_char = 0xFF;
+	id_t_ wallet_set_id =
+		test_create_generic_id();
+	wallet_set_t *wallet_set_ptr =
+		PTR_DATA(wallet_set_id, wallet_set_t);
+	if(wallet_set_ptr == nullptr){
+		print("wallet_set_ptr is a nullptr", P_ERR);
+	}
+	std::vector<uint8_t> payload =
+		wallet_set_ptr->id.export_data(
+			ID_DATA_NOEXP, 0);
 	std::vector<uint8_t> escaped_data =
 		escape_vector(
-			raw,
+			payload,
 			escape_char);
+	print("complete chunk size (unescaped): " + std::to_string(payload.size()), P_SPAM);
+	print("complete chunk size (escaped): "  + std::to_string(escaped_data.size()), P_SPAM);
+	uint32_t cruft_size = escaped_data.size()/2;
+	escaped_data.insert(
+		escaped_data.end(),
+		escaped_data.begin(),
+		escaped_data.begin()+cruft_size); // intentionally create second half
+	print("complete chunk size (fragmented half added): " + std::to_string(escaped_data.size()), P_SPAM);
 	std::pair<std::vector<std::vector<uint8_t> >, std::vector<uint8_t> > deconstructed =
 		unescape_all_vectors(
 			escaped_data,
 			escape_char);
-	P_V(deconstructed.first.size(), P_NOTE);
-	P_V(deconstructed.second.size(), P_NOTE);
-	if(deconstructed.first != unescaped){
-		if(deconstructed.first.size() != unescaped.size()){
-			P_V(deconstructed.first.size(), P_SPAM);
-			P_V(unescaped.size(), P_SPAM);
-			print("escape vector test failed (mis-matched sizes)", P_ERR);
-		}
-		for(uint64_t i = 0;i < deconstructed.first.size();i++){
-			P_V(deconstructed.first[i].size(), P_SPAM);
-			P_V(unescaped[i].size(), P_SPAM);
-		}
+	print("escaped chunk count: " + std::to_string(deconstructed.first.size()), P_SPAM);
+	print("escaped chunk size: " + std::to_string(deconstructed.first[0].size()), P_SPAM);
+	if(deconstructed.first.size() != 1){
+		P_V(deconstructed.first.size(), P_WARN);
+		print("incorrect vector count from unescape_all_vectors", P_ERR);
 	}
+	if(deconstructed.first[0].size() != payload.size()){
+		P_V(payload.size(), P_WARN);
+		P_V(deconstructed.first[0].size(), P_WARN);
+		print("incorrect vector size from unescape_all_vectors", P_ERR);
+	}
+	if(deconstructed.first[0] != payload){
+		// not going to print, probably breaks the terminal...
+		print("incorrect vector payload from unescape_all_vectors", P_ERR);
+	}
+	if(deconstructed.second.size() != cruft_size){
+		P_V(cruft_size, P_SPAM);
+		P_V(deconstructed.second.size(), P_SPAM);
+		print("incorrect extra size from unescape_all_vectors", P_ERR);
+	}
+	
 }
 
 static void test_id_set_compression(){
@@ -571,8 +611,17 @@ static void test_math_number_set(){
 
 void test_net_proto_socket_transcoding(){
 	net_socket_t *intermediate_socket = new net_socket_t;
-	intermediate_socket->set_net_ip("", 60000); // blank means accepts incoming
-	intermediate_socket->connect();
+	uint16_t port = 59999;
+	/*
+	  One pretty cool side-effect of this code is it keeps looping until
+	  one port opens and uses it, since ports fit nicely (with the exception
+	  of 0) into a 16-bit variable
+	 */
+	while(intermediate_socket->get_tcp_socket() == nullptr){
+		port++; // 60000 is the typical
+		intermediate_socket->set_net_ip("", port); // blank means accepts incoming
+		intermediate_socket->connect();
+	}
 	std::vector<std::pair<net_proto_socket_t *, net_socket_t *> > socket_vector =
 		{std::make_pair(new net_proto_socket_t,
 				new net_socket_t),
@@ -584,7 +633,7 @@ void test_net_proto_socket_transcoding(){
 		socket_vector[1].second->id.get_id());
 	// 0 attempts a connect, intermediate_socket accepts, shifts ownership
 	// to 1, and allows for transmission of data over the proto_socket
-	socket_vector[0].second->set_net_ip("127.0.0.1", 60000);
+	socket_vector[0].second->set_net_ip("127.0.0.1", port);
 	socket_vector[0].second->connect();
 	// accept incoming
 	TCPsocket new_socket = nullptr;
@@ -593,25 +642,18 @@ void test_net_proto_socket_transcoding(){
 	}
 	socket_vector[1].second->set_tcp_socket(new_socket);
 	// load, export, delete, send, reload
-	wallet_set_t *wallet_set_ptr =
-		new wallet_set_t;
-	std::string totally_legit_bitcoin_wallet_please_give_me_money =
-		"13dfmkk84rXyHoiZQmuYfTxGYykug1mDEZ";
-	wallet_set_ptr->add_wallet(
-		std::vector<uint8_t>({'B', 'T', 'C'}),
-		std::vector<uint8_t>(
-			(uint8_t*)&(totally_legit_bitcoin_wallet_please_give_me_money[0]),
-			(uint8_t*)&(totally_legit_bitcoin_wallet_please_give_me_money[0])+
-			totally_legit_bitcoin_wallet_please_give_me_money.size()));
-	socket_vector[0].first->send_id(wallet_set_ptr->id.get_id());
+	id_t_ wallet_set_id = test_create_generic_id();
+	socket_vector[0].first->send_id(wallet_set_id);
 	// checks for having it are done on read, not send, we're fine
-	const id_t_ old_id = wallet_set_ptr->id.get_id();
-	id_api::destroy(old_id);
-	wallet_set_ptr = nullptr;
-	socket_vector[1].first->update();
-	if(PTR_ID(old_id, ) != nullptr){
+	id_api::destroy(wallet_set_id);
+	for(uint64_t i = 0;i < 5;i++){
+		sleep_ms(1000);
+		socket_vector[1].first->update();
+	}
+	if(PTR_ID(wallet_set_id, ) != nullptr){
 		print("WE DID IT GUYS", P_ERR);
-		// critical success
+	}else{
+		print("net_proto_socket transcoding failed", P_ERR);
 	}
 }
 
@@ -634,15 +676,28 @@ void test_nc(){
 
 #define RUN_TEST(test) try{test();}catch(...){print((std::string)(#test) + " failed", P_ERR);throw std::runtime_error("failed test");}
 
+/*
+  Golden Rule for Tests:
+
+  If a problem is complicated enough that it requires re-writing a test to
+  debug, more basic tests need to be ran more thoroughly. When in doubt,
+  feed IDs and random data.
+ */
+
 void test(){
-	test_math_number_set();
+	/*
+	  All of these tests work fine, but are commented out since I haven't
+	  bothered checking and running individual tests, and i'm running
+	  100+ and capturing the output
+	 */
+	// test_math_number_set();
 	test_escape_string();
-	//test_max_tcp_sockets();
-	test_id_transport();
-	test_nbo_transport();
-	test_rsa_key_gen();
-	test_rsa_encryption();
-	test_aes();
-	test_id_set_compression();
+	// //test_max_tcp_sockets();
+	// test_id_transport();
+	// test_nbo_transport();
+	// test_rsa_key_gen();
+	// test_rsa_encryption();
+	// test_aes();
+	// test_id_set_compression();
 	test_net_proto_socket_transcoding();
 }

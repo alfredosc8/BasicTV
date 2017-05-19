@@ -12,11 +12,11 @@
 
 std::vector<uint8_t> escape_vector(
 	std::vector<uint8_t> vector,
-	char escape_char);
+	uint8_t escape_char);
 std::pair<std::vector<uint8_t>, std::vector<uint8_t> > unescape_vector(
 	std::vector<uint8_t> vector,
-	char escape_char);
+	uint8_t escape_char);
 std::pair<std::vector<std::vector<uint8_t> >, std::vector<uint8_t> > unescape_all_vectors(
 	std::vector<uint8_t> vector,
-	char escape_char);
+	uint8_t escape_char);
 #endif

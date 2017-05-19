@@ -138,6 +138,9 @@ void init(){
 	settings::set_setting("throw_level", std::to_string(P_CRIT));
 	// shouldn't need to disable other stuff
 	settings::set_setting("run_tests", "true");
+	settings::set_setting("data_folder", ((std::string)getenv("HOME"))+"/.BasicTV/");
+	settings_init();
+
 	/*
 	  Using "~" doesn't work with C++, so get the information from getenv()
 
@@ -145,17 +148,18 @@ void init(){
 
 	  TODO: use getuid and that stuff when getenv doesn't work (?)
 	 */
+
 	id_disk_index_t *disk_index =
 		new id_disk_index_t;
 	disk_index->id.noexp_all_data();
 	disk_index->id.nonet_all_data();
+		
 	disk_index->set(
 		ID_DISK_MEDIUM_HDD,
 		2, // Tier 2 is lowest for non-RAM storage
 		ID_DISK_TRANS_DIR,
 		{ID_DISK_ENHANCE_UNDEF}, // macro to zero, here for verbosity
-		((std::string)getenv("HOME"))+"/.BasicTV/");
-	settings_init();
+		settings::get_setting("data_folder"));
 
 	bootstrap_production_priv_key_id();
 

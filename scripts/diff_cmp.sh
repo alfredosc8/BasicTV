@@ -1,6 +1,6 @@
-for i in {1..10}
+for i in {1..100}
 do
-    for c in {1..10}
+    for c in {1..100}
     do
 	if [[ i -eq c ]]
 	then

@@ -115,42 +115,32 @@ void net_proto_socket_t::update_working_buffer(){
 }
 
 void net_proto_socket_t::update_block_buffer(){
-	std::pair<std::vector<std::vector<uint8_t> >, std::vector<uint8_t> > block_data =
-		unescape_all_vectors(
-			working_buffer,
-			NET_PROTO_ESCAPE);
-	working_buffer = block_data.second;
-	/*
-	  This has no out of sync protection. 
-
-	  TODO: Possibly do sanity checks on length of first segment and slide
-	  all buffers left by one to fix?
-	 */
-	if(block_data.first.size() != 0){
-		print("finished reading in escaped vectors from the socket", P_SPAM);
-		for(uint64_t i = 0;i < block_data.first.size();i++){
-			P_V(i, P_SPAM);
-			P_V(block_data.first[i].size(), P_SPAM);
-		}
-	}
-	if(block_buffer.size() == 0){
-		block_buffer.push_back(
-			std::make_pair(
-				std::vector<uint8_t>(),
-				std::vector<uint8_t>()));
-	}
-	for(uint64_t i = 0;i < block_data.first.size();i++){
-		if(block_buffer[block_buffer.size()-1].first.size() == 0){
-			block_buffer[block_buffer.size()-1].first =
-				block_data.first[i];
-		}else if(block_buffer[block_buffer.size()-1].second.size() == 0){
-			block_buffer[block_buffer.size()-1].second =
-				block_data.first[i];
+	std::pair<std::vector<uint8_t>, std::vector<uint8_t> > block_data;
+	while((block_data = unescape_vector(
+		       working_buffer,
+		       NET_PROTO_ESCAPE)).first.size() != 0){
+		working_buffer = block_data.second;
+		if(block_data.first.size() != 0){
+			if(block_buffer.size() == 0){
+				block_buffer.push_back(
+					std::make_pair(
+						std::vector<uint8_t>(),
+						std::vector<uint8_t>()));
+			}
+			if(block_buffer[block_buffer.size()-1].first.size() == 0){
+				block_buffer[block_buffer.size()-1].first =
+					block_data.first;
+			}else if(block_buffer[block_buffer.size()-1].second.size() == 0){
+				block_buffer[block_buffer.size()-1].second =
+					block_data.first;
+			}else{
+				block_buffer.push_back(
+					std::make_pair(
+						block_data.first,
+						std::vector<uint8_t>({})));
+			}
 		}else{
-			block_buffer.push_back(
-				std::make_pair(
-					block_data.first[i],
-					std::vector<uint8_t>({})));
+			print("socket appears up to date (no full escaped vectors to read)", P_SPAM);
 		}
 	}
 }
@@ -176,18 +166,15 @@ void net_proto_socket_t::send_id(id_t_ id_){
 		print("socket is a nullptr", P_ERR);
 	}
 	// can simplify to one vector, not done for debugging reasons
-	std::vector<uint8_t> std_data_out =
-		escape_vector(std_data, NET_PROTO_ESCAPE);
-	std::vector<uint8_t> payload_out =
-		escape_vector(payload, NET_PROTO_ESCAPE);
-	P_V(std_data_out.size(), P_SPAM);
-	P_V(payload_out.size(), P_SPAM);
-	socket_ptr->send(std_data_out);
-	socket_ptr->send(payload);
-	// socket_ptr->send(escape_vector(std_data, NET_PROTO_ESCAPE));
-	// socket_ptr->send(escape_vector(payload, NET_PROTO_ESCAPE));
-	P_V(std_data.size(), P_SPAM);
 	P_V(payload.size(), P_SPAM);
+	std::vector<uint8_t> std_data_postescape =
+		escape_vector(std_data, NET_PROTO_ESCAPE);
+	std::vector<uint8_t> payload_postescape =
+		escape_vector(payload, NET_PROTO_ESCAPE);
+	P_V(std_data_postescape.size(), P_SPAM);
+	P_V(payload_postescape.size(), P_SPAM);
+	socket_ptr->send(std_data_postescape);
+	socket_ptr->send(payload_postescape);
 }
 
 void net_proto_socket_t::send_id_vector(std::vector<id_t_> id_vector){
@@ -210,6 +197,7 @@ void net_proto_socket_t::load_blocks(){
 	  data (expandable to say giant tape libraries, CD/DVD/BD archvies,
 	  in memory, on disk, etc). However, that is for another day.
 	 */
+	P_V(block_buffer.size(), P_SPAM);
 	for(uint64_t i = 0;i < block_buffer.size();i++){
 		if(block_buffer[i].first.size() != 0 &&
 		   block_buffer[i].second.size() != 0){
@@ -223,6 +211,7 @@ void net_proto_socket_t::load_blocks(){
 			  i'm not worried about implementing decoding code,
 			  although that wouldn't be a bad idea
 			 */
+			print("found a complete block_buffer set", P_SPAM);
 			net_proto_standard_data_t std_data;
 			net_proto_read_packet_metadata(
 				block_buffer[i].first,
