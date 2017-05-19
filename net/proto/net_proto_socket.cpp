@@ -127,7 +127,7 @@ void net_proto_socket_t::update_block_buffer(){
 	  all buffers left by one to fix?
 	 */
 	if(block_data.first.size() != 0){
-		print("finished reading in an escaped vectors from the socket", P_SPAM);
+		print("finished reading in escaped vectors from the socket", P_SPAM);
 		for(uint64_t i = 0;i < block_data.first.size();i++){
 			P_V(i, P_SPAM);
 			P_V(block_data.first[i].size(), P_SPAM);
@@ -175,8 +175,17 @@ void net_proto_socket_t::send_id(id_t_ id_){
 	if(socket_ptr == nullptr){
 		print("socket is a nullptr", P_ERR);
 	}
-	socket_ptr->send(escape_vector(std_data, NET_PROTO_ESCAPE));
-	socket_ptr->send(escape_vector(payload, NET_PROTO_ESCAPE));
+	// can simplify to one vector, not done for debugging reasons
+	std::vector<uint8_t> std_data_out =
+		escape_vector(std_data, NET_PROTO_ESCAPE);
+	std::vector<uint8_t> payload_out =
+		escape_vector(payload, NET_PROTO_ESCAPE);
+	P_V(std_data_out.size(), P_SPAM);
+	P_V(payload_out.size(), P_SPAM);
+	socket_ptr->send(std_data_out);
+	socket_ptr->send(payload);
+	// socket_ptr->send(escape_vector(std_data, NET_PROTO_ESCAPE));
+	// socket_ptr->send(escape_vector(payload, NET_PROTO_ESCAPE));
 	P_V(std_data.size(), P_SPAM);
 	P_V(payload.size(), P_SPAM);
 }

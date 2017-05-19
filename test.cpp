@@ -219,25 +219,30 @@ static void test_id_transport_print_exp(std::vector<uint8_t> exp){
  */
 
 static void test_id_transport(){
-	// not defined behavior at all
-	settings::set_setting("export_data", "true");
-	net_proto_peer_t *tmp =
-		new net_proto_peer_t;
-	tmp->id.noexp_all_data();
-	tmp->set_net_ip("127.0.0.1", 58486);
-	const std::vector<uint8_t> exp =
-		tmp->id.export_data(ID_DATA_NOEXP | ID_DATA_NONET,
-				    ID_EXTRA_COMPRESS | ID_EXTRA_ENCRYPT);
-	//test_id_transport_print_exp(exp);
-	net_proto_peer_t *tmp_2 =
-		new net_proto_peer_t;
-	tmp_2->id.noexp_all_data();
-	tmp_2->id.import_data(exp);
-	// P_V_S(convert::array::id::to_hex(tmp->id.get_id()), P_NOTE);
-	// P_V_S(convert::array::id::to_hex(tmp_2->id.get_id()), P_NOTE);
-	// P_V(tmp_2->get_net_port(), P_NOTE);
-	// P_V_S(tmp_2->get_net_ip_str(), P_NOTE);
-	running = false;
+	wallet_set_t *wallet_set_ptr =
+		new wallet_set_t;
+	wallet_set_ptr->id.noexp_all_data();
+	// noexp is overridden in the export function parameters
+	std::string totally_legit_bitcoin_wallet_please_give_me_money =
+		"13dfmkk84rXyHoiZQmuYfTxGYykug1mDEZ";
+	wallet_set_ptr->add_wallet(
+		std::vector<uint8_t>({'B', 'T', 'C'}),
+		std::vector<uint8_t>(
+			(uint8_t*)&(totally_legit_bitcoin_wallet_please_give_me_money[0]),
+			(uint8_t*)&(totally_legit_bitcoin_wallet_please_give_me_money[0])+
+			totally_legit_bitcoin_wallet_please_give_me_money.size()));
+	std::vector<uint8_t> payload =
+		wallet_set_ptr->id.export_data(
+			ID_DATA_NOEXP,
+			ID_EXTRA_COMPRESS | ID_EXTRA_ENCRYPT);
+	id_api::destroy(wallet_set_ptr->id.get_id());
+	wallet_set_ptr = nullptr;
+	wallet_set_ptr =
+		PTR_DATA(id_api::array::add_data(payload),
+			 wallet_set_t);
+	if(wallet_set_ptr == nullptr){
+		print("id transport failed", P_ERR);
+	}
 }
 
 /*
@@ -260,7 +265,7 @@ static void test_nbo_transport(){
 			// P_V_C(test[i], P_WARN);
 			// P_V_C(test_2[i], P_WARN);
 		}
-		print("it doesn't work", P_ERR);
+		print("Network byte order functions failed (embarassing, I know)", P_ERR);
 	}
 	running = false;
 }
@@ -309,32 +314,26 @@ static void test_rsa_key_gen(){
 }
 
 static void test_rsa_encryption(){
-	//print("using an RSA key length of 4096", P_NOTE);
 	uint64_t key_len = 4096;
 	std::vector<uint8_t> test_data;
 	std::pair<id_t_, id_t_> rsa_key_pair =
 		rsa::gen_key_pair(key_len);
 	ID_NOEXP_NONET(rsa_key_pair.first);
 	ID_NOEXP_NONET(rsa_key_pair.second);
-	//print("generating RSA test data", P_NOTE);
 	for(uint64_t x = 0;x < 1024;x++){
 		test_data.push_back(
 			(uint8_t)true_rand(0, 255));
 	}
-	//print("encrypting RSA test data", P_NOTE);
 	std::vector<uint8_t> test_data_output =
 		encrypt_api::encrypt(
 			test_data,
 			rsa_key_pair.first);
-	//print("decrypting RSA test data", P_NOTE);
 	test_data_output =
 		encrypt_api::decrypt(
 			test_data_output,
 			rsa_key_pair.second);
-	if(test_data == test_data_output){
-		//print("it worked with " + std::to_string((long double)test_data.size()/(1024.0*1024.0)) + " MB", P_NOTE);
-	}else{
-		print("FAILED", P_ERR);
+	if(test_data != test_data_output){
+		print("RSA encryption test failed", P_ERR);
 	}
 }
 
@@ -345,9 +344,8 @@ static void test_aes(){
 		   aes::encrypt(
 			   data, key),
 		   key) != data){
-		print("it does not work", P_CRIT);
+		print("AES encryption doesn't work", P_ERR);
 	}
-		
 }
 
 /*
@@ -447,35 +445,33 @@ static void benchmark_encryption(std::string method){
 }
 
 static void test_escape_string(){
-	for(uint64_t c = 0;c < 1024;c++){
-		const char escape_char = 0xFF;
-		// doesn't stop, shouldn't make it to Git tree
-		std::vector<std::vector<uint8_t> > unescaped;
-		std::vector<uint8_t> raw =
-			true_rand_byte_vector(
-				true_rand(1, 65536));
-		unescaped.push_back(
-			raw);
-		std::vector<uint8_t> escaped_data =
-			escape_vector(
-				raw,
-				escape_char);
-		std::pair<std::vector<std::vector<uint8_t> >, std::vector<uint8_t> > deconstructed =
-			unescape_all_vectors(
-				escaped_data,
-				escape_char);
-		P_V(deconstructed.first.size(), P_NOTE);
-		P_V(deconstructed.second.size(), P_NOTE);
-		if(deconstructed.first != unescaped){
-			if(deconstructed.first.size() != unescaped.size()){
-				P_V(deconstructed.first.size(), P_SPAM);
-				P_V(unescaped.size(), P_SPAM);
-				print("sizes of escaped vectors don't match", P_ERR);
-			}
-			for(uint64_t i = 0;i < deconstructed.first.size();i++){
-				P_V(deconstructed.first[i].size(), P_SPAM);
-				P_V(unescaped[i].size(), P_SPAM);
-			}
+	const char escape_char = 0xFF;
+	// doesn't stop, shouldn't make it to Git tree
+	std::vector<std::vector<uint8_t> > unescaped;
+	std::vector<uint8_t> raw =
+		true_rand_byte_vector(
+			true_rand(1, 65536));
+	unescaped.push_back(
+		raw);
+	std::vector<uint8_t> escaped_data =
+		escape_vector(
+			raw,
+			escape_char);
+	std::pair<std::vector<std::vector<uint8_t> >, std::vector<uint8_t> > deconstructed =
+		unescape_all_vectors(
+			escaped_data,
+			escape_char);
+	P_V(deconstructed.first.size(), P_NOTE);
+	P_V(deconstructed.second.size(), P_NOTE);
+	if(deconstructed.first != unescaped){
+		if(deconstructed.first.size() != unescaped.size()){
+			P_V(deconstructed.first.size(), P_SPAM);
+			P_V(unescaped.size(), P_SPAM);
+			print("escape vector test failed (mis-matched sizes)", P_ERR);
+		}
+		for(uint64_t i = 0;i < deconstructed.first.size();i++){
+			P_V(deconstructed.first[i].size(), P_SPAM);
+			P_V(unescaped[i].size(), P_SPAM);
 		}
 	}
 }
@@ -519,7 +515,7 @@ static void test_id_set_compression(){
 				P_V_S(convert::array::id::to_hex(id_set_new[i]), P_NOTE);
 			}
 		}
-		print("ERROR, COULDN'T PROPERLY DECOMPRESS", P_ERR);
+		print("id_set compression failed (not matching)", P_ERR);
 	}
 	running = false;
 }
@@ -592,43 +588,30 @@ void test_net_proto_socket_transcoding(){
 	socket_vector[0].second->connect();
 	// accept incoming
 	TCPsocket new_socket = nullptr;
-	print("waiting for connection to myself for net_proto_socket_t", P_NOTE);
 	while((new_socket = SDLNet_TCP_Accept(intermediate_socket->get_tcp_socket())) == nullptr){
 		sleep_ms(1);
 	}
-	print("connection established", P_NOTE);
 	socket_vector[1].second->set_tcp_socket(new_socket);
-
-	for(uint64_t i = 0;i < 1024;i++){
-		/*
-		  Right now, the proto socket directly loads all data coming
-		  in from the socket directly into memory, and from there the
-		  internal memory management based on statistics used will
-		  take care of it. Since it makes no sense to change that
-		  right now, and since we don't have spam filters installed
-		  yet, we can create valid data, set it as unexportable, destroy
-		  it, and push the generated string down the socket
-		 */
-		wallet_set_t *wallet_set_ptr =
-			new wallet_set_t;
-		std::string totally_legit_bitcoin_wallet_please_give_me_money =
-			"13dfmkk84rXyHoiZQmuYfTxGYykug1mDEZ";
-		wallet_set_ptr->add_wallet(
-			std::vector<uint8_t>({'B', 'T', 'C'}),
-			std::vector<uint8_t>(
-				(uint8_t*)&(totally_legit_bitcoin_wallet_please_give_me_money[0]),
-				(uint8_t*)&(totally_legit_bitcoin_wallet_please_give_me_money[0])+
-				totally_legit_bitcoin_wallet_please_give_me_money.size()));
-		socket_vector[0].first->send_id(wallet_set_ptr->id.get_id());
-		// checks for having it are done on read, not send, we're fine
-		const id_t_ old_id = wallet_set_ptr->id.get_id();
-		id_api::destroy(old_id);
-		wallet_set_ptr = nullptr;
-		socket_vector[1].first->update();
-		if(PTR_ID(old_id, wallet_set_t) != nullptr){
-			print("WE DID IT GUYS", P_ERR);
-			// critical success
-		}
+	// load, export, delete, send, reload
+	wallet_set_t *wallet_set_ptr =
+		new wallet_set_t;
+	std::string totally_legit_bitcoin_wallet_please_give_me_money =
+		"13dfmkk84rXyHoiZQmuYfTxGYykug1mDEZ";
+	wallet_set_ptr->add_wallet(
+		std::vector<uint8_t>({'B', 'T', 'C'}),
+		std::vector<uint8_t>(
+			(uint8_t*)&(totally_legit_bitcoin_wallet_please_give_me_money[0]),
+			(uint8_t*)&(totally_legit_bitcoin_wallet_please_give_me_money[0])+
+			totally_legit_bitcoin_wallet_please_give_me_money.size()));
+	socket_vector[0].first->send_id(wallet_set_ptr->id.get_id());
+	// checks for having it are done on read, not send, we're fine
+	const id_t_ old_id = wallet_set_ptr->id.get_id();
+	id_api::destroy(old_id);
+	wallet_set_ptr = nullptr;
+	socket_vector[1].first->update();
+	if(PTR_ID(old_id, ) != nullptr){
+		print("WE DID IT GUYS", P_ERR);
+		// critical success
 	}
 }
 
@@ -642,12 +625,14 @@ void test_nc(){
 }
 
 /*
-  Ran with --run_tests
+  Ran with --run_tests (enabled by default)
  */
 
 /*
   Might be able to multithread (?)
  */
+
+#define RUN_TEST(test) try{test();}catch(...){print((std::string)(#test) + " failed", P_ERR);throw std::runtime_error("failed test");}
 
 void test(){
 	test_math_number_set();

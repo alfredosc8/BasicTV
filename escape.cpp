@@ -63,28 +63,30 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t> > unescape_vector(
 		     vector.begin()+4);
 	escaped_length = NBO_32(escaped_length);
 	// P_V(escaped_length, P_SPAM);
+	std::vector<uint8_t> payload;
 	if(escaped_length > vector.size()){
 		// P_V_B(escaped_length, P_NOTE);
 		// P_V_B(vector.size(), P_NOTE);
-		print("escaped_length is longer than actual data, not parsing", P_ERR);
-	}
-	std::vector<uint8_t> payload(
-		vector.begin(),
-		vector.begin()+escaped_length);
-	for(uint64_t i = 0;i < payload.size();i++){
-		/*
-		  we can safely assume that escape chars
-		  exist in pairs because of pos_of_next_true_escape
-		*/
-		if(payload[i] == escape_char){
-			payload.erase(payload.begin()+i);
-			i--;
+		print("escaped_length is longer than actual data, not parsing", P_NOTE);
+	}else{
+		payload = std::vector<uint8_t>(
+			vector.begin(),
+			vector.begin()+escaped_length);
+		for(uint64_t i = 0;i < payload.size();i++){
+			/*
+			  we can safely assume that escape chars
+			  exist in pairs because of pos_of_next_true_escape
+			*/
+			if(payload[i] == escape_char){
+				payload.erase(payload.begin()+i);
+				i--;
+			}
 		}
 	}
 	return std::make_pair(
 		payload,
 		std::vector<uint8_t>(
-			vector.begin()+escaped_length,
+			vector.begin()+payload.size(),
 			vector.end()));
 }
 
