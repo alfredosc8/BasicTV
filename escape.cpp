@@ -53,7 +53,7 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t> > unescape_vector(
 	uint8_t escape_char){
 	std::pair<std::vector<uint8_t>, std::vector<uint8_t> > retval;
 	if(vector.size() <= 5){ // escape char + 32-bit length
-		print("vector is too small to contain metadata", P_NOTE);
+		//print("vector is too small to contain metadata", P_SPAM);
 		return std::make_pair(
 			std::vector<uint8_t>({}),
 			vector);

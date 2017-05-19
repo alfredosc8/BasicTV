@@ -197,7 +197,6 @@ void net_proto_socket_t::load_blocks(){
 	  data (expandable to say giant tape libraries, CD/DVD/BD archvies,
 	  in memory, on disk, etc). However, that is for another day.
 	 */
-	P_V(block_buffer.size(), P_SPAM);
 	for(uint64_t i = 0;i < block_buffer.size();i++){
 		if(block_buffer[i].first.size() != 0 &&
 		   block_buffer[i].second.size() != 0){

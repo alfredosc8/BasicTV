@@ -51,6 +51,11 @@
 
   Any test that requires more complicated code (coordination with another
   running instance, user input, etc.) is prefixed with test_nc (non-compliant)
+
+  ALSO, IF A TEST HAS SHORTCOMINGS, MAKE NOTE OF THEM AT THE TOP
+
+  Keep each test as simple as possible, it is impossible to debug a problem when
+  the test is faulting...
 */
 
 /*
@@ -650,9 +655,7 @@ void test_net_proto_socket_transcoding(){
 		sleep_ms(1000);
 		socket_vector[1].first->update();
 	}
-	if(PTR_ID(wallet_set_id, ) != nullptr){
-		print("WE DID IT GUYS", P_ERR);
-	}else{
+	if(PTR_ID(wallet_set_id, ) == nullptr){
 		print("net_proto_socket transcoding failed", P_ERR);
 	}
 }
