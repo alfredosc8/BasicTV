@@ -40,10 +40,10 @@ static void net_proto_routine_request_fill(std::vector<std::string> type_vector,
  			type_request->update_type(
  				convert::type::to(
  					type_vector[i]));
- 			type_request->set_peer_id(
+ 			type_request->set_receiver_peer_id(
  				net_proto::peer::get_self_as_peer());
- 			// net_request_ts with no bound sockets are assumed to
- 			// be outbound, which will always be true
+			type_request->set_sender_peer_id(
+				net_proto::peer::random_peer_id());
  		}
 		*last_request_time_micro_s = time_micro_s;
  	}

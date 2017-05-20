@@ -46,7 +46,9 @@ void net_proto::request::add_id(std::vector<id_t_> id){
 void net_proto::request::add_id_linked_list(id_t_ id, uint32_t length){
 	net_proto_linked_list_request_t *linked_list_request_ptr =
 		new net_proto_linked_list_request_t;
-	linked_list_request_ptr->set_peer_id(ID_BLANK_ID);
+	// let's assume a sender_peer_id of ID_BLANK_ID means we have no idea
+	// that should work long enough, hopefully
+	linked_list_request_ptr->set_sender_peer_id(ID_BLANK_ID);
 	linked_list_request_ptr->set_curr_id(id, length);
 }
 

@@ -59,9 +59,15 @@ static std::vector<id_t_> remove_ids_from_vector(std::vector<id_t_> first,
 	return first;
 }
 
+/*
+  Fill request functions are different enough to make generics and abstractions
+  too complicated.
+ */
+
 static void net_proto_fill_type_requests(){
 	std::vector<id_t_> net_proto_type_requests =
 	 	id_api::cache::get("net_proto_type_request_t");
+	P_V(net_proto_type_requests.size(), P_SPAM);
 	for(uint64_t i = 0;i < net_proto_type_requests.size();i++){
 	 	net_proto_type_request_t *proto_type_request =
 	 		PTR_DATA(net_proto_type_requests[i],
@@ -69,50 +75,27 @@ static void net_proto_fill_type_requests(){
 	 	if(proto_type_request == nullptr){
 	 		continue;
 	 	}
-		const id_t_ peer_id = proto_type_request->get_peer_id();
-	 	if(peer_id != net_proto::peer::get_self_as_peer()){
-			const std::vector<id_t_> raw_id_vector =
-				proto_type_request->get_ids();
-			const std::vector<id_t_> type_vector =
-				id_api::cache::get(
-					proto_type_request->get_type());
-			try{
-				net_proto_send_logic(
-					remove_ids_from_vector(
-						type_vector,
-						raw_id_vector),
-					peer_id);
-				delete proto_type_request;
-				proto_type_request = nullptr;
-			}catch(...){}
-	 	}else{
-			// created locally, distribute out randomly
-			// TODO: assign a peer to send out to in type itself
-			id_t_ proto_peer_id =
-				net_proto::peer::random_peer_id();
-			if(proto_peer_id == ID_BLANK_ID){
-				// completely isolated from network
-				continue;
-			}
-			uint32_t try_count = 0;
-			net_proto_socket_t *proto_socket_ptr = nullptr;
-			do{
-				proto_socket_ptr = PTR_DATA(
-					net_proto::socket::optimal_proto_socket_of_peer(
-						proto_peer_id),
-					net_proto_socket_t);
-				proto_peer_id =
-					net_proto::peer::random_peer_id();
-				try_count++;
-			}while(proto_socket_ptr == nullptr && try_count < 8);
-			if(proto_socket_ptr == nullptr){
-				// no open socket to any peer
-				continue;
-			}
-			proto_socket_ptr->send_id(
-				net_proto_type_requests[i]);
-			delete proto_type_request;
+		const id_t_ receiver_peer_id =
+			proto_type_request->get_receiver_peer_id();
+	 	if(receiver_peer_id == net_proto::peer::get_self_as_peer()){
+			print("type request has me sending a request to myself, weird", P_WARN);
+			continue;
+		}
+		const std::vector<id_t_> raw_id_vector =
+			proto_type_request->get_ids();
+		const std::vector<id_t_> type_vector =
+			id_api::cache::get(
+				proto_type_request->get_type());
+		try{
+			net_proto_send_logic(
+				remove_ids_from_vector(
+					type_vector,
+					raw_id_vector),
+				receiver_peer_id);
+			id_api::destroy(net_proto_type_requests[i]);
 			proto_type_request = nullptr;
+		}catch(...){
+			print("couldn't send type request", P_ERR);
 		}
 	}
 }
@@ -128,16 +111,17 @@ static void net_proto_fill_id_requests(){
 	 	if(proto_id_request == nullptr){
 	 		continue;
 	 	}
-		const id_t_ peer_id = proto_id_request->get_peer_id();
-	 	if(peer_id != net_proto::peer::get_self_as_peer()){
-			const std::vector<id_t_> id_vector =
-				proto_id_request->get_ids();
-			try{
-				net_proto_send_logic(
-					id_vector, peer_id);
-				id_api::destroy(net_proto_id_requests[i]);
-			}catch(...){}
-	 	}
+		const id_t_ peer_id = proto_id_request->get_sender_peer_id();
+	 	if(peer_id == net_proto::peer::get_self_as_peer()){
+			print("id request has me sending a request to myself, weird", P_WARN);
+		}
+		const std::vector<id_t_> id_vector =
+			proto_id_request->get_ids();
+		try{
+			net_proto_send_logic(
+				id_vector, peer_id);
+			id_api::destroy(net_proto_id_requests[i]);
+		}catch(...){}
 	}
 }
 
@@ -151,7 +135,7 @@ static void net_proto_fill_linked_list_requests(){
 	 	if(proto_linked_list_request == nullptr){
 	 		continue;
 	 	}
-		const id_t_ peer_id = proto_linked_list_request->get_peer_id();
+		const id_t_ peer_id = proto_linked_list_request->get_sender_peer_id();
 	 	if(peer_id != net_proto::peer::get_self_as_peer()){
 			const id_t_ curr_id =
 				proto_linked_list_request->get_curr_id();
@@ -168,15 +152,98 @@ static void net_proto_fill_linked_list_requests(){
 
 /*
   TODO: better implement networking stats before this is written
+
+  TODO: actually write this stuff
+
+  TODO: check for best route for data
  */
 
+static bool net_proto_send_id_to_peer(
+	id_t_ payload_id,
+	id_t_ peer_id){
+	bool sent = false;
+	std::vector<id_t_> all_sockets =
+		id_api::cache::get(
+			TYPE_NET_PROTO_SOCKET_T);
+	for(uint64_t i = 0;i < all_sockets.size();i++){
+		try{
+			net_proto_socket_t *proto_socket_ptr =
+				PTR_DATA(all_sockets[i],
+					 net_proto_socket_t);
+			if(proto_socket_ptr == nullptr){
+				print("proto_socket_ptr is a nullptr", P_NOTE);
+				continue;
+			}
+			if(proto_socket_ptr->get_peer_id() == peer_id){
+				print("peer socket already exists, sending over first found", P_NOTE);
+				proto_socket_ptr->send_id(
+					payload_id);
+				sent = true;
+				break;
+			}
+		}catch(...){} // search for another socket I guess...
+	}
+	if(sent == false){
+		print("no valid proto socket found, requesting new socket for peer", P_NOTE);
+		net_proto::socket::connect(
+			peer_id, 1); // one socket currently
+		/*
+		  Connections aren't made until later on in the code, so just
+		  forget about sending any data this iteration, not to mention
+		  latencies and holepunching jargon.
+		 */
+	}
+	return sent;
+}
+
+/*
+  General rule of thumb is the code can be as tacky as it can be SO LONG AS
+  all of the tacky code can be represented on the screen, in one file, at one
+  time.
+ */
+
+template <typename T>
+void net_proto_handle_request(T* request_ptr){
+	if(request_ptr == nullptr){
+		print("request_ptr is a nullptr", P_NOTE);
+		return;
+	}
+	/*
+	  Until I can hammer out formal responses and the sort, let's assume
+	  that 100 percent of the requests are processed and no reply means
+	  they don't have it
+	 */
+	if(request_ptr->get_request_time() == 0 &&
+	   net_proto_send_id_to_peer(
+		   request_ptr->id.get_id(),
+		   request_ptr->get_sender_peer_id()) == false){
+		request_ptr->update_request_time();
+	}else{
+		print("couldn't send request to peer, probably no available socket", P_SPAM);
+	}
+
+}
+
+#define NET_PROTO_HANDLE_REQUEST_HANDLER(type)	\
+	std::vector<id_t_> request_vector =	\
+		id_api::cache::get(		\
+			#type);					\
+	for(uint64_t i = 0;i < request_vector.size();i++){	\
+		net_proto_handle_request(			\
+			PTR_DATA(request_vector[i],		\
+				 type));			\
+	}							\
+	
 static void net_proto_send_type_requests(){
+	NET_PROTO_HANDLE_REQUEST_HANDLER(net_proto_type_request_t);
 }
 
 static void net_proto_send_id_requests(){
+	NET_PROTO_HANDLE_REQUEST_HANDLER(net_proto_id_request_t);
 }
 
 static void net_proto_send_linked_list_requests(){
+	NET_PROTO_HANDLE_REQUEST_HANDLER(net_proto_linked_list_request_t);
 }
 
 void net_proto_handle_outbound_requests(){

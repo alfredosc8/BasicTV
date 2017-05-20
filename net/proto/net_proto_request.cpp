@@ -8,16 +8,25 @@ net_proto_request_bare_t::net_proto_request_bare_t(){}
 net_proto_request_bare_t::~net_proto_request_bare_t(){}
 
 void net_proto_request_bare_t::list_bare_virtual_data(data_id_t *id){
-	id->add_data_id(&peer_id, 1);
+	id->add_data_id(&sender_peer_id, 1);
+	id->add_data_id(&receiver_peer_id, 1);
 	id->add_data_raw((uint8_t*)&request_time, 8);
 }
 
-id_t_ net_proto_request_bare_t::get_peer_id(){
-	return peer_id;
+id_t_ net_proto_request_bare_t::get_sender_peer_id(){
+	return sender_peer_id;
 }
 
-void net_proto_request_bare_t::set_peer_id(id_t_ peer_id_){
-	peer_id = peer_id_;
+void net_proto_request_bare_t::set_sender_peer_id(id_t_ sender_peer_id_){
+	sender_peer_id = sender_peer_id_;
+}
+
+id_t_ net_proto_request_bare_t::get_receiver_peer_id(){
+	return receiver_peer_id;
+}
+
+void net_proto_request_bare_t::set_receiver_peer_id(id_t_ receiver_peer_id_){
+	receiver_peer_id = receiver_peer_id_;
 }
 
 void net_proto_request_bare_t::update_request_time(){

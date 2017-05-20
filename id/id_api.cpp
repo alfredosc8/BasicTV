@@ -45,33 +45,26 @@ static data_id_t *id_find(id_t_ id){
   stats library, since speed is more important than actually having the data)
  */
 
+#define LOOKUP_AND_RETURN()			\
+	retval = id_find(id);			\
+	if(retval != nullptr){			\
+		return retval;			\
+	}					\
+
 data_id_t *id_api::array::ptr_id(id_t_ id,
 				 std::string type,
 				 uint8_t flags){
 	if(id == ID_BLANK_ID){
 		return nullptr;
 	}
-	data_id_t *retval = id_find(id);
-	if(retval == nullptr){
-		id_api::cache::load_id(id);
-		retval = id_find(id);
-		if(retval == nullptr){
-			if(flags & ID_LOOKUP_FAST){
-				// TODO: add more levels?
-				print("fast lookup, not querying disk", P_NOTE);
-				return nullptr;
-			}
-			print("attempting import from disk", P_SPAM);
-			try{
-				id_disk_api::load(id);
-			}catch(...){
-				print("querying network for data", P_SPAM);
-				net_proto::request::add_id(id);
-			}
-		}
-	}else if(retval->get_type() != type && type != ""){
-		print("type-id mismatch", P_SPAM);
-		return nullptr;
+	data_id_t *retval = nullptr;
+	LOOKUP_AND_RETURN();
+	id_api::cache::load_id(id);
+	LOOKUP_AND_RETURN();
+	id_disk_api::load(id);
+	LOOKUP_AND_RETURN();
+	if(!(flags & ID_LOOKUP_FAST)){
+		net_proto::request::add_id(id);
 	}
 	return retval;
 }
@@ -132,6 +125,10 @@ id_t_ id_api::array::add_data(std::vector<uint8_t> data_, bool raw){
 		print("can't import id and type from raw data", P_ERR);
 		throw e;
 	}
+	const id_t_ pub_key_id =
+		encrypt_api::search::pub_key_from_hash(
+			get_id_hash(
+				id));
 	std::vector<id_t_> tmp_type_cache =
 		id_api::cache::get(type);
 	for(uint64_t i = 0;i < tmp_type_cache.size();i++){

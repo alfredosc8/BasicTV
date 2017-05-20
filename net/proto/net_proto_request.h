@@ -7,16 +7,26 @@
   automatically sent. 
  */
 
+/*
+  For multicasting requests, just create new requests for simplicity.
+  On arrival, it can remove or append the obsolete ones
+ */
+
 struct net_proto_request_bare_t{
 private:
 	uint64_t request_time = 0;
-	id_t_ peer_id = ID_BLANK_ID;
+	id_t_ sender_peer_id = ID_BLANK_ID;
+	id_t_ receiver_peer_id = ID_BLANK_ID;
 public:
 	net_proto_request_bare_t();
 	~net_proto_request_bare_t();
-	void set_peer_id(id_t_);
-	id_t_ get_peer_id();
+	void set_sender_peer_id(id_t_);
+	id_t_ get_sender_peer_id();
+	void set_receiver_peer_id(id_t_);
+	id_t_ get_receiver_peer_id();
+	
 	void update_request_time();
+	uint64_t get_request_time(){return request_time;}
 	void list_bare_virtual_data(data_id_t *id);
 };
 

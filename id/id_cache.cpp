@@ -80,7 +80,6 @@ void id_api::cache::add_data(std::vector<uint8_t> data){
 void id_api::cache::load_id(id_t_ id){
 	// we can assume we only have one ID safely (only harm is not
 	// reading data, it would be self-destructive to recreate UUID)
-	std::raise(SIGINT);
 	for(uint64_t i = 0;i < cache_state.size();i++){
 		const id_t_ cache_state_id =
 			id_api::raw::fetch_id(cache_state[i]);
