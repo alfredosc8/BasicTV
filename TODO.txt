@@ -28,3 +28,22 @@ NETWORKING
    d. Sum all instantaneous download speeds on a proxy, reorganize if the sums are constant and they are flat
    e. Create a nice breakdown of nework growth as a function of all data storage, not only peers (spoofing peers is a problem for multi-proxy setups)
 
+
+General Improvement
+1. Originally, the trans_i was used to preserve data between different versions of the software (i.e. backwards compatiability).
+   However, exported space can be preserved if we define all of one type in an array and refer to them as elements, instead of independent
+   variables. This would break old code, but there is nothing preserved at this stage in development.
+2. Moving code over to templates and generics could help wonderfully
+3. Tacky and hacky code is allowed, and is encouraged if it makes my life easier, SO LONG AS all of the tacky references can fit on my
+   screen at any one time, in one file, back to back.
+4. I would rather live with an extra 100 bytes in storage than have to deal with, maintain, and work upon tacky garbage I did in version one, since
+   optimizations can come about.
+
+   For example, if I have two connections to the internet, one high upload and low download, and one high download
+   and low upload, they have different network peers associated with them. In the older model of network requests, all requests would be sent to
+   the peer associated with the socket. However, since there are seperate high upload and high download connections, it would make the most sense
+   to send the request (via a multicast, maybe) through the high upload network peer to the other peers on the network, and the receivers of the
+   network request check the hashes of the two network peers. If they match, then allow it as normal. Although this use case is limited, such
+   shortcuts and optimizations could lay a roadblock for future strikes of genius.
+5. There are far too few tests being ran, and the tests that are being ran don't fit any basic style guidelines or have any serious documentation
+   whatsoever. I want to fix this, since a majority of my problems come from false positives or outright broken tests.
