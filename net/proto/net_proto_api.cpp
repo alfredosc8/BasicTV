@@ -13,6 +13,31 @@ static std::vector<id_t_> id_request_buffer;
 static std::vector<std::pair<id_t_, int64_t> > linked_list_request_buffer;
 static std::vector<type_t_ > type_request_buffer; // ?
 
+static id_t_ net_proto_preferable_id_from_hash(
+	std::array<uint8_t, 32> hash){
+	id_t_ matching_hash_peer_id =
+		ID_BLANK_ID;
+	std::vector<id_t_> peer_vector =
+		id_api::cache::get(
+			TYPE_NET_PROTO_PEER_T);
+	for(uint64_t i = 0;i < peer_vector.size();i++){
+		if(unlikely(get_id_hash(matching_hash_peer_id) ==
+			    get_id_hash(peer_vector[i]))){
+			matching_hash_peer_id =
+				peer_vector[i];
+		}
+	}
+	if(matching_hash_peer_id == ID_BLANK_ID){
+		matching_hash_peer_id =
+			net_proto::peer::random_peer_id();
+	}
+	if(matching_hash_peer_id == ID_BLANK_ID){
+		print("no connected peers to facilitate request", P_SPAM);
+	}
+	return matching_hash_peer_id;
+}
+
+
 void net_proto::request::add_id(id_t_ id){
 	// could probably speed this up
 	for(uint64_t i = 0;i < id_request_buffer.size();i++){
@@ -43,13 +68,26 @@ void net_proto::request::add_id(std::vector<id_t_> id){
 	}
 }
 
-void net_proto::request::add_id_linked_list(id_t_ id, uint32_t length){
-	net_proto_linked_list_request_t *linked_list_request_ptr =
-		new net_proto_linked_list_request_t;
-	// let's assume a sender_peer_id of ID_BLANK_ID means we have no idea
-	// that should work long enough, hopefully
-	linked_list_request_ptr->set_sender_peer_id(ID_BLANK_ID);
-	linked_list_request_ptr->set_curr_id(id, length);
+/*
+  Signed-ness is important for dictating direction
+ */
+
+void net_proto::request::add_id_linked_list(id_t_ id, int64_t length){
+	for(uint64_t i = 0;i < linked_list_request_buffer.size();i++){
+		if(unlikely(get_id_hash(linked_list_request_buffer[i].first) ==
+			    get_id_hash(id))){
+			std::pair<id_t_, int64_t> request_entry =
+				std::make_pair(
+					id, length);
+			linked_list_request_buffer.insert(
+				linked_list_request_buffer.begin()+i,
+				request_entry);
+			return;
+		}
+	}
+	linked_list_request_buffer.push_back(
+		std::make_pair(
+			id, length));
 }
 
 void net_proto::request::del_id(id_t_ id){
@@ -190,12 +228,14 @@ void net_proto::socket::connect(id_t_ peer_id_, uint32_t min){
 
 void net_proto::request::add_fast_routine_type(std::string type){
 	routine_request_fast_vector.push_back(
-		type);
+		convert::type::to(
+			type));
 }
 
 void net_proto::request::add_slow_routine_type(std::string type){
 	routine_request_slow_vector.push_back(
-		type);
+		convert::type::to(
+			type));
 }
 
 void net_proto::request::del_fast_routine_type(std::string type){
@@ -203,7 +243,7 @@ void net_proto::request::del_fast_routine_type(std::string type){
 		std::find(
 			routine_request_fast_vector.begin(),
 			routine_request_fast_vector.end(),
-			type);
+			convert::type::to(type));
 	if(iterator != routine_request_fast_vector.end()){
 		routine_request_fast_vector.erase(
 			iterator);
@@ -215,7 +255,7 @@ void net_proto::request::del_slow_routine_type(std::string type){
 		std::find(
 			routine_request_slow_vector.begin(),
 			routine_request_slow_vector.end(),
-			type);
+			convert::type::to(type));
 	if(iterator != routine_request_slow_vector.end()){
 		routine_request_slow_vector.erase(
 			iterator);

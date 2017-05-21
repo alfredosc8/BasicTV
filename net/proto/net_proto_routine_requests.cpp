@@ -10,40 +10,46 @@ static uint64_t last_request_fast_time_micro_s = 0;
 static uint64_t last_request_slow_time_micro_s = 0;
 
 // Interdependent upon other nodes, has a higher priority
-std::vector<std::string> routine_request_fast_vector = {
-	"net_proto_con_req_t"
+std::vector<type_t_> routine_request_fast_vector = {
+	TYPE_NET_PROTO_CON_REQ_T
 };
 
-// Self-serving (most of the time), lower priority
-std::vector<std::string> routine_request_slow_vector = {
-	"tv_channel_t",
-	"net_proto_peer_t",
-	"encrypt_pub_key_t"
+std::vector<type_t_> routine_request_slow_vector = {
+	TYPE_TV_CHANNEL_T,
+	TYPE_NET_PROTO_PEER_T,
+	TYPE_ENCRYPT_PUB_KEY_T
 };
 
-static void net_proto_routine_request_fill(std::vector<std::string> type_vector,
+static void net_proto_routine_request_fill(std::vector<type_t_> type_vector,
 					   uint64_t request_interval_micro_s,
 					   uint64_t *last_request_time_micro_s){
 	const uint64_t time_micro_s =
 		get_time_microseconds();
 	if(time_micro_s-(*last_request_time_micro_s) > request_interval_micro_s){
-		print("sending routine type request to network", P_SPAM);
 		for(uint64_t i = 0;i < type_vector.size();i++){
-			std::vector<id_t_> id_vector =
-				id_api::cache::get(
-					type_vector[i]);
-			std::vector<uint64_t> mod_vector =
-				id_api::bulk_fetch::mod(
- 					id_vector);
- 			net_proto_type_request_t *type_request =
- 				new net_proto_type_request_t;
- 			type_request->update_type(
- 				convert::type::to(
- 					type_vector[i]));
- 			type_request->set_receiver_peer_id(
- 				net_proto::peer::get_self_as_peer());
-			type_request->set_sender_peer_id(
-				net_proto::peer::random_peer_id());
+			// all request names are in the perspective of the
+			// sender, not the receiver. This makes the receiver
+			// the person we send it to, and the sender ourselves.
+			id_t_ recv_peer_id =
+				net_proto::peer::random_peer_id();
+			if(recv_peer_id == ID_BLANK_ID){
+				print("we have no other peer information whatsoever, not creating any network requests", P_NOTE);
+			}else{
+				std::vector<id_t_> id_vector =
+					id_api::cache::get(
+						type_vector[i]);
+				std::vector<uint64_t> mod_vector =
+					id_api::bulk_fetch::mod(
+						id_vector);
+				net_proto_type_request_t *type_request =
+					new net_proto_type_request_t;
+				type_request->update_type(
+						type_vector[i]);
+				type_request->set_receiver_peer_id(
+					net_proto::peer::random_peer_id());
+				type_request->set_sender_peer_id(
+					net_proto::peer::get_self_as_peer());
+			}
  		}
 		*last_request_time_micro_s = time_micro_s;
  	}

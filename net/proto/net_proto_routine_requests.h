@@ -4,6 +4,8 @@
 #include "vector"
 #include "string"
 
+#include "../../id/id.h" // type_t_
+
 /*
   This is for handling routine requests that ought to be made as an entire
   data types.
@@ -29,6 +31,6 @@ extern void net_proto_routine_requests_loop();
 
 // only used by net_proto API
 
-extern std::vector<std::string> routine_request_fast_vector;
-extern std::vector<std::string> routine_request_slow_vector;
+extern std::vector<type_t_> routine_request_fast_vector;
+extern std::vector<type_t_> routine_request_slow_vector;
 #endif

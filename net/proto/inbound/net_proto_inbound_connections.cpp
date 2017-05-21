@@ -23,6 +23,15 @@ static void net_proto_accept_direct_connections(net_socket_t *incoming_conn){
 			new net_socket_t;
 		net_proto_socket_t *new_proto_socket =
 			new net_proto_socket_t;
+		net_proto_peer_t *fake_proto_peer_ptr =
+			new net_proto_peer_t;
+		IPaddress *ip_tmp =
+			SDLNet_TCP_GetPeerAddress(
+				tcp_socket);
+		fake_proto_peer_ptr->set_net_ip(
+			SDLNet_ResolveIP(ip_tmp),
+			NBO_16(ip_tmp->port)); // IPaddress is in NBO
+		// proto_peer_ptr should be upgraded
 		new_socket->set_tcp_socket(
 			tcp_socket);
 		new_proto_socket->set_socket_id(

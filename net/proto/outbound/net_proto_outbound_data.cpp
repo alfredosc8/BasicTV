@@ -13,6 +13,9 @@ static void net_proto_send_logic(std::vector<id_t_> id_vector,
 		PTR_DATA(net_proto_peer_id,
 			 net_proto_peer_t);
 	if(proto_peer_ptr == nullptr){
+		if(net_proto_peer_id == ID_BLANK_ID){
+			print("network peer ID is intentionally blank, this is probably my fault, sorry...", P_WARN);
+		}
 		print("can't send request to an invalid network peer", P_ERR);
 	}
 	// TODO: effectively send across multiple?
@@ -67,7 +70,6 @@ static std::vector<id_t_> remove_ids_from_vector(std::vector<id_t_> first,
 static void net_proto_fill_type_requests(){
 	std::vector<id_t_> net_proto_type_requests =
 	 	id_api::cache::get("net_proto_type_request_t");
-	P_V(net_proto_type_requests.size(), P_SPAM);
 	for(uint64_t i = 0;i < net_proto_type_requests.size();i++){
 	 	net_proto_type_request_t *proto_type_request =
 	 		PTR_DATA(net_proto_type_requests[i],
@@ -75,10 +77,16 @@ static void net_proto_fill_type_requests(){
 	 	if(proto_type_request == nullptr){
 	 		continue;
 	 	}
-		const id_t_ receiver_peer_id =
+		const id_t_ target_peer_id =
+			proto_type_request->get_sender_peer_id();
+	 	if(target_peer_id == net_proto::peer::get_self_as_peer()){
+			print("request is not meant for me", P_SPAM);
+			continue;
+		} // check if we are sending it to ourselves
+		const id_t_ origin_peer_id =
 			proto_type_request->get_receiver_peer_id();
-	 	if(receiver_peer_id == net_proto::peer::get_self_as_peer()){
-			print("type request has me sending a request to myself, weird", P_WARN);
+		if(origin_peer_id != net_proto::peer::get_self_as_peer()){
+			print("request originates from me", P_SPAM);
 			continue;
 		}
 		const std::vector<id_t_> raw_id_vector =
@@ -86,16 +94,28 @@ static void net_proto_fill_type_requests(){
 		const std::vector<id_t_> type_vector =
 			id_api::cache::get(
 				proto_type_request->get_type());
-		try{
-			net_proto_send_logic(
-				remove_ids_from_vector(
-					type_vector,
-					raw_id_vector),
-				receiver_peer_id);
-			id_api::destroy(net_proto_type_requests[i]);
-			proto_type_request = nullptr;
-		}catch(...){
-			print("couldn't send type request", P_ERR);
+		const std::vector<id_t_> real_payload =
+			remove_ids_from_vector(
+				type_vector,
+				raw_id_vector);
+		P_V_S(convert::type::from(proto_type_request->get_type()), P_SPAM);
+		P_V(type_vector.size(), P_SPAM);
+		P_V(raw_id_vector.size(), P_SPAM);
+		P_V(real_payload.size(), P_SPAM);
+		if(real_payload.size() == 0){
+			print("we don't have any new data to send out, "
+			      "not sending anything (should probably have "
+			      "some sort of response for not finding it", P_SPAM);
+		}else{
+			try{
+				net_proto_send_logic(
+					real_payload,
+					target_peer_id);
+				id_api::destroy(net_proto_type_requests[i]);
+				proto_type_request = nullptr;
+			}catch(...){
+				print("couldn't send type request", P_ERR);
+			}
 		}
 	}
 }
@@ -165,6 +185,7 @@ static bool net_proto_send_id_to_peer(
 	std::vector<id_t_> all_sockets =
 		id_api::cache::get(
 			TYPE_NET_PROTO_SOCKET_T);
+	P_V(all_sockets.size(), P_SPAM);
 	for(uint64_t i = 0;i < all_sockets.size();i++){
 		try{
 			net_proto_socket_t *proto_socket_ptr =
@@ -173,7 +194,7 @@ static bool net_proto_send_id_to_peer(
 			if(proto_socket_ptr == nullptr){
 				print("proto_socket_ptr is a nullptr", P_NOTE);
 				continue;
-			}
+			}	
 			if(proto_socket_ptr->get_peer_id() == peer_id){
 				print("peer socket already exists, sending over first found", P_NOTE);
 				proto_socket_ptr->send_id(
@@ -213,7 +234,7 @@ void net_proto_handle_request(T* request_ptr){
 	  that 100 percent of the requests are processed and no reply means
 	  they don't have it
 	 */
-	if(request_ptr->get_request_time() == 0 &&
+	if(//request_ptr->get_request_time() == 0 &&
 	   net_proto_send_id_to_peer(
 		   request_ptr->id.get_id(),
 		   request_ptr->get_sender_peer_id()) == false){

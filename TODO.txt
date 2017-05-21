@@ -1,17 +1,20 @@
+TODO for BasicTV, no particular order of importance
+
+
 MATH
-1. Move over numbers code entirely
-2. Make a standardized unit converter/generator/extractor, based on the information given and some definition of what we want
+1. Make a standardized unit converter/generator/extractor, based on the information given and some definition of what we want
    a. That definition is probably sane local units in the settings.cfg file
-3. Allow for higher and lower precision than 64-bit (8-bytes and 4-bytes size is pretty wack)
+2. Allow for higher and lower precision than 64-bit (casting to uint64_t is pretty wack, 32-bit length is good)
 
 TV
 1. Audio compression (Opus)
 2. Video compression (VP9)
 3. Intuitive UI
 4. Finish webcam recording (not a priority)
+5. Decode online streams and re-encode into WebM
 
 NETWORKING
-1. Actually get peer connections working
+1. Finish network request handling
 2. Hoard as much data as possible
    a. Ping time from a ping program
    b. Ping time from time of request being sent to response
@@ -27,7 +30,7 @@ NETWORKING
    c. Find the probablility that a node has a given ID, based on linked list references and the hash
    d. Sum all instantaneous download speeds on a proxy, reorganize if the sums are constant and they are flat
    e. Create a nice breakdown of nework growth as a function of all data storage, not only peers (spoofing peers is a problem for multi-proxy setups)
-
+4. TCP and (possibly) UDP holepunching
 
 General Improvement
 1. Originally, the trans_i was used to preserve data between different versions of the software (i.e. backwards compatiability).
