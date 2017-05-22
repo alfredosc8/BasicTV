@@ -67,7 +67,7 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t> > unescape_vector(
 	       &(vector[1]), // escape char is first byte
 	       4);
 	escaped_length = NBO_32(escaped_length);
-	P_V(escaped_length, P_SPAM);
+	P_V(escaped_length, P_VAR);
 	std::vector<uint8_t> payload;
 	if(escaped_length <= vector.size()){
 		vector.erase(
@@ -89,8 +89,8 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t> > unescape_vector(
 			}
 		}
 	}
-	P_V(payload.size(), P_SPAM);
-	P_V(vector.size(), P_SPAM);
+	P_V(payload.size(), P_VAR);
+	P_V(vector.size(), P_VAR);
 	return std::make_pair(
 		payload, vector);
 }

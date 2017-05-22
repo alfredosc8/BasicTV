@@ -91,8 +91,8 @@ void id_api::cache::load_id(id_t_ id){
 			cache_state.erase(
 				cache_state.begin()+i);
 		}else{
-			P_V_S(convert::array::id::to_hex(cache_state_id), P_SPAM);
-			P_V_S(convert::array::id::to_hex(id), P_SPAM);
+			P_V_S(convert::array::id::to_hex(cache_state_id), P_VAR);
+			P_V_S(convert::array::id::to_hex(id), P_VAR);
 		}
 	}
 }

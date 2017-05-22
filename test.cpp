@@ -135,8 +135,8 @@ static void test_nc_socket_array(std::vector<std::pair<id_t_, id_t_> > socket_ar
 			PTR_DATA(socket_array[i].second,
 				 net_socket_t);
 		if(first == nullptr || second == nullptr){
-			P_V_S(convert::array::id::to_hex(socket_array[i].first), P_SPAM);
-			P_V_S(convert::array::id::to_hex(socket_array[i].second), P_SPAM);
+			P_V_S(convert::array::id::to_hex(socket_array[i].first), P_VAR);
+			P_V_S(convert::array::id::to_hex(socket_array[i].second), P_VAR);
 			print("SOCKETS STRUCTS ARE NULL", P_ERR);
 		}
 		first->send("aaaa");
@@ -234,9 +234,9 @@ static void test_max_tcp_sockets_local(){
 }
 
 static void test_id_transport_print_exp(std::vector<uint8_t> exp){
-	P_V(exp.size(), P_SPAM);
+	P_V(exp.size(), P_VAR);
 	for(uint64_t i = 0;i < exp.size();i++){
-		print(std::to_string(i) + "\t" + std::to_string((int)(exp[i])) + "\t" + std::string(1, exp[i]), P_SPAM);
+		print(std::to_string(i) + "\t" + std::to_string((int)(exp[i])) + "\t" + std::string(1, exp[i]), P_VAR);
 	}
 }
 
@@ -486,20 +486,20 @@ static void test_escape_string(){
 		escape_vector(
 			payload,
 			escape_char);
-	print("complete chunk size (unescaped): " + std::to_string(payload.size()), P_SPAM);
-	print("complete chunk size (escaped): "  + std::to_string(escaped_data.size()), P_SPAM);
+	print("complete chunk size (unescaped): " + std::to_string(payload.size()), P_VAR);
+	print("complete chunk size (escaped): "  + std::to_string(escaped_data.size()), P_VAR);
 	uint32_t cruft_size = escaped_data.size()/2;
 	escaped_data.insert(
 		escaped_data.end(),
 		escaped_data.begin(),
 		escaped_data.begin()+cruft_size); // intentionally create second half
-	print("complete chunk size (fragmented half added): " + std::to_string(escaped_data.size()), P_SPAM);
+	print("complete chunk size (fragmented half added): " + std::to_string(escaped_data.size()), P_VAR);
 	std::pair<std::vector<std::vector<uint8_t> >, std::vector<uint8_t> > deconstructed =
 		unescape_all_vectors(
 			escaped_data,
 			escape_char);
-	print("escaped chunk count: " + std::to_string(deconstructed.first.size()), P_SPAM);
-	print("escaped chunk size: " + std::to_string(deconstructed.first[0].size()), P_SPAM);
+	print("escaped chunk count: " + std::to_string(deconstructed.first.size()), P_VAR);
+	print("escaped chunk size: " + std::to_string(deconstructed.first[0].size()), P_VAR);
 	if(deconstructed.first.size() != 1){
 		P_V(deconstructed.first.size(), P_WARN);
 		print("incorrect vector count from unescape_all_vectors", P_ERR);
@@ -514,8 +514,8 @@ static void test_escape_string(){
 		print("incorrect vector payload from unescape_all_vectors", P_ERR);
 	}
 	if(deconstructed.second.size() != cruft_size){
-		P_V(cruft_size, P_SPAM);
-		P_V(deconstructed.second.size(), P_SPAM);
+		P_V(cruft_size, P_WARN);
+		P_V(deconstructed.second.size(), P_WARN);
 		print("incorrect extra size from unescape_all_vectors", P_ERR);
 	}
 	
@@ -632,6 +632,18 @@ void test_net_proto_socket_transcoding(){
 				new net_socket_t),
 		 std::make_pair(new net_proto_socket_t,
 				new net_socket_t)};
+	socket_vector[0].first->id.noexp_all_data();
+	socket_vector[1].first->id.noexp_all_data();
+
+	// as of right now, there shouldn't be any problems with recycling my
+	// peer, so long as we are just testing this. This wouldn't normally
+	// fly in software since it (should) never try and send something
+	// to itself
+	socket_vector[0].first->set_peer_id(
+		net_proto::peer::get_self_as_peer());
+	socket_vector[1].first->set_peer_id(
+		net_proto::peer::get_self_as_peer());
+
 	socket_vector[0].first->set_socket_id(
 		socket_vector[0].second->id.get_id());
 	socket_vector[1].first->set_socket_id(
@@ -651,10 +663,7 @@ void test_net_proto_socket_transcoding(){
 	socket_vector[0].first->send_id(wallet_set_id);
 	// checks for having it are done on read, not send, we're fine
 	id_api::destroy(wallet_set_id);
-	for(uint64_t i = 0;i < 5;i++){
-		sleep_ms(1000);
-		socket_vector[1].first->update();
-	}
+	socket_vector[1].first->update();
 	if(PTR_ID(wallet_set_id, ) == nullptr){
 		print("net_proto_socket transcoding failed", P_ERR);
 	}
@@ -677,7 +686,7 @@ void test_nc(){
   Might be able to multithread (?)
  */
 
-#define RUN_TEST(test) try{test();}catch(...){print((std::string)(#test) + " failed", P_ERR);throw std::runtime_error("failed test");}
+#define RUN_TEST(test) try{test();print("TEST " + fix_to_length(((std::string)#test), 40) + " OK", P_NOTE);}catch(...){print((std::string)(#test) + " FAIL", P_ERR);throw std::runtime_error("failed test");}
 
 /*
   Golden Rule for Tests:
@@ -688,19 +697,14 @@ void test_nc(){
  */
 
 void test(){
-	/*
-	  All of these tests work fine, but are commented out since I haven't
-	  bothered checking and running individual tests, and i'm running
-	  100+ and capturing the output
-	 */
-	// test_math_number_set();
-	test_escape_string();
-	// //test_max_tcp_sockets();
-	// test_id_transport();
-	// test_nbo_transport();
-	// test_rsa_key_gen();
-	// test_rsa_encryption();
-	// test_aes();
-	// test_id_set_compression();
-	test_net_proto_socket_transcoding();
+	RUN_TEST(test_math_number_set);
+	RUN_TEST(test_escape_string);
+	RUN_TEST(test_id_transport);
+	RUN_TEST(test_nbo_transport);
+	RUN_TEST(test_rsa_key_gen);
+	RUN_TEST(test_rsa_encryption);
+	RUN_TEST(test_aes);
+	RUN_TEST(test_id_set_compression);
+	RUN_TEST(test_net_proto_socket_transcoding);
+	print("All tests passed", P_NOTE);
 }

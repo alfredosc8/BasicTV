@@ -1,11 +1,13 @@
 #ifndef UTIL_H
 #define UTIL_H
-#define PRINT_SPAM 0
-#define PRINT_DEBUG 1
-#define PRINT_NOTICE 2
-#define PRINT_WARNING 3
-#define PRINT_ERROR 4
-#define PRINT_CRITICAL 5
+#define PRINT_VAR 0
+#define PRINT_SPAM 1
+#define PRINT_DEBUG 2
+#define PRINT_NOTICE 3
+#define PRINT_WARNING 4
+#define PRINT_ERROR 5
+#define PRINT_CRITICAL 6
+#define P_VAR PRINT_VAR
 #define P_SPAM PRINT_SPAM
 #define P_DEBUG PRINT_DEBUG
 #define P_NOTICE PRINT_NOTICE

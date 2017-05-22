@@ -21,7 +21,7 @@ static std::string gen_table(std::vector<std::vector<std::string> > entries){
 			}
 		}
 	}
-	P_V(end, P_SPAM);
+	P_V(end, P_VAR);
 	for(uint64_t y = 0;y < entries.size();y++){
 		std::string row;
 		for(uint64_t x = 0;x <= end;x++){
@@ -30,7 +30,7 @@ static std::string gen_table(std::vector<std::vector<std::string> > entries){
 		row += " | ";
 		retval += row + "\n";
 	}
-	P_V_S(retval, P_DEBUG);
+	P_V_S(retval, P_VAR);
 	return retval + "\n";
 }
 

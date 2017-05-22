@@ -135,7 +135,7 @@ static std::vector<uint8_t> rsa_decrypt_mod_len(RSA *rsa, std::vector<uint8_t> d
 		print("invalid key type supplied", P_ERR);
 	}
 	if(encrypt_retval == -1){
-		P_V(data.size(), P_SPAM);
+		P_V(data.size(), P_WARN);
 		print("unable to decrypt RSA string:"+(std::string)ERR_error_string(ERR_get_error(), nullptr), P_ERR);
 	}
 	uint16_t payload_size =
@@ -214,7 +214,7 @@ std::pair<id_t_, id_t_> rsa::gen_key_pair(uint64_t bits){
 			nullptr,
 			nullptr);
 	if(rsa_key == nullptr){
-		P_V(bits, P_NOTE);
+		P_V(bits, P_WARN);
 		print("can't generate new RSA key:"+(std::string)ERR_error_string(ERR_get_error(), nullptr), P_ERR);
 	}
 	uint8_t *priv_buf = 0;

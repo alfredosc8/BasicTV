@@ -2,20 +2,44 @@ I have been tripping over discrepencies for a while now. Writing
 formal formatting rules should help.
 
 Personally, I use Emacs' electric indent mode, so all of the codebase should
-have rather uniform formatting already. 
+have rather uniform formatting already. Try and stick with it, but I'm not a
+stickler for formatting.
 
 Follow 80-col, having multiple windows open side by side is wonderful, and
 dealing with truncated lines isn't fun at that stage. It also helps keep
 better mental track of what each line does and needs. If you need to go
 above 80 characters deep with eight spaces or tabs, you are doing something
-wrong already.
+wrong already. Try creating static inline functions above the code to simplify
+it.
 
-If an argument list is too long, break each argument off individually
-or leave it as one line. Don't try and fill each line to 80-col.
+If an argument list to a function is too long, break each argument off
+individually or leave it as one line. Don't try and fill each line to 80-col.
 
 Exceptions are thrown on all calls to P_ERR or P_CRIT. All other uses of
 exceptions in-line should be caught inside of the same function (effectively
-a goto for non-optimal paths).
+a goto for non-optimal paths). Here are some other print rules that should
+always be followed for my sanity:
+- If a variable is interesting to a developer, but is completely useless to
+  the people using it (i.e. it isn't causing a failure), use the P_VAR flag.
+  The P_VAR flag should be optimized out of the code when some (not yet
+  created) macro is passed in the Makefile.
+- Human readable strings that are printed too much in the code and don't have
+  any significance other than clarifying the state of the code should use the
+  P_SPAM flag. This is turned on by default, but that is only for my own
+  sanity.
+- If it is slightly important to know from a debugging standpoint, use the
+  P_DEBUG flag
+- If an error is being thrown, print all relevant variables beforehand with
+  P_WARN. NEVER put a valuable print after a P_ERR that isn't caught, since
+  P_ERR always throws a runtime_error.
+- P_ERR is used for errors. P_ERR should be caught as soon as something can
+  be done to fix or mitigate the problem. Functions not only should have
+  well-defined inputs and outputs, but also HOW they get those outputs. If
+  there are multiple ways a function can get a valid output, then create two
+  seperate functions.
+- P_CRIT stops the program entirely. This is only currently used to stop the
+  code when it comes across a function that has not been written yet. P_CRIT
+  raises SIGKILL (was SIGINT, but could interfere with signal handler)
 
 Use try-catch blocks in places where something can be done to solve or
 mitigate the problem (i.e. don't catch and re-throw the same error).
@@ -32,10 +56,10 @@ char to string in convert/convert.cpp), as well as a macro for safe destruction
 Any ID used to reference a specific type needs to use the full name of the
 type in the ID definition (this is why I am writing the document). For example,
 a network proxy ID (net_proxy_t) referenced by a network socket (net_socket_t),
-needs to be defined as at least net_proxy_id. Statistical sample sets need to be
-referenced as at least math_stat_sample_set_t. Prefixing it with more information
+needs to be defined as at least net_proxy_id. Numerical data sets need to be
+referenced as at least math_number_set_t. Prefixing it with more information
 is allowed and encouraged, so long as it makes the usage more clear (for example,
-outbound_math_stat_sample_set_id and inbound_math_stat_sample_set_id).
+outbound_math_number_set_id and inbound_math_number_set_id).
 
 Make sure you are checking return values and being consistent with
 network byte-order (any long vector with individual items within it, like the
@@ -50,6 +74,9 @@ the function has been declared, to prevent spamming the "namespace" with short
 and non-documented macros.
 
 There are many places in the source code that don't follow these rules, and they
-all should with reasonable exceptions (exception thrown in print() is fine).
-I'm working on fixing those errors as I'm working, but don't put the source
+all should with reasonable exceptions:
+- Exception thrown in print() is fine
+- No ID hashes are possible before data is loaded, such as id_disk_index_t
+
+I'm working on fixing actual errors as I'm working, but don't put the source
 code as a de-facto formatting guide before this guide.

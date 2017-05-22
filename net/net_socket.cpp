@@ -137,7 +137,7 @@ static void net_socket_recv_posix_error_checking(int32_t error){
 		case -EPERM: // non-blocking socket and no data is received
 			break;
 		default:
-			P_V(error, P_SPAM);
+			P_V(error, P_DEBUG);
 		}
 	}
 #endif

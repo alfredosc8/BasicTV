@@ -105,7 +105,7 @@ void net_proto_socket_t::update_working_buffer(){
 	std::vector<uint8_t> buffer =
 		socket_ptr->recv_all_buffer();
 	if(buffer.size() != 0){
-		P_V(buffer.size(), P_SPAM);
+		P_V(buffer.size(), P_VAR);
 		last_recv_micro_s = get_time_microseconds();
 		working_buffer.insert(
 			working_buffer.end(),
@@ -166,13 +166,13 @@ void net_proto_socket_t::send_id(id_t_ id_){
 		print("socket is a nullptr", P_ERR);
 	}
 	// can simplify to one vector, not done for debugging reasons
-	P_V(payload.size(), P_SPAM);
+	P_V(payload.size(), P_VAR);
 	std::vector<uint8_t> std_data_postescape =
 		escape_vector(std_data, NET_PROTO_ESCAPE);
 	std::vector<uint8_t> payload_postescape =
 		escape_vector(payload, NET_PROTO_ESCAPE);
-	P_V(std_data_postescape.size(), P_SPAM);
-	P_V(payload_postescape.size(), P_SPAM);
+	P_V(std_data_postescape.size(), P_VAR);
+	P_V(payload_postescape.size(), P_VAR);
 	socket_ptr->send(std_data_postescape);
 	socket_ptr->send(payload_postescape);
 }
@@ -230,7 +230,7 @@ void net_proto_socket_t::load_blocks(){
 				wrong_peer_ptr = nullptr;
 				peer_id = std_data.peer_id;
 			}
-			P_V(block_buffer[i].second.size(), P_SPAM); // temporary
+			P_V(block_buffer[i].second.size(), P_VAR); // temporary
 			/*
 			  NOTE: this doesn't call id_api::array::add_data, this
 			  function calls id_api::cache::add_data, which just

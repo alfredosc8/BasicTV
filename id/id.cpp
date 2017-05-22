@@ -284,11 +284,16 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_, uint8_t extra){
 	 */
 	if(encrypt_blacklist_type(
 		   convert::type::from(get_id_type(id)))){
-		print("forcing no encryption on basis of encryption blacklist", P_DEBUG);
+		/*
+		  It is normal for the function to override the flags passed to
+		  it. Think of the flags as an "do it if you can". There is no
+		  harm in not encrypting data that isn't supposed to be.
+		 */
+		print("forcing no encryption on basis of encryption blacklist", P_SPAM);
 		extra &= ~ID_EXTRA_ENCRYPT;
 	}
 	if(!export_datum_check_type(global_flags, flags_)){
-		print("global flags don't allow exporting, skipping", P_DEBUG);
+		print("global flags don't allow exporting, skipping", P_SPAM);
 		return {};
 	}
 	if(is_owner() == false){
@@ -468,8 +473,8 @@ void data_id_t::import_data(std::vector<uint8_t> data){
 	// P_V_S(convert::type::from(get_id_type(trans_id)), P_SPAM);
 	// P_V_B(extra, P_SPAM);
 	if(get_id_type(trans_id) != get_id_type(id)){
-		P_V(get_id_type(trans_id), P_SPAM);
-		P_V(get_id_type(id), P_SPAM);
+		P_V(get_id_type(trans_id), P_WARN);
+		P_V(get_id_type(id), P_WARN);
 		print("can't import a mis-matched type", P_ERR);
 	}
 	set_id(trans_id);
@@ -483,7 +488,7 @@ void data_id_t::import_data(std::vector<uint8_t> data){
 		const bool valid_entry =
 			trans_i < data_vector.size();
 		if(unlikely(!valid_entry)){
-			P_V(trans_i, P_SPAM);
+			P_V(trans_i, P_WARN);
 			print("invalid i entry, probably came from a new version", P_ERR);
 			return;
 		}else if(unlikely(data_vector[trans_i].get_ptr() == nullptr)){

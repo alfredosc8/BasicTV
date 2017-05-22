@@ -158,8 +158,8 @@ std::vector<id_t_> tv_audio_load_wav(id_t_ channel_id, uint64_t start_time_micro
 	// five seconds ought to be enough
 	const uint64_t frame_duration_micro_s =
 		1000*1000;
-	P_V(output_sampling_rate, P_SPAM);
-	P_V(output_bit_depth, P_SPAM);
+	P_V(output_sampling_rate, P_VAR);
+	P_V(output_bit_depth, P_VAR);
 	const uint64_t sample_length_per_frame =
 		((output_sampling_rate*output_bit_depth)/8.0)*(frame_duration_micro_s/(1000.0*1000.0));
 	uint64_t current_start = 0;
@@ -192,8 +192,8 @@ std::vector<id_t_> tv_audio_load_wav(id_t_ channel_id, uint64_t start_time_micro
 		audio->set_standard(start_time_micro_s+(frame_duration_micro_s*audio_frame_vector.size()),
 				    frame_duration_micro_s,
 				    audio_frame_vector.size());
-		P_V(current_start, P_SPAM);
-		P_V(length, P_SPAM);
+		P_V(current_start, P_VAR);
+		P_V(length, P_VAR);
 		current_start += length;
 		audio_frame_vector.push_back(
 			audio->id.get_id());
@@ -320,7 +320,7 @@ static void tv_audio_add_frame_audios(std::vector<id_t_> frame_audios){
 			audio->get_ttl_micro_s();
 		std::vector<uint8_t> wav_data =
 			tv_audio_get_wav_data(audio);
-		P_V(wav_data.size(), P_SPAM);
+		P_V(wav_data.size(), P_VAR);
 		SDL_RWops *rw =
 			SDL_RWFromMem(
 				wav_data.data(),

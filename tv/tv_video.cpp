@@ -53,9 +53,9 @@ static SDL_Surface* tv_render_frame_to_surface_slow_copy(tv_frame_video_t *frame
 		       &y_res);
 	// TODO: actually stretch it to fit the frame
 	// older approach, very slow
-	P_V_B(red_mask, P_SPAM);
-	P_V_B(green_mask, P_SPAM);
-	P_V_B(blue_mask, P_SPAM);
+	P_V_B(red_mask, P_VAR);
+	P_V_B(green_mask, P_VAR);
+	P_V_B(blue_mask, P_VAR);
 	SDL_Surface *surface =
 		SDL_CreateRGBSurface(0,
 				     x_res,

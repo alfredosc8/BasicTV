@@ -125,7 +125,7 @@ void console_t::run(){
 	std::vector<uint8_t> inbound_data =
 		socket->recv_all_buffer();
 	for(uint64_t i = 0;i < inbound_data.size();i++){
-		P_V((int16_t)inbound_data[i], P_DEBUG);
+		P_V((int16_t)inbound_data[i], P_VAR);
 	}
 	working_input.insert(
 		working_input.end(),
@@ -149,14 +149,14 @@ void console_t::run(){
 					input_full.begin()+i+1);
 				i = 0;
 				if(cmd_vector.size() > 0){
-					P_V_S(cmd_vector[cmd_vector.size()-1], P_SPAM);
+					P_V_S(cmd_vector[cmd_vector.size()-1], P_VAR);
 				}
 			}
 		}
 		working_input.erase(
 			working_input.begin(),
 			pos);
-		P_V(working_input.size(), P_DEBUG);
+		P_V(working_input.size(), P_VAR);
 		if(working_input.size() <= 2){
 			working_input.clear();
 		}

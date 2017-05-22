@@ -162,10 +162,10 @@ static uint8_t encrypt_gen_optimal_encrypt(std::vector<uint8_t> data,
 		print("TODO: (possibly) implement larger than one block headers for unsafe keys", P_ERR);
 	}
 	if(data.size()+13 > key.size()){
-		print("using AES-192 encryption", P_DEBUG);
+		print("using AES-192 encryption", P_SPAM);
 		return ENCRYPT_AES192_SHA256;
 	}else{
-		print("using plain RSA encryption (small payload)", P_DEBUG);
+		print("using plain RSA encryption (small payload)", P_SPAM);
 		return ENCRYPT_RSA;
 	}
 }
@@ -192,7 +192,7 @@ std::vector<uint8_t> encrypt_api::encrypt(std::vector<uint8_t> data,
 		encryption_scheme =
 			encrypt_gen_optimal_encrypt(data, key);
 	}
-	P_V(encryption_scheme, P_DEBUG);
+	P_V(encryption_scheme, P_VAR);
 	switch(encryption_scheme){
 	case ENCRYPT_AES192_SHA256:
 		retval = encrypt_aes192_sha256(
@@ -280,7 +280,7 @@ std::string encrypt_api::hash::sha256::gen_str_from_raw(std::array<uint8_t, 32> 
 	for(uint16_t i = 0;i < 32;i++){
 		retval += to_hex(data[i]);
 	}
-	P_V_S(retval, P_SPAM);
+	P_V_S(retval, P_VAR);
 	return retval;
 }
 
@@ -292,7 +292,7 @@ id_t_ encrypt_api::search::pub_key_from_hash(std::array<uint8_t, 32> hash){
 	std::vector<id_t_> pub_key_vector =
 		id_api::cache::get(
 			"encrypt_pub_key_t");
-	P_V(pub_key_vector.size(), P_SPAM);
+	P_V(pub_key_vector.size(), P_VAR);
 	for(uint64_t i = 0;i < pub_key_vector.size();i++){
 		encrypt_pub_key_t *pub_key_ptr =
 			PTR_DATA(
@@ -308,11 +308,11 @@ id_t_ encrypt_api::search::pub_key_from_hash(std::array<uint8_t, 32> hash){
 			P_V_S(convert::number::to_hex(
 				      std::vector<uint8_t>(
 					      &(hash[0]),
-					      &(hash[0])+32)), P_SPAM);
+					      &(hash[0])+32)), P_VAR);
 			P_V_S(convert::number::to_hex(
 				      std::vector<uint8_t>(
 					      &(pub_key_hash[0]),
-					      &(pub_key_hash[0])+32)), P_SPAM);
+					      &(pub_key_hash[0])+32)), P_VAR);
 			return pub_key_vector[i];
 		}
 	}
@@ -336,9 +336,9 @@ id_t_ encrypt_api::search::priv_key_from_hash(std::array<uint8_t, 32> hash){
 		if(priv_key_ptr == nullptr){
 			continue;
 		}
-		P_V_S(convert::array::id::to_hex(pub_key), P_SPAM);
+		P_V_S(convert::array::id::to_hex(pub_key), P_VAR);
 		P_V_S(convert::array::id::to_hex(
-			      priv_key_ptr->get_pub_key_id()), P_SPAM);
+			      priv_key_ptr->get_pub_key_id()), P_VAR);
 		if(priv_key_ptr->get_pub_key_id() == pub_key){
 			return priv_keys[i];
 		}

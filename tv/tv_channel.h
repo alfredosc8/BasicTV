@@ -21,6 +21,7 @@
 
 struct tv_channel_t{
 private:
+	std::vector<uint8_t> name;
 	std::vector<uint8_t> description;
 	id_t_ wallet_set_id = ID_BLANK_ID;
 public:

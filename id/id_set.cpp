@@ -81,7 +81,7 @@ std::vector<uint8_t> compact_id_set(std::vector<id_t_> id_set){
 	return retval;
 }
 
-#define ASSERT_LENGTH(vector, size_) if(vector.size() < size_){P_V(vector.size(), P_SPAM);P_V(size_, P_SPAM);print("invalid length, corrupt id_set", P_ERR);}
+#define ASSERT_LENGTH(vector, size_) if(vector.size() < size_){P_V(vector.size(), P_WARN);P_V(size_, P_WARN);print("invalid length, corrupt id_set", P_ERR);}
 
 static uint64_t find_first_seperator(std::vector<uint8_t> data){
 	for(int64_t i = 0;i < (int64_t)(data.size())-7;i++){

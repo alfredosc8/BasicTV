@@ -98,14 +98,14 @@ static void net_proto_fill_type_requests(){
 			remove_ids_from_vector(
 				type_vector,
 				raw_id_vector);
-		P_V_S(convert::type::from(proto_type_request->get_type()), P_SPAM);
-		P_V(type_vector.size(), P_SPAM);
-		P_V(raw_id_vector.size(), P_SPAM);
-		P_V(real_payload.size(), P_SPAM);
+		P_V_S(convert::type::from(proto_type_request->get_type()), P_VAR);
+		P_V(type_vector.size(), P_VAR);
+		P_V(raw_id_vector.size(), P_VAR);
+		P_V(real_payload.size(), P_VAR);
 		if(real_payload.size() == 0){
 			print("we don't have any new data to send out, "
 			      "not sending anything (should probably have "
-			      "some sort of response for not finding it", P_SPAM);
+			      "some sort of response for not finding it)", P_SPAM);
 		}else{
 			try{
 				net_proto_send_logic(
@@ -185,7 +185,7 @@ static bool net_proto_send_id_to_peer(
 	std::vector<id_t_> all_sockets =
 		id_api::cache::get(
 			TYPE_NET_PROTO_SOCKET_T);
-	P_V(all_sockets.size(), P_SPAM);
+	P_V(all_sockets.size(), P_VAR);
 	for(uint64_t i = 0;i < all_sockets.size();i++){
 		try{
 			net_proto_socket_t *proto_socket_ptr =

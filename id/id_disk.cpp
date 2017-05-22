@@ -200,7 +200,7 @@ void id_disk_index_t::update_index_from_disk(){
 			find_output[i].substr(
 				find_output[i].find_last_of(SLASH)+1,
 			        find_output[i].find_last_of('_')-find_output[i].find_last_of(SLASH)-1);
-		P_V_S(id_hex, P_SPAM); // checking my work, not important
+		P_V_S(id_hex, P_VAR); // checking my work, not important
 		// TODO: might want to store types and other info as well...
 		index.push_back(
 			convert::array::id::from_hex(id_hex));
@@ -239,12 +239,12 @@ std::string id_disk_index_t::get_path_of_id(id_t_ id_){
 			return "";
 		}
 	}else{
-		print("ID exists in memory already, generating new filename", P_DEBUG);
+		print("ID exists in memory already, generating new filename", P_SPAM);
 		retval += file::ensure_slash_at_end((char*)(path.data()));
 		retval += id->get_type() + "/";
 		retval += convert::array::id::to_hex(id_) + "_" + std::to_string(id->get_mod_inc()); // + _ + id incrementor (if it existed)
 	}
-	P_V_S(retval, P_SPAM);
+	P_V_S(retval, P_VAR);
 	return retval;
 }
 
@@ -255,7 +255,7 @@ void id_disk_index_t::export_id(id_t_ id_){
 		ptr->export_data(ID_DATA_NONET,
 				 ID_EXTRA_COMPRESS | ID_EXTRA_ENCRYPT);
 	if(exportable_data.size() == 0){
-		print("no data to export from ID", P_DEBUG);
+		print("no data to export from ID", P_SPAM);
 		return;
 	}
 	std::string filename =
@@ -287,7 +287,7 @@ void id_disk_index_t::import_id(id_t_ id_){
 		std::istream_iterator<uint8_t>(),
 		std::back_inserter(full_file));
 	in.close();
-	P_V(full_file.size(), P_SPAM);
+	P_V(full_file.size(), P_VAR);
 	id_api::array::add_data(full_file, false);
 }
 

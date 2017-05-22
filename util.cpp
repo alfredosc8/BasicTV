@@ -52,6 +52,9 @@ int search_for_argv(std::string value){
 static std::string print_level_text(int level){
 	std::string retval;
 	switch(level){
+	case P_VAR:
+		retval = "[VAR]";
+		break;
 	case P_SPAM:
 		retval = "[SPAM]";
 		break;
@@ -99,6 +102,11 @@ std::string print_color_text(std::string data, int level){
 	case P_SPAM:
 		prefix = "\033[1;32m";
 		break;
+	case P_VAR:
+		// not seen by most people, only really ran through 'diff', so
+		// looks don't matter
+		prefix = "";
+		break;
 	}
 	return prefix + data + "\033[0m";
 }
@@ -130,7 +138,7 @@ void print(std::string data, int level, const char *func){
 			   "throw_level", P_CRIT) <= level){
 			std::cerr << "CRITICAL ERROR" << std::endl;
 			// standard throws aren't as easily debuggable
-			std::raise(SIGINT);
+			std::raise(SIGKILL);
 		}
 		if(level >= P_ERR){
 			throw std::runtime_error(data);

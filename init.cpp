@@ -89,9 +89,9 @@ static void bootstrap_production_priv_key_id(){
 			print("no public keys can possibly match private key, error in loading?", P_CRIT);
 		}
 		production_priv_key_id = all_private_keys[0];
-		P_V_S(convert::array::id::to_hex(all_private_keys[0]), P_SPAM);
+		P_V_S(convert::array::id::to_hex(all_private_keys[0]), P_VAR);
 		priv_key = PTR_DATA(all_private_keys[0], encrypt_priv_key_t);
-		P_V_S(convert::array::id::to_hex(all_public_keys[0]), P_SPAM);
+		P_V_S(convert::array::id::to_hex(all_public_keys[0]), P_VAR);
 		pub_key = PTR_DATA(all_public_keys[0], encrypt_pub_key_t);
 	}else if(all_private_keys.size() > 1){
 		print("I have more than one private key, make a prompt to choose one", P_ERR);

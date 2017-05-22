@@ -36,7 +36,7 @@ static data_id_t *id_find(id_t_ id){
 			return id_list[i];
 		}
 	}
-	print("Couldn't find ID", P_NOTE);
+	print("Couldn't find ID", P_SPAM);
 	return nullptr;
 }
 
@@ -105,7 +105,7 @@ void id_api::array::del(id_t_ id){
 	print("cannot find ID in list", P_ERR);
 }
 
-#define CHECK_TYPE(a) if(convert::type::from(type) == #a){print("importing data", P_NOTE);a *tmp = new a;tmp->id.import_data(data_);return tmp->id.get_id();}
+#define CHECK_TYPE(a) if(convert::type::from(type) == #a){print("importing data", P_SPAM);a *tmp = new a;tmp->id.import_data(data_);return tmp->id.get_id();}
 
 /*
   General purpose reader, returns the ID of the new information.
@@ -119,8 +119,8 @@ id_t_ id_api::array::add_data(std::vector<uint8_t> data_, bool raw){
 	try{
 		id = id_api::raw::fetch_id(data_);
 		type = get_id_type(id_api::raw::fetch_id(data_));
-		P_V_S(convert::array::id::to_hex(id), P_SPAM);
-		P_V_S(convert::type::from(type), P_SPAM);
+		P_V_S(convert::array::id::to_hex(id), P_VAR);
+		P_V_S(convert::type::from(type), P_VAR);
 	}catch(std::exception &e){
 		print("can't import id and type from raw data", P_ERR);
 		throw e;
@@ -460,7 +460,7 @@ void id_api::destroy_all_data(){
 		   list_tmp[i]->get_type_byte() == TYPE_ID_DISK_INDEX_T){
 			continue;
 		}
-		P_V(list_tmp[i]->get_type_byte(), P_DEBUG);
+		P_V(list_tmp[i]->get_type_byte(), P_VAR);
 		destroy(list_tmp[i]->get_id());
 		list_tmp[i] = nullptr;
 	}
@@ -494,7 +494,7 @@ static uint64_t get_mem_usage_kb(){
 	uint32_t t_size = 0, resident = 0, share = 0;
 	mem_buf >> t_size >> resident >> share;
 	mem_buf.close();
-	P_V(resident*sysconf(_SC_PAGE_SIZE)/1024, P_SPAM);
+	P_V(resident*sysconf(_SC_PAGE_SIZE)/1024, P_VAR);
 	return resident*sysconf(_SC_PAGE_SIZE)/1024; // RSS
 #else
 #error No memory function currently exists for non-Linux systems
@@ -570,7 +570,7 @@ void id_api::import::load_all_of_type(std::string type, uint8_t flags){
 				new_.end());
 		}
 		for(uint64_t i = 0;i < find_out.size();i++){
-			P_V_S(find_out[i], P_SPAM);
+			P_V_S(find_out[i], P_VAR);
 			std::ifstream in(find_out[i], std::ios::binary);
 			if(in.is_open() == false){
 				print("can't open file I just searched for", P_ERR);
@@ -630,7 +630,7 @@ std::vector<uint64_t> id_api::bulk_fetch::mod(std::vector<id_t_> vector){
 
 std::vector<uint8_t> id_api::raw::encrypt(std::vector<uint8_t> data){
 	id_t_ id = fetch_id(data);
-	P_V_S(convert::array::id::to_hex(id), P_SPAM);
+	P_V_S(convert::array::id::to_hex(id), P_VAR);
 	if(get_id_type(id) == TYPE_ENCRYPT_PUB_KEY_T){
 		print("can't encrypt public key", P_WARN);
 	}else if(get_id_type(id) == TYPE_ENCRYPT_PRIV_KEY_T){
@@ -640,7 +640,7 @@ std::vector<uint8_t> id_api::raw::encrypt(std::vector<uint8_t> data){
 			id_t_ priv_key_id =
 				encrypt_api::search::priv_key_from_hash(
 					get_id_hash(id));
-			P_V_S(convert::array::id::to_hex(priv_key_id), P_SPAM);
+			P_V_S(convert::array::id::to_hex(priv_key_id), P_VAR);
 			std::vector<uint8_t> encrypt_chunk =
 				encrypt_api::encrypt(
 					std::vector<uint8_t>(

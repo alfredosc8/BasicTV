@@ -213,7 +213,7 @@ std::string convert::array::id::to_hex(id_t_ id_){
 		(uint8_t*)&uuid_num,
 		((uint8_t*)&uuid_num)+8);
 	if(uuid_vector.size() != 8){
-		P_V(uuid_vector.size(), P_SPAM);
+		P_V(uuid_vector.size(), P_WARN);
 		print("invalid size for UUID", P_ERR);
 	}
 	std::string retval =
@@ -351,8 +351,8 @@ std::string convert::type::from(uint8_t type){
 		std::raise(SIGINT);
 		return "";
 	default:
-		print("invalid type, probably malicious (not zero)", P_CRIT);
 		P_V(type, P_WARN);
+		print("invalid type, probably malicious (not zero)", P_CRIT);
 		return "";
 	}
 }
