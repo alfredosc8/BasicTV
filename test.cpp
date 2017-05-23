@@ -683,8 +683,8 @@ void test_net_proto_socket_transcoding(){
 	}
 	id_api::destroy(socket_vector[0].first->id.get_id());
 	id_api::destroy(socket_vector[0].second->id.get_id());
-	id_api::destroy(socket_vector[0].first->id.get_id());
-	id_api::destroy(socket_vector[0].second->id.get_id());
+	id_api::destroy(socket_vector[1].first->id.get_id());
+	id_api::destroy(socket_vector[1].second->id.get_id());
 	id_api::destroy(intermediate_socket->id.get_id());
 }
 
@@ -739,7 +739,10 @@ void test(){
 			}
 		}
 	}
-	P_V(extra_id_set.size(), P_VAR);
+	if(extra_id_set.size() > 0){
+		print("not all tests cleaned up after themselves, should fix "
+		      "this on a function basis soon", P_SPAM);
+	}
 	for(uint64_t i = 0;i < extra_id_set.size();i++){
 		id_api::destroy(extra_id_set[i]);
 	}
