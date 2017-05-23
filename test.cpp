@@ -95,6 +95,7 @@ static void test_nc_socket(){
 	  address (breaking 4-tuple), so just test this with laptop
 	 */
 	net_socket_t *test_socket_ = new net_socket_t;
+	test_socket_->id.noexp_all_data();
 	std::string ip;
 	uint16_t port = 0;
 	bool recv = false;
@@ -120,6 +121,8 @@ static void test_nc_socket(){
 			sleep_ms(1);
 		}
 	}
+	id_api::destroy(test_socket_->id.get_id());
+	test_socket_ = nullptr;
 }
 
 /*
@@ -231,6 +234,11 @@ static void test_max_tcp_sockets_local(){
 		}
 		test_nc_socket_array(socket_pair);
 	}
+	id_api::destroy(inbound->id.get_id());
+	for(uint64_t i = 0;i < socket_pair.size();i++){
+		id_api::destroy(socket_pair[i].first);
+		id_api::destroy(socket_pair[i].second);
+	}
 }
 
 static void test_id_transport_print_exp(std::vector<uint8_t> exp){
@@ -269,6 +277,8 @@ static void test_id_transport(){
 	if(wallet_set_ptr == nullptr){
 		print("id transport failed", P_ERR);
 	}
+	id_api::destroy(wallet_set_ptr->id.get_id());
+	wallet_set_ptr = nullptr;
 }
 
 /*
@@ -336,6 +346,8 @@ static void test_rsa_key_gen(){
 	if(pub == nullptr){
 		print("pub key is a nullptr", P_ERR);
 	}
+	id_api::destroy(rsa_key_pair.first);
+	id_api::destroy(rsa_key_pair.second);
 	// P_V(pub->get_encrypt_key().second.size(), P_NOTE);
 }
 
@@ -361,6 +373,8 @@ static void test_rsa_encryption(){
 	if(test_data != test_data_output){
 		print("RSA encryption test failed", P_ERR);
 	}
+	id_api::destroy(rsa_key_pair.first);
+	id_api::destroy(rsa_key_pair.second);
 }
 
 static void test_aes(){
@@ -518,7 +532,7 @@ static void test_escape_string(){
 		P_V(deconstructed.second.size(), P_WARN);
 		print("incorrect extra size from unescape_all_vectors", P_ERR);
 	}
-	
+	id_api::destroy(wallet_set_id);
 }
 
 static void test_id_set_compression(){
@@ -667,6 +681,11 @@ void test_net_proto_socket_transcoding(){
 	if(PTR_ID(wallet_set_id, ) == nullptr){
 		print("net_proto_socket transcoding failed", P_ERR);
 	}
+	id_api::destroy(socket_vector[0].first->id.get_id());
+	id_api::destroy(socket_vector[0].second->id.get_id());
+	id_api::destroy(socket_vector[0].first->id.get_id());
+	id_api::destroy(socket_vector[0].second->id.get_id());
+	id_api::destroy(intermediate_socket->id.get_id());
 }
 
 /*
@@ -697,6 +716,8 @@ void test_nc(){
  */
 
 void test(){
+	std::vector<id_t_> full_id_set =
+		id_api::get_all();
 	RUN_TEST(test_math_number_set);
 	RUN_TEST(test_escape_string);
 	RUN_TEST(test_id_transport);
@@ -706,5 +727,21 @@ void test(){
 	RUN_TEST(test_aes);
 	RUN_TEST(test_id_set_compression);
 	RUN_TEST(test_net_proto_socket_transcoding);
+	std::vector<id_t_> extra_id_set =
+		id_api::get_all();
+	for(uint64_t i = 0;i < full_id_set.size();i++){
+		for(uint64_t c = 0;c < extra_id_set.size();c++){
+			if(full_id_set[i] == extra_id_set[c]){
+				extra_id_set.erase(
+					extra_id_set.begin()+c);
+				c--;
+				i = 0;
+			}
+		}
+	}
+	P_V(extra_id_set.size(), P_VAR);
+	for(uint64_t i = 0;i < extra_id_set.size();i++){
+		id_api::destroy(extra_id_set[i]);
+	}
 	print("All tests passed", P_NOTE);
 }

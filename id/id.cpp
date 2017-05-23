@@ -145,7 +145,9 @@ data_id_t::~data_id_t(){
 
 id_t_ data_id_t::get_id(bool skip){
 	// even with unlikely, this seems pretty slow
-	if(!skip && !id_throw_exception && get_id_hash(id) == ID_BLANK_HASH){
+	if(unlikely(!skip &&
+		    !id_throw_exception &&
+		    get_id_hash(id) == ID_BLANK_HASH)){
 		encrypt_priv_key_t *priv_key =
 			PTR_DATA(production_priv_key_id,
 				 encrypt_priv_key_t);

@@ -90,6 +90,8 @@ net_proto_socket_t::net_proto_socket_t() : id(this, TYPE_NET_PROTO_SOCKET_T){
 	std_data =
 		net_proto_write_packet_metadata(
 			std_data_);
+	id.noexp_all_data();
+	id.nonet_all_data();
 }
 
 net_proto_socket_t::~net_proto_socket_t(){

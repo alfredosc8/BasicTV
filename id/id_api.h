@@ -18,7 +18,13 @@
   doesn't exist locally, then it has fallen out of use. This DOES allow for
   re-loading of cached data (since it shouldn't be too slow)
  */
-#define ID_LOOKUP_FAST (1 << 0)
+// can refer to id_disk_index_t
+#define ID_LOOKUP_FAST 1
+// cannot refer to id_disk_index_t, only looks in memory
+#define ID_LOOKUP_MEM 2
+
+#define PTR_DATA_MEM(id, type) ((type*)id_api::array::ptr_data(id, #type, ID_LOOKUP_MEM))
+#define PTR_ID_MEM(id, type) (id_api::array::ptr_id(id, #type, ID_LOOKUP_MEM))
 
 #define PTR_DATA_FAST(id, type) ((type*)id_api::array::ptr_data(id, #type, ID_LOOKUP_FAST))
 #define PTR_ID_FAST(id, type) (id_api::array::ptr_id(id, #type, ID_LOOKUP_FAST))
@@ -59,6 +65,7 @@ namespace id_api{
 		id_t_ fetch_one_from_hash(type_t_ type,
 					  std::array<uint8_t, 32> sha_hash);
 		// TODO: create a version that throws on more than one
+		uint64_t get_id_count();
 	}
 	namespace cache{
 		// get_type_vector_ptr should never be used outside of id_api.cpp	

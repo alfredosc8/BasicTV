@@ -33,7 +33,7 @@ static void net_proto_routine_request_fill(std::vector<type_t_> type_vector,
 			id_t_ recv_peer_id =
 				net_proto::peer::random_peer_id();
 			if(recv_peer_id == ID_BLANK_ID){
-				print("we have no other peer information whatsoever, not creating any network requests", P_NOTE);
+				print("we have no other peer information whatsoever, not creating any network requests", P_DEBUG);
 			}else{
 				std::vector<id_t_> id_vector =
 					id_api::cache::get(

@@ -107,6 +107,8 @@ std::string fix_to_length(std::string string, uint64_t size);
 
 #define P_V_LEN 80
 
+#define P_V_LEV_LEN 12
+
 // print var
 #define P_V(a, b) print(fix_to_length((std::string)__PRETTY_FUNCTION__ + ":" + (std::string)#a + " == ", P_V_LEN) + "'" + std::to_string(a) + "'", b)
 // print var string

@@ -77,18 +77,18 @@ static void net_proto_fill_type_requests(){
 	 	if(proto_type_request == nullptr){
 	 		continue;
 	 	}
-		const id_t_ target_peer_id =
-			proto_type_request->get_sender_peer_id();
-	 	if(target_peer_id == net_proto::peer::get_self_as_peer()){
-			print("request is not meant for me", P_SPAM);
-			continue;
-		} // check if we are sending it to ourselves
-		const id_t_ origin_peer_id =
+		const id_t_ holder_peer_id =
 			proto_type_request->get_receiver_peer_id();
-		if(origin_peer_id != net_proto::peer::get_self_as_peer()){
-			print("request originates from me", P_SPAM);
+		const id_t_ requester_peer_id =
+			proto_type_request->get_sender_peer_id();
+	 	if(holder_peer_id == net_proto::peer::get_self_as_peer()){
+			//print("network request's data holder ID doesn't match, skipping", P_SPAM);
 			continue;
-		}
+		} // check if we are the intended recepient
+		if(requester_peer_id != net_proto::peer::get_self_as_peer()){
+			//print("request was created with my peer ID, skipping", P_SPAM);
+			continue;
+		} // check if we created the request
 		const std::vector<id_t_> raw_id_vector =
 			proto_type_request->get_ids();
 		const std::vector<id_t_> type_vector =
@@ -110,7 +110,7 @@ static void net_proto_fill_type_requests(){
 			try{
 				net_proto_send_logic(
 					real_payload,
-					target_peer_id);
+					requester_peer_id);
 				id_api::destroy(net_proto_type_requests[i]);
 				proto_type_request = nullptr;
 			}catch(...){
@@ -182,6 +182,9 @@ static bool net_proto_send_id_to_peer(
 	id_t_ payload_id,
 	id_t_ peer_id){
 	bool sent = false;
+	if(peer_id == net_proto::peer::get_self_as_peer()){
+		print("attempted to send an ID to myself as a peer, left over from tests?", P_NOTE);
+	}
 	std::vector<id_t_> all_sockets =
 		id_api::cache::get(
 			TYPE_NET_PROTO_SOCKET_T);

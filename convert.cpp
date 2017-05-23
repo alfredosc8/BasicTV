@@ -347,12 +347,11 @@ std::string convert::type::from(uint8_t type){
 	case TYPE_TV_ITEM_T:
 		return "tv_item_t";
 	case 0:
-		print("zero type, something went wrong earlier", P_WARN);
-		std::raise(SIGINT);
+		print("zero type, something went wrong earlier", P_ERR);
 		return "";
 	default:
 		P_V(type, P_WARN);
-		print("invalid type, probably malicious (not zero)", P_CRIT);
+		print("invalid type, probably malicious (not zero)", P_ERR);
 		return "";
 	}
 }

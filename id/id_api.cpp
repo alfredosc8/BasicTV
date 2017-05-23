@@ -30,6 +30,10 @@
 static std::vector<data_id_t*> id_list;
 static std::vector<std::pair<std::vector<id_t_>, type_t_ > > type_cache;
 
+uint64_t id_api::array::get_id_count(){
+	return id_list.size();
+}
+
 static data_id_t *id_find(id_t_ id){
 	for(uint64_t i = 0;i < id_list.size();i++){
 		if(unlikely(id_list[i]->get_id(true) == id)){
@@ -57,13 +61,24 @@ data_id_t *id_api::array::ptr_id(id_t_ id,
 	if(id == ID_BLANK_ID){
 		return nullptr;
 	}
+	const bool query_network =
+		(flags != ID_LOOKUP_FAST) &&
+		(flags != ID_LOOKUP_MEM);
+	const bool query_disk =
+		(flags != ID_LOOKUP_MEM);
+	// TODO: make a flag for this
+	const bool query_cache = true;
 	data_id_t *retval = nullptr;
 	LOOKUP_AND_RETURN();
-	id_api::cache::load_id(id);
-	LOOKUP_AND_RETURN();
-	id_disk_api::load(id);
-	LOOKUP_AND_RETURN();
-	if(!(flags & ID_LOOKUP_FAST)){
+	if(query_cache){
+		id_api::cache::load_id(id);
+		LOOKUP_AND_RETURN();
+	}
+	if(query_disk){
+		id_disk_api::load(id);
+		LOOKUP_AND_RETURN();
+	}
+	if(query_network){
 		net_proto::request::add_id(id);
 	}
 	return retval;

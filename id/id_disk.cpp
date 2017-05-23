@@ -224,7 +224,7 @@ void id_disk_index_t::set(uint8_t medium_, uint8_t tier_, uint8_t transport_, st
 std::string id_disk_index_t::get_path_of_id(id_t_ id_){
 	std::string retval;
 	data_id_t *id =
-		PTR_ID_FAST(id_, );
+		PTR_ID_MEM(id_, );
 	if(id == nullptr){
 		print("ID doesn't exist in memory already, searching disk for ID", P_NOTE);
 		std::vector<std::string> rgrep_output =

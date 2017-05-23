@@ -49,7 +49,7 @@ int search_for_argv(std::string value){
 	return -1;
 }
 
-static std::string print_level_text(int level){
+static std::string print_level_text (int level){
 	std::string retval;
 	switch(level){
 	case P_VAR:
@@ -76,7 +76,7 @@ static std::string print_level_text(int level){
 	default:
 		throw std::runtime_error("invalid print level");
 	}
-	return fix_to_length(retval, 12);
+	return fix_to_length(retval, P_V_LEV_LEN);
 }
 
 static int print_level = P_SPAM;
