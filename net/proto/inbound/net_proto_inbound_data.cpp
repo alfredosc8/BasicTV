@@ -10,7 +10,6 @@
 void net_proto_handle_inbound_data(){
 	std::vector<id_t_> proto_sockets =
 		id_api::cache::get("net_proto_socket_t");
-	P_V(proto_sockets.size(), P_VAR);
 	for(uint64_t i = 0;i < proto_sockets.size();i++){
 		try{
 			net_proto_socket_t *proto_socket =
@@ -19,7 +18,6 @@ void net_proto_handle_inbound_data(){
 			if(proto_socket == nullptr){
 				print("proto_socket is a nullptr", P_ERR);
 			}
-			print("WE GOT A SOCKET ALRIGHT", P_WARN);
 			proto_socket->update();
 		}catch(...){}
 	}

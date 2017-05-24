@@ -152,6 +152,7 @@ std::vector<uint8_t> net_socket_t::recv(uint64_t byte_count, uint64_t flags){
 			int32_t recv_retval = 0;
 			if((recv_retval = SDLNet_TCP_Recv(socket, &(buffer[0]), 512)) > 0){
 				if(recv_retval <= 0){
+					print("SDLNet_TCP_Recv failed, closing socket: " + (std::string)SDL_GetError(), P_SPAM);
 					disconnect();
 					break;
 				}else{
@@ -288,8 +289,8 @@ bool net_socket_t::activity(){
 		print("socket is nullptr", P_WARN);
 		return false;
 	}
-	return SDLNet_SocketReady(socket) != 0;
-	//return SDLNet_CheckSockets(socket_set, 0) > 0;
+	bool activity_ = SDLNet_CheckSockets(socket_set, 0) > 0;
+	return activity_;
 }
 
 void net_socket_t::set_inbound_stat_sample_set_id(id_t_ inbound_stat_sample_set_id_){

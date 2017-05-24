@@ -247,7 +247,11 @@ void net_proto_socket_t::load_blocks(){
 					block_buffer[i].second);
 			add_id_to_inbound_id_set(
 				inbound_id);
-			print("received ID " + convert::array::id::to_hex(inbound_id), P_DEBUG);
+			print("received ID " +
+			      convert::array::id::to_hex(inbound_id) + " of type " +
+			      convert::type::from(
+				      get_id_type(
+					      inbound_id)), P_DEBUG);
 			block_buffer.erase(
 				block_buffer.begin()+i);
 			i--;
@@ -255,8 +259,15 @@ void net_proto_socket_t::load_blocks(){
 	}
 }
 
+void net_proto_socket_t::check_state(){
+	// turns out this doesn't solve the problem, but the function
+	// and a state system for sockets can still be useful, so i'm leaving
+	// this here for now
+}
+
 void net_proto_socket_t::update(){
 	update_working_buffer();
 	update_block_buffer();
 	load_blocks();
+	check_state();
 }

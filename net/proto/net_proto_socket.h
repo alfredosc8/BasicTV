@@ -27,6 +27,9 @@
 
 #define NET_PROTO_SOCKET_NO_ENCRYPT (1 << 1)
 
+#define NET_PROTO_SOCKET_STATE_PEER_NOT_SENT 0
+#define NET_PROTO_SOCKET_STATE_PEER_SENT 1
+
 struct net_proto_socket_t{
 private:
 	id_t_ socket_id = ID_BLANK_ID;
@@ -35,6 +38,7 @@ private:
 	id_t_ inbound_id_set_id = ID_BLANK_ID;
 	id_t_ outbound_id_set_id = ID_BLANK_ID;
 	uint8_t flags = 0;
+	uint8_t state = 0;
 	uint64_t last_recv_micro_s = 0;
 	std::vector<uint8_t> std_data;
 	std::vector<uint8_t> working_buffer;
@@ -42,7 +46,8 @@ private:
 	void update_working_buffer();
 	void update_block_buffer();
 	void load_blocks();
-
+	void check_state();
+	
 	// other init functions
 	void init_create_id_sets();
 	void add_id_to_inbound_id_set(id_t_ payload_id);

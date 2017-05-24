@@ -195,19 +195,21 @@ id_t_ net_proto::socket::optimal_proto_socket_of_peer(id_t_ peer_id){
 id_t_ net_proto::peer::random_peer_id(){
 	std::vector<id_t_> proto_peer_vector =
 		id_api::cache::get(
-			"net_proto_peer_t");
-	if(proto_peer_vector.size() < 2){
-		return ID_BLANK_ID;
-	}
-	std::random_shuffle(
-		proto_peer_vector.begin(),
-		proto_peer_vector.begin()+2);
-	for(uint64_t i = 0;i < 2;i++){
-		if(proto_peer_vector[i] !=
-		   net_proto::peer::get_self_as_peer()){
-			return proto_peer_vector[i];
+			TYPE_NET_PROTO_PEER_T);
+	if(proto_peer_vector.size() >= 2){
+		std::random_shuffle(
+			proto_peer_vector.begin(),
+			proto_peer_vector.begin()+2);
+		for(uint64_t i = 0;i < 2;i++){
+			if(proto_peer_vector[i] !=
+			   net_proto::peer::get_self_as_peer()){
+				return proto_peer_vector[i];
+			}
 		}
+	}else{
+		P_V(proto_peer_vector.size(), P_VAR);
 	}
+	print("no other peers detected, cannot return a valid peer id", P_WARN);
 	return ID_BLANK_ID;
 }
 
