@@ -42,6 +42,8 @@ void net_ip_t::set_net_ip(std::string ip_, uint16_t port_){
 		type = NET_IP_FMT_DOMAIN;
 		memcpy(&(address[0]), ip_.data(), ip_.size());
 	}
+	P_V_S((char*)&(address[0]), P_VAR);
+	P_V(port, P_VAR);
 }
 
 std::string net_ip_t::get_net_ip_str(){

@@ -128,6 +128,19 @@ void print(std::string data, int level, const char *func){
 		}catch(...){}
 	}
 	if(unlikely(level >= print_level)){
+		// Personally, I use the print delay to keep tmux from
+		// slowing to a halt and destroying my bandwidth
+		uint64_t print_delay_milli_s =
+			settings::get_setting_unsigned_def(
+				"print_delay", 0);
+		// need to force the sleep to get around running variable
+		// that's no biggie
+		/*
+		  TODO: instead of sleeping, stack requests back on each other
+		  until a limit is reached (to keep printed output and the
+		  program state in-line, in case of errors or exceptions)
+		 */
+		sleep_ms(print_delay_milli_s, true);
 		std::string func_;
 		if(func != nullptr){
 			func_ = func;

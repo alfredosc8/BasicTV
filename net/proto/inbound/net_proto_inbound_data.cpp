@@ -7,19 +7,20 @@
 #include "../../../id/id_api.h"
 #include "../net_proto_api.h"
 
-static void net_proto_dummy_read(){
-}
-
 void net_proto_handle_inbound_data(){
 	std::vector<id_t_> proto_sockets =
 		id_api::cache::get("net_proto_socket_t");
+	P_V(proto_sockets.size(), P_VAR);
 	for(uint64_t i = 0;i < proto_sockets.size();i++){
-		net_proto_socket_t *proto_socket =
-			PTR_DATA(proto_sockets[i],
-				 net_proto_socket_t);
-		if(proto_socket == nullptr){
-			print("proto_socket is a nullptr", P_ERR);
-		}
-		proto_socket->update();
+		try{
+			net_proto_socket_t *proto_socket =
+				PTR_DATA(proto_sockets[i],
+					 net_proto_socket_t);
+			if(proto_socket == nullptr){
+				print("proto_socket is a nullptr", P_ERR);
+			}
+			print("WE GOT A SOCKET ALRIGHT", P_WARN);
+			proto_socket->update();
+		}catch(...){}
 	}
 }

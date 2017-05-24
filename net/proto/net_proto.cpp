@@ -22,9 +22,6 @@
   Goes through and cleans out network requests that are irrelevant.
  */
 
-static void net_proto_clean_stale_data(){
-}
-
 void net_proto_loop(){
 	net_proto_handle_inbound_data();
 	net_proto_handle_outbound_requests();
@@ -66,6 +63,8 @@ static void net_proto_init_self_peer(){
 	net_proto::peer::set_self_as_peer(
 		ip_addr,
 		tmp_port);
+	P_V_S(proto_peer_ptr->get_net_ip_str(), P_VAR);
+	P_V(proto_peer_ptr->get_net_port(), P_VAR);
 }
 
 /*
@@ -99,9 +98,9 @@ static void net_proto_verify_bootstrap_nodes(){
 	std::vector<std::pair<std::string, uint16_t> > nodes_to_connect;
 	if(bootstrap_nodes.size() > 0){
 		nodes_to_connect = 
-		std::vector<std::pair<std::string, uint16_t> >(
-			bootstrap_nodes.begin(),
-			bootstrap_nodes.end());
+			std::vector<std::pair<std::string, uint16_t> >(
+				bootstrap_nodes.begin(),
+				bootstrap_nodes.end());
 	}
 	print("attempting to read in " + std::to_string(nodes_to_connect.size()) + " bootstrap nodes", P_DEBUG);
 	for(uint64_t i = 0;i < peer_vector.size();i++){
@@ -113,15 +112,21 @@ static void net_proto_verify_bootstrap_nodes(){
 		}
 		const std::string ip_addr =
 			proto_peer->get_net_ip_str();
+		const uint16_t port =
+			proto_peer->get_net_port();
 		auto bootstrap_iter =
 			std::find_if(
 				nodes_to_connect.begin(),
 				nodes_to_connect.end(),
-				[&ip_addr](std::pair<std::string, uint16_t> const& elem){
-					return ip_addr == elem.first;
+				[&ip_addr, &port](std::pair<std::string, uint16_t> const& elem){
+					return ip_addr == elem.first &&
+						port == elem.second;
 				});
 		if(bootstrap_iter != nodes_to_connect.end()){
 			// remove duplicates, prefer encrypted version
+			P_V_S(ip_addr, P_SPAM);
+			P_V(port, P_SPAM);
+			print("erasing obsolete bootstrap information", P_SPAM);
 			nodes_to_connect.erase(
 				bootstrap_iter);
 		}
@@ -144,6 +149,10 @@ static void net_proto_verify_bootstrap_nodes(){
 	const uint64_t start_node_count =
 		id_api::cache::get(
 			"net_proto_peer_t").size()-1; // don't count ourselves
+	if(start_node_count == 0){
+		// only OK if i'm connecting with another peer first
+		print("no peers exist whatsoever, I better know what i'm doing", P_WARN);
+	}
 	print("starting with " + std::to_string(start_node_count) + " unique nodes", P_NOTE);
 }
 

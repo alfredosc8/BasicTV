@@ -33,6 +33,7 @@ private:
 	uint8_t status = 0;
 	std::vector<uint8_t> local_buffer;
 	// raw socket for SDL
+	SDLNet_SocketSet socket_set = nullptr;
 	TCPsocket socket = nullptr;
 	void socket_check();
 	id_t_ outbound_stat_sample_set_id = ID_BLANK_ID;
@@ -42,6 +43,7 @@ private:
 	void register_outbound_data(uint32_t bytes);
 	void register_inbound_data(uint32_t bytes);
 	void init_create_data_sets();
+	void update_socket_set();
 public:
 	data_id_t id;
 	net_socket_t();

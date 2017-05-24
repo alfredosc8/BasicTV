@@ -23,22 +23,24 @@ static void net_proto_accept_direct_connections(net_socket_t *incoming_conn){
 			new net_socket_t;
 		net_proto_socket_t *new_proto_socket =
 			new net_proto_socket_t;
-		net_proto_peer_t *fake_proto_peer_ptr =
-			new net_proto_peer_t;
 		IPaddress *ip_tmp =
 			SDLNet_TCP_GetPeerAddress(
 				tcp_socket);
-		fake_proto_peer_ptr->set_net_ip(
-			SDLNet_ResolveIP(ip_tmp),
-			NBO_16(ip_tmp->port)); // IPaddress is in NBO
-		// proto_peer_ptr should be upgraded
+		if(ip_tmp == nullptr){
+			print("couldn't pull ip info from new socket: " + (std::string)SDL_GetError(), P_WARN);
+		}
 		new_socket->set_tcp_socket(
 			tcp_socket);
 		new_proto_socket->set_socket_id(
 			new_socket->id.get_id());
-		// peer information is sent in metadata
-		// no information needs to be sent over without a request, so
-		// everything should be fine from here on out
+		new_proto_socket->send_id(
+			net_proto::peer::get_self_as_peer());
+		/*
+		  I can't pull any valid IP or port info from SDL, so we are
+		  going to live without it until data comes in, then we can
+		  set it directly from the metadata.
+		 */
+		print("accepted a peer connection", P_NOTE);
 	}
 }
 
@@ -117,7 +119,7 @@ static void net_proto_create_incoming_socket(){
 	incoming_conn->set_net_ip(
 		"",
  		settings::get_setting_unsigned_def(
-			"network_port",
+			"net_port",
 			58486));
 	incoming_conn->connect();
 }

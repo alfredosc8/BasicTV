@@ -114,7 +114,7 @@ static void net_proto_fill_type_requests(){
 				id_api::destroy(net_proto_type_requests[i]);
 				proto_type_request = nullptr;
 			}catch(...){
-				print("couldn't send type request", P_ERR);
+				print("couldn't send type request", P_WARN);
 			}
 		}
 	}
@@ -182,6 +182,8 @@ static bool net_proto_send_id_to_peer(
 	id_t_ payload_id,
 	id_t_ peer_id){
 	bool sent = false;
+	WARN_ON_BLANK_ID(payload_id);
+	WARN_ON_BLANK_ID(peer_id);
 	if(peer_id == net_proto::peer::get_self_as_peer()){
 		print("attempted to send an ID to myself as a peer, left over from tests?", P_NOTE);
 	}
@@ -237,7 +239,13 @@ void net_proto_handle_request(T* request_ptr){
 	  that 100 percent of the requests are processed and no reply means
 	  they don't have it
 	 */
-	if(//request_ptr->get_request_time() == 0 &&
+	// TODO: reimplement timeout
+	if(get_time_microseconds()-request_ptr->get_request_time() > 10*1000*1000){
+		print("type request is over ten seconds old, deleting", P_NOTE);
+		id_api::destroy(request_ptr->id.get_id());
+		return;
+	}
+	if(request_ptr->get_sender_peer_id() != net_proto::peer::get_self_as_peer() &&
 	   net_proto_send_id_to_peer(
 		   request_ptr->id.get_id(),
 		   request_ptr->get_sender_peer_id()) == false){

@@ -686,6 +686,11 @@ void test_net_proto_socket_transcoding(){
 	id_api::destroy(socket_vector[1].first->id.get_id());
 	id_api::destroy(socket_vector[1].second->id.get_id());
 	id_api::destroy(intermediate_socket->id.get_id());
+	socket_vector[0].first = nullptr;
+	socket_vector[0].second = nullptr;
+	socket_vector[1].first = nullptr;
+	socket_vector[1].second = nullptr;
+	intermediate_socket = nullptr;
 }
 
 /*

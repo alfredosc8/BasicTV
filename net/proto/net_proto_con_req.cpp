@@ -78,6 +78,9 @@ id_t_ net_proto_generate_con_req(id_t_ peer_id){
 		//print("attempted to connect to myself, not connecting", P_WARN);
 		return ID_BLANK_ID;
 	}
+	if(peer_ptr->get_net_ip_str() == ""){
+		print("can't connect to a blank IP address", P_ERR);
+	}
 	const uint8_t net_flags =
 		peer_connection_flags_to_con_req(peer_ptr);
 	net_proto_con_req_t *proto_con_req =

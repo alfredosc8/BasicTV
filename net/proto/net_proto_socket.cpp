@@ -121,6 +121,7 @@ void net_proto_socket_t::update_block_buffer(){
 	while((block_data = unescape_vector(
 		       working_buffer,
 		       NET_PROTO_ESCAPE)).first.size() != 0){
+		print("received another block of data", P_SPAM);
 		working_buffer = block_data.second;
 		if(block_data.first.size() != 0){
 			if(block_buffer.size() == 0){
@@ -246,6 +247,7 @@ void net_proto_socket_t::load_blocks(){
 					block_buffer[i].second);
 			add_id_to_inbound_id_set(
 				inbound_id);
+			print("received ID " + convert::array::id::to_hex(inbound_id), P_DEBUG);
 			block_buffer.erase(
 				block_buffer.begin()+i);
 			i--;

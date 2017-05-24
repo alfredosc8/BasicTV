@@ -12,6 +12,11 @@
 
 #include <algorithm>
 
+/*
+  This specifically handles creating net_proto_con_req_t. Actual connecting
+  code is handled in inbound and outbound connection files directly.
+ */
+
 void net_proto_handle_tcp_holepunch(net_proto_con_req_t *con_req){
 	const uint64_t timestamp =
 		con_req->get_timestamp();
@@ -164,6 +169,9 @@ void net_proto_create_random_connections(){
 		connections_to_start = peer_id_vector.size();
 	}
 	for(uint64_t i = 0;i < connections_to_start;i++){
+		if(peer_id_vector[i] == net_proto::peer::get_self_as_peer()){
+			continue;
+		}
 		if(pending_clearnet_con_req_for_peer(peer_id_vector[i]) == false){
 			net_proto::socket::connect(
 				peer_id_vector[i], 1);

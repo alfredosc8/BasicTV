@@ -220,10 +220,15 @@ void net_socket_t::connect(){
 						     nullptr,
 						     get_net_port());
 	}else{
-		print("opening a standard socket", P_NOTE);
-		res_host_retval = SDLNet_ResolveHost(&tmp_ip,
-						     get_net_ip_str().c_str(),
-						     get_net_port());
+		print("opening a standard socket to " +
+		      convert::net::ip::to_string(
+			      get_net_ip_str(),
+			      get_net_port()), P_NOTE);
+		res_host_retval =
+			SDLNet_ResolveHost(
+				&tmp_ip,
+				get_net_ip_str().c_str(),
+				get_net_port());
 	}
 	if(res_host_retval == -1){
 		print((std::string)"cannot resolve host:"+SDL_GetError(),
@@ -236,11 +241,19 @@ void net_socket_t::connect(){
 	}else{
 		print("opened socket", P_NOTE);
 	}
+	update_socket_set();
+}
+
+void net_socket_t::update_socket_set(){
+	socket_set = SDLNet_AllocSocketSet(1);
+	SDLNet_TCP_AddSocket(socket_set, socket);
 }
 
 void net_socket_t::disconnect(){
 	SDLNet_TCP_Close(socket);
 	socket = nullptr;
+	SDLNet_FreeSocketSet(socket_set);
+	socket_set = nullptr;
 }
 
 void net_socket_t::reconnect(){
@@ -263,6 +276,7 @@ void net_socket_t::set_tcp_socket(TCPsocket socket_){
 	}
 	set_net_ip(ip_addr_tmp,
 		   NBO_16(tmp_ip.port));
+	update_socket_set();
 }
 
 TCPsocket net_socket_t::get_tcp_socket(){
@@ -274,21 +288,8 @@ bool net_socket_t::activity(){
 		print("socket is nullptr", P_WARN);
 		return false;
 	}
-	/*
-	  For some reason, socket checking functions can only run on
-	  sockets inside of sets. I hope creating a temporary socket set
-	  doesn't interfere with the output
-	 */
-	bool retval = false;
-	SDLNet_SocketSet tmp_set = SDLNet_AllocSocketSet(1);
-	SDLNet_TCP_AddSocket(tmp_set, socket);
-	if(SDLNet_CheckSockets(tmp_set, 0) > 0){
-		retval = true;
-	}
-	SDLNet_TCP_DelSocket(tmp_set, socket);
-	SDLNet_FreeSocketSet(tmp_set);
-	tmp_set = nullptr;
-	return retval;
+	return SDLNet_SocketReady(socket) != 0;
+	//return SDLNet_CheckSockets(socket_set, 0) > 0;
 }
 
 void net_socket_t::set_inbound_stat_sample_set_id(id_t_ inbound_stat_sample_set_id_){

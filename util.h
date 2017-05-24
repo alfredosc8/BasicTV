@@ -43,6 +43,8 @@
 
 #define BETWEEN(a, b, c) ((a <= b) && (b <= c))
 
+#define WARN_ON_BLANK_ID(id___) if(unlikely(id___ == ID_BLANK_ID)){P_V_S((std::string)(#id___) + " is a blank ID, warning you now", P_WARN);}
+
 /*
   never and always are reserved for insane and impossible
   situations, mostly in tight loops.
