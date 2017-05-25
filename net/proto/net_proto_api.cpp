@@ -189,6 +189,7 @@ id_t_ net_proto::socket::optimal_proto_socket_of_peer(id_t_ peer_id){
 					proto_socket->get_last_recv_micro_s());
 		}
 	}
+	P_V_S(convert::array::id::to_hex(optimal_socket.first), P_VAR);
 	return optimal_socket.first;
 }
 
@@ -219,10 +220,11 @@ void net_proto::socket::connect(id_t_ peer_id_, uint32_t min){
 		PTR_DATA(peer_id_,
 			 net_proto_peer_t);
 	if(proto_peer_ptr == nullptr){
-		print("cannot connect to a null peer", P_WARN);
+		print("cannot connect to a null peer", P_ERR);
 	}
 	int64_t sockets_to_open =
 		min-all_proto_socket_of_peer(peer_id_).size();
+	P_V(sockets_to_open, P_VAR);
 	for(;sockets_to_open > 0;sockets_to_open--){
 		net_proto_generate_con_req(peer_id_);
 	}

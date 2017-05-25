@@ -18,16 +18,33 @@
   doesn't exist locally, then it has fallen out of use. This DOES allow for
   re-loading of cached data (since it shouldn't be too slow)
  */
+
 // can refer to id_disk_index_t
 #define ID_LOOKUP_FAST 1
 // cannot refer to id_disk_index_t, only looks in memory
 #define ID_LOOKUP_MEM 2
+// pre loaded as a type, no cache
+#define ID_LOOKUP_PRE 3
 
-#define PTR_DATA_MEM(id, type) ((type*)id_api::array::ptr_data(id, #type, ID_LOOKUP_MEM))
-#define PTR_ID_MEM(id, type) (id_api::array::ptr_id(id, #type, ID_LOOKUP_MEM))
+#define ID_LOOKUP_DISK 4
 
-#define PTR_DATA_FAST(id, type) ((type*)id_api::array::ptr_data(id, #type, ID_LOOKUP_FAST))
-#define PTR_ID_FAST(id, type) (id_api::array::ptr_id(id, #type, ID_LOOKUP_FAST))
+// #define PTR_DATA_PRE(id, type) ((type*)id_api::array::ptr_data(id, #type, ID_LOOKUP_PRE))
+// #define PTR_ID_PRE(id, type) (id_api::array::ptr_id(id, #type, ID_LOOKUP_PRE))
+
+// #define PTR_DATA_MEM(id, type) ((type*)id_api::array::ptr_data(id, #type, ID_LOOKUP_MEM))
+// #define PTR_ID_MEM(id, type) (id_api::array::ptr_id(id, #type, ID_LOOKUP_MEM))
+
+// #define PTR_DATA_FAST(id, type) ((type*)id_api::array::ptr_data(id, #type, ID_LOOKUP_FAST))
+// #define PTR_ID_FAST(id, type) (id_api::array::ptr_id(id, #type, ID_LOOKUP_FAST))
+
+// legacy
+
+#define PTR_DATA_FAST PTR_DATA
+#define PTR_ID_FAST PTR_ID
+#define PTR_DATA_MEM PTR_DATA
+#define PTR_ID_MEM PTR_ID
+#define PTR_DATA_PRE PTR_DATA
+#define PTR_ID_PRE PTR_ID
 
 #define PTR_DATA(id, type) ((type*)id_api::array::ptr_data(id, #type))
 #define PTR_ID(id, type) (id_api::array::ptr_id(id, #type))

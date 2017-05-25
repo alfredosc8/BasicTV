@@ -173,8 +173,10 @@ void net_proto_create_random_connections(){
 			continue;
 		}
 		if(pending_clearnet_con_req_for_peer(peer_id_vector[i]) == false){
-			net_proto::socket::connect(
-				peer_id_vector[i], 1);
+			try{
+				net_proto::socket::connect(
+					peer_id_vector[i], 1);
+			}catch(...){}
 		}else{
 			//print("not initiating another connection until first con_req is handled somehow", P_DEBUG);
 		}

@@ -37,10 +37,11 @@ uint64_t id_api::array::get_id_count(){
 static data_id_t *id_find(id_t_ id){
 	for(uint64_t i = 0;i < id_list.size();i++){
 		if(unlikely(id_list[i]->get_id(true) == id)){
+			// print("found ID " + convert::array::id::to_hex(id), P_SPAM);
 			return id_list[i];
 		}
 	}
-	print("Couldn't find ID", P_SPAM);
+	// print("couldn't find ID " + convert::array::id::to_hex(id), P_SPAM);
 	return nullptr;
 }
 
@@ -51,9 +52,13 @@ static data_id_t *id_find(id_t_ id){
 
 #define LOOKUP_AND_RETURN()			\
 	retval = id_find(id);			\
+	id_lookup.erase(id_lookup.end()-1);	\
 	if(retval != nullptr){			\
 		return retval;			\
 	}					\
+
+// might be more optimized data types
+std::vector<id_t_> id_lookup;
 
 data_id_t *id_api::array::ptr_id(id_t_ id,
 				 std::string type,
@@ -61,26 +66,21 @@ data_id_t *id_api::array::ptr_id(id_t_ id,
 	if(id == ID_BLANK_ID){
 		return nullptr;
 	}
-	const bool query_network =
-		(flags != ID_LOOKUP_FAST) &&
-		(flags != ID_LOOKUP_MEM);
-	const bool query_disk =
-		(flags != ID_LOOKUP_MEM);
-	// TODO: make a flag for this
-	const bool query_cache = true;
+	for(uint64_t i = 0;i < id_lookup.size();i++){
+		if(id_lookup[i] == id){
+			return nullptr;
+		}
+	}
+	id_lookup.push_back(id);
 	data_id_t *retval = nullptr;
 	LOOKUP_AND_RETURN();
-	if(query_cache){
-		id_api::cache::load_id(id);
-		LOOKUP_AND_RETURN();
-	}
-	if(query_disk){
-		id_disk_api::load(id);
-		LOOKUP_AND_RETURN();
-	}
-	if(query_network){
-		net_proto::request::add_id(id);
-	}
+	id_lookup.push_back(id);
+	id_api::cache::load_id(id);
+	LOOKUP_AND_RETURN();
+	id_lookup.push_back(id);
+	id_disk_api::load(id);
+	LOOKUP_AND_RETURN();
+	net_proto::request::add_id(id);
 	return retval;
 }
 
@@ -159,8 +159,16 @@ id_t_ id_api::array::add_data(std::vector<uint8_t> data_, bool raw){
 					compressor::decompress(
 						data_);
 			}
-			PTR_ID(id, )->import_data(data_);
-			return tmp_type_cache[i];
+			data_id_t *tmp_id_ptr =
+				PTR_ID_PRE(id, );
+			if(tmp_id_ptr == nullptr){
+				// loaded in cache, not in memory, needs to load
+				// the real data into a new allocated type
+				continue;
+			}else{
+				PTR_ID(id, )->import_data(data_);
+				return tmp_type_cache[i];
+			}
 		}
 	}
 	CHECK_TYPE(tv_channel_t);

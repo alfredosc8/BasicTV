@@ -123,7 +123,11 @@ std::string fix_to_length(std::string string, uint64_t size);
 // print var as a hex
 #define P_V_H(a, b) print(fix_to_length((std::string)__PRETTY_FUNCTION__ + ":" + (std::string)#a + " == ", P_V_LEN) + "'" +  convert::number::to_hex(a) + "'", b)
 
+// use every print function
 #define P_V_E(a, b) std::cout << std::endl;P_V(a, b);P_V_C(a, b);P_V_B(a, b);P_V_H(a, b);std::cout << std::endl;
+
+// print an ID
+#define P_V_I(a, b) print(fix_to_length((std::string)__PRETTY_FUNCTION__ + ":", P_V_LEN) + convert::array::id::to_hex(a) + " of type " + convert::type::from(get_id_type(a)), b),
 
 #ifdef SPAM_OUTPUT
 #define DEBUG_OUTPUT 1

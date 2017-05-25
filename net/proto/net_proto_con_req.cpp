@@ -72,10 +72,11 @@ id_t_ net_proto_generate_con_req(id_t_ peer_id){
 		PTR_DATA_FAST(peer_id,
 			      net_proto_peer_t);
 	if(peer_ptr == nullptr){
+		print("peer to connect to is a nullptr", P_SPAM);
 		return ID_BLANK_ID;
 	}
 	if(peer_id == net_proto::peer::get_self_as_peer()){
-		//print("attempted to connect to myself, not connecting", P_WARN);
+		print("attempted to connect to myself, not connecting", P_ERR);
 		return ID_BLANK_ID;
 	}
 	if(peer_ptr->get_net_ip_str() == ""){

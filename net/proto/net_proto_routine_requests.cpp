@@ -44,7 +44,7 @@ static void net_proto_routine_request_fill(std::vector<type_t_> type_vector,
 				net_proto_type_request_t *type_request =
 					new net_proto_type_request_t;
 				type_request->update_type(
-						type_vector[i]);
+					type_vector[i]);
 				type_request->set_receiver_peer_id(
 					net_proto::peer::random_peer_id());
 				type_request->set_sender_peer_id(

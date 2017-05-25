@@ -88,16 +88,16 @@ void id_api::cache::load_id(id_t_ id){
 	for(uint64_t i = 0;i < cache_state.size();i++){
 		const id_t_ cache_state_id =
 			id_api::raw::fetch_id(cache_state[i]);
-		P_V_S(convert::array::id::to_hex(cache_state_id), P_VAR);
-		P_V_S(convert::array::id::to_hex(id), P_VAR);
 		if(unlikely(id_api::raw::fetch_id(cache_state[i]) == id)){
 			print("found ID in cache_state vector", P_SPAM);
-			id_api::array::add_data(cache_state[i]);
+			try{
+				id_api::array::add_data(cache_state[i]);
+			}catch(...){
+				print("couldn't import data, probably lack a public key", P_DEBUG);
+				// TODO: probably create a request for it...
+			}
 			cache_state.erase(
 				cache_state.begin()+i);
-		}else{
-			P_V_S(convert::array::id::to_hex(cache_state_id), P_VAR);
-			P_V_S(convert::array::id::to_hex(id), P_VAR);
 		}
 	}
 }

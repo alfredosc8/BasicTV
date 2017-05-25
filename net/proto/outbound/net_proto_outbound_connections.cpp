@@ -5,6 +5,8 @@
 #include "../../../id/id.h"
 #include "../../../id/id_api.h"
 
+#include "../../../encrypt/encrypt.h"
+
 #include <vector>
 
 static void net_proto_initiate_direct_tcp(net_proto_con_req_t *con_req){
@@ -45,8 +47,14 @@ static void net_proto_initiate_direct_tcp(net_proto_con_req_t *con_req){
 			new net_proto_socket_t;
 		proto_socket_ptr->set_peer_id(peer_id);
 		proto_socket_ptr->set_socket_id(socket_ptr->id.get_id());
+		const id_t_ my_peer_id =
+			net_proto::peer::get_self_as_peer();
 		proto_socket_ptr->send_id(
-			net_proto::peer::get_self_as_peer());
+			my_peer_id);
+		proto_socket_ptr->send_id(
+			encrypt_api::search::pub_key_from_hash(
+				get_id_hash(
+					my_peer_id)));
 	}catch(...){
 		print("socket is a nullptr (client disconnect), destroying net_proto_socket_t", P_NOTE);
 		if(proto_socket_ptr != nullptr){
@@ -105,11 +113,14 @@ void net_proto_initiate_all_connections(){
 			if(get_time_microseconds() >
 			   second_peer_ptr->get_last_attempted_connect_time()+1000000){
 				net_proto_first_id_logic(con_req);
-				second_peer_ptr->set_last_attempted_connect_time(
-					get_time_microseconds());
 			}else{
 				//print("skipping connection to peer, too fast", P_SPAM);
 			}
+		}else{
+			P_V_S(convert::array::id::to_hex(first_id), P_VAR);
+			P_V_S(convert::array::id::to_hex(second_id), P_VAR);
+			P_V_S(convert::array::id::to_hex(
+				      net_proto::peer::get_self_as_peer()), P_VAR);
 		}
 		// second is always inbound, don't bother with that here
 	}

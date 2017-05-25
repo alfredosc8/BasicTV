@@ -30,6 +30,7 @@
 #include "id/id_set.h"
 #include "id/id_disk.h"
 #include "math/math.h"
+#include "lock.h"
 
 #include "net/proto/net_proto_socket.h"
 #include "net/net_socket.h"
@@ -720,6 +721,16 @@ void test_nc(){
   feed IDs and random data.
  */
 
+void test_lock(){
+	lock_t test_lock;
+	for(uint64_t i = 0;i < 256;i++){
+		test_lock.lock();
+	}
+	for(uint64_t i = 0;i < 256;i++){
+		test_lock.unlock();
+	}
+}
+
 void test(){
 	std::vector<id_t_> full_id_set =
 		id_api::get_all();
@@ -732,6 +743,7 @@ void test(){
 	RUN_TEST(test_aes);
 	RUN_TEST(test_id_set_compression);
 	RUN_TEST(test_net_proto_socket_transcoding);
+	RUN_TEST(test_lock);
 	std::vector<id_t_> extra_id_set =
 		id_api::get_all();
 	for(uint64_t i = 0;i < full_id_set.size();i++){

@@ -295,7 +295,7 @@ id_t_ encrypt_api::search::pub_key_from_hash(std::array<uint8_t, 32> hash){
 	P_V(pub_key_vector.size(), P_VAR);
 	for(uint64_t i = 0;i < pub_key_vector.size();i++){
 		encrypt_pub_key_t *pub_key_ptr =
-			PTR_DATA(
+			PTR_DATA_PRE(
 				pub_key_vector[i],
 				encrypt_pub_key_t);
 		if(pub_key_ptr == nullptr){

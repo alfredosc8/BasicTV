@@ -44,7 +44,11 @@ static void net_proto_send_logic(std::vector<id_t_> id_vector,
 		if(id_ptr == nullptr){
 			continue;
 		}
-		proto_socket->send_id(id_vector[i]);
+		try{
+			proto_socket->send_id(id_vector[i]);
+		}catch(...){
+			print("couldn't send ID to peer", P_WARN);
+		}
 	}
 }
 
@@ -81,11 +85,11 @@ static void net_proto_fill_type_requests(){
 			proto_type_request->get_receiver_peer_id();
 		const id_t_ requester_peer_id =
 			proto_type_request->get_sender_peer_id();
-	 	if(holder_peer_id == net_proto::peer::get_self_as_peer()){
+	 	if(holder_peer_id != net_proto::peer::get_self_as_peer()){
 			//print("network request's data holder ID doesn't match, skipping", P_SPAM);
 			continue;
 		} // check if we are the intended recepient
-		if(requester_peer_id != net_proto::peer::get_self_as_peer()){
+		if(requester_peer_id == net_proto::peer::get_self_as_peer()){
 			//print("request was created with my peer ID, skipping", P_SPAM);
 			continue;
 		} // check if we created the request
@@ -171,58 +175,6 @@ static void net_proto_fill_linked_list_requests(){
 }
 
 /*
-  TODO: better implement networking stats before this is written
-
-  TODO: actually write this stuff
-
-  TODO: check for best route for data
- */
-
-static bool net_proto_send_id_to_peer(
-	id_t_ payload_id,
-	id_t_ peer_id){
-	bool sent = false;
-	WARN_ON_BLANK_ID(payload_id);
-	WARN_ON_BLANK_ID(peer_id);
-	if(peer_id == net_proto::peer::get_self_as_peer()){
-		print("attempted to send an ID to myself as a peer, left over from tests?", P_NOTE);
-	}
-	std::vector<id_t_> all_sockets =
-		id_api::cache::get(
-			TYPE_NET_PROTO_SOCKET_T);
-	P_V(all_sockets.size(), P_VAR);
-	for(uint64_t i = 0;i < all_sockets.size();i++){
-		try{
-			net_proto_socket_t *proto_socket_ptr =
-				PTR_DATA(all_sockets[i],
-					 net_proto_socket_t);
-			if(proto_socket_ptr == nullptr){
-				print("proto_socket_ptr is a nullptr", P_NOTE);
-				continue;
-			}	
-			if(proto_socket_ptr->get_peer_id() == peer_id){
-				print("peer socket already exists, sending over first found", P_NOTE);
-				proto_socket_ptr->send_id(
-					payload_id);
-				sent = true;
-				break;
-			}
-		}catch(...){} // search for another socket I guess...
-	}
-	if(sent == false){
-		print("no valid proto socket found, requesting new socket for peer", P_NOTE);
-		net_proto::socket::connect(
-			peer_id, 1); // one socket currently
-		/*
-		  Connections aren't made until later on in the code, so just
-		  forget about sending any data this iteration, not to mention
-		  latencies and holepunching jargon.
-		 */
-	}
-	return sent;
-}
-
-/*
   General rule of thumb is the code can be as tacky as it can be SO LONG AS
   all of the tacky code can be represented on the screen, in one file, at one
   time.
@@ -245,15 +197,18 @@ void net_proto_handle_request(T* request_ptr){
 		id_api::destroy(request_ptr->id.get_id());
 		return;
 	}
-	if(request_ptr->get_sender_peer_id() != net_proto::peer::get_self_as_peer() &&
-	   net_proto_send_id_to_peer(
-		   request_ptr->id.get_id(),
-		   request_ptr->get_sender_peer_id()) == false){
-		request_ptr->update_request_time();
-	}else{
-		print("couldn't send request to peer, probably no available socket", P_SPAM);
+	if(request_ptr->get_sender_peer_id() != net_proto::peer::get_self_as_peer()){
+		try{
+			net_proto_send_logic({request_ptr->id.get_id()},
+					     request_ptr->get_sender_peer_id());
+			request_ptr->update_request_time();
+		}catch(...){
+			print("couldn't send request to peer, probably no available socket", P_SPAM);
+			net_proto::socket::connect(
+				request_ptr->get_sender_peer_id(),
+				1);
+		}
 	}
-
 }
 
 #define NET_PROTO_HANDLE_REQUEST_HANDLER(type)	\

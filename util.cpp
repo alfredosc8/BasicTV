@@ -154,6 +154,21 @@ void print(std::string data, int level, const char *func){
 			std::raise(SIGKILL);
 		}
 		if(level >= P_ERR){
+			if(settings::get_setting("print_backtrace") == "true"){
+				void *trace[16];
+				uint32_t trace_size =
+					backtrace(
+						trace, 16);
+				char **backtrace_symbol_retval =
+					backtrace_symbols(
+						trace, trace_size);
+				for(uint32_t i = 0;i < trace_size;i++){
+					std::cout << backtrace_symbol_retval[i] << std::endl;
+					free(backtrace_symbol_retval[i]);
+					backtrace_symbol_retval = nullptr;
+				}
+				std::cout << "Finished backtrace" << std::endl;
+			}
 			throw std::runtime_error(data);
 		}
 		// if(level >= P_WARN){

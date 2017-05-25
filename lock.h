@@ -4,9 +4,9 @@
 #include <thread>
 struct lock_t{
 private:
-	bool first_run = true;
 	std::mutex mutex_lock;
 	std::thread::id id;
+	uint16_t depth = 0;
 public:
 	lock_t();
 	~lock_t();

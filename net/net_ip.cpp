@@ -17,6 +17,9 @@ void net_ip_t::list_virtual_data(data_id_t *id){
 }
 
 void net_ip_t::set_net_ip(std::string ip_, uint16_t port_){
+	if(ip_ == ""){
+		std::raise(SIGINT);
+	}
 	port = port_;
 	if(ip_.size() >= address.size()){
 		print("attempted ip length is greater than 63 characters", P_ERR);
