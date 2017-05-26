@@ -580,6 +580,33 @@ static void test_id_set_compression(){
 	running = false;
 }
 
+static void test_number_cmp(){
+	std::vector<uint8_t> number_one =
+		math::number::create(
+			true_rand(0, ~(uint64_t)0),
+			0);
+	std::vector<uint8_t> number_two =
+		math::number::create(
+			true_rand(0, ~(uint64_t)0),
+			0);
+        uint64_t number_one_real =
+		math::number::get::number(number_one);
+        uint64_t number_two_real =
+		math::number::get::number(number_two);
+	if((number_one_real > number_two_real) !=
+	   math::number::cmp::greater_than(number_one, number_two)){
+		print("greather than number comparison is wrong", P_ERR);
+	}
+	if((number_one_real == number_two_real) !=
+	   math::number::cmp::equal_to(number_one, number_two)){
+		print("equal to number comparison is wrong", P_ERR);
+	}
+	if((number_one_real < number_two_real) !=
+	   math::number::cmp::less_than(number_one, number_two)){
+		print("less than number comparison is wrong", P_ERR);
+	}
+}
+
 static void benchmark_encryption(){
 	try{
 		if(settings::get_setting("benchmark_encryption") == "rsa"){
@@ -744,6 +771,7 @@ void test(){
 	RUN_TEST(test_id_set_compression);
 	RUN_TEST(test_net_proto_socket_transcoding);
 	RUN_TEST(test_lock);
+	RUN_TEST(test_number_cmp);
 	std::vector<id_t_> extra_id_set =
 		id_api::get_all();
 	for(uint64_t i = 0;i < full_id_set.size();i++){

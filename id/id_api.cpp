@@ -70,7 +70,7 @@ data_id_t *id_api::array::ptr_id(id_t_ id,
 	if(id == ID_BLANK_ID){
 		return nullptr;
 	}
-	if(convert::type::from(get_id_type(id)) != type){
+	if(convert::type::from(get_id_type(id)) != type && type != ""){
 		print("type mis-match in ptr_id", P_SPAM);
 		return nullptr;
 	}
@@ -666,21 +666,35 @@ std::vector<uint8_t> id_api::raw::encrypt(std::vector<uint8_t> data){
 				encrypt_api::search::priv_key_from_hash(
 					get_id_hash(id));
 			P_V_S(convert::array::id::to_hex(priv_key_id), P_VAR);
+			std::vector<uint8_t> unencrypt_chunk =
+				std::vector<uint8_t>(
+					data.begin()+1+sizeof(id_t_),
+					data.end());
+			P_V(unencrypt_chunk.size(), P_VAR);
+			if(unencrypt_chunk.size() == 0){
+				print("unencrypt_chunk is empty", P_ERR);
+			}
 			std::vector<uint8_t> encrypt_chunk =
 				encrypt_api::encrypt(
-					std::vector<uint8_t>(
-						data.begin()+1+sizeof(id_t_),
-						data.end()),
+					unencrypt_chunk,
 					priv_key_id);
-			data.erase(
-				data.begin()+1+sizeof(id_t_),
-				data.end());
-			data.insert(
-				data.end(),
-				encrypt_chunk.begin(),
-				encrypt_chunk.end());
-			data[0] |= ID_EXTRA_ENCRYPT;
+			P_V(encrypt_chunk.size(), P_VAR);
+			if(encrypt_chunk.size() != 0){
+				data.erase(
+					data.begin()+1+sizeof(id_t_),
+					data.end());
+				data.insert(
+					data.end(),
+					encrypt_chunk.begin(),
+					encrypt_chunk.end());
+				data[0] |= ID_EXTRA_ENCRYPT;
+			}else{
+				print("can't encrypt empty chunk", P_WARN);
+				// should be checked before call, but it's no
+				// biggie right now
+			}
 		}catch(...){
+			P_V_S(convert::type::from(get_id_type(id)), P_VAR);
 			print("can't encrypt exported id information, either not owner or a bug", P_ERR);
 		}
 	}

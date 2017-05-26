@@ -56,6 +56,7 @@ static void encrypt_pull_key_info(id_t_ id,
 				  uint8_t *key_type){
 	data_id_t *ptr = PTR_ID(id, );
 	if(ptr == nullptr){
+		P_V_I(id, P_SPAM)
 		print("id is nullptr", P_ERR);
 	}
 	if(ptr->get_type() == "encrypt_pub_key_t"){
