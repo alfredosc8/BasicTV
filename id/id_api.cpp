@@ -125,8 +125,23 @@ void id_api::array::del(id_t_ id){
 	print("cannot find ID in list", P_ERR);
 }
 
-#define CHECK_TYPE(a) if(convert::type::from(type) == #a){print("importing data", P_SPAM);a *tmp = new a;tmp->id.import_data(data_);return tmp->id.get_id();}
-
+#define CHECK_TYPE(a)					\
+	if(convert::type::from(type) == #a){		\
+		print("importing data", P_SPAM);	\
+		a* tmp = nullptr;			\
+		try{					\
+			tmp = new a;			\
+			tmp->id.import_data(data_);	\
+			return tmp->id.get_id();	\
+		}catch(...){				\
+			if(tmp != nullptr){		\
+				delete tmp;		\
+				tmp = nullptr;		\
+				return ID_BLANK_ID;	\
+			}				\
+		}					\
+	}						\
+	
 /*
   General purpose reader, returns the ID of the new information.
   The only current use of the return value is for associating sockets with

@@ -222,6 +222,9 @@ void net_proto::socket::connect(id_t_ peer_id_, uint32_t min){
 	if(proto_peer_ptr == nullptr){
 		print("cannot connect to a null peer", P_ERR);
 	}
+	P_V_S(convert::array::id::to_hex(peer_id_), P_VAR);
+	P_V_S(proto_peer_ptr->get_net_ip_str(), P_VAR);
+	P_V(proto_peer_ptr->get_net_port(), P_VAR);
 	int64_t sockets_to_open =
 		min-all_proto_socket_of_peer(peer_id_).size();
 	P_V(sockets_to_open, P_VAR);

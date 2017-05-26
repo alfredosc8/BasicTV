@@ -58,11 +58,10 @@ static void net_proto_init_self_peer(){
 	net_proto_peer_t *proto_peer_ptr =
 		new net_proto_peer_t;
 	proto_peer_ptr->id.noexp_all_data();
+	proto_peer_ptr->set_net_ip(
+		ip_addr, tmp_port);
 	net_proto::peer::set_self_peer_id(
 		proto_peer_ptr->id.get_id());
-	net_proto::peer::set_self_as_peer(
-		ip_addr,
-		tmp_port);
 	P_V_S(proto_peer_ptr->get_net_ip_str(), P_VAR);
 	P_V(proto_peer_ptr->get_net_port(), P_VAR);
 }
@@ -134,14 +133,14 @@ static void net_proto_verify_bootstrap_nodes(){
 	for(uint64_t i = 0;i < nodes_to_connect.size();i++){
 		net_proto_peer_t *proto_peer_ptr =
 			new net_proto_peer_t;
-		proto_peer_ptr->id.noexp_all_data();
-		// no harm in assuming port is open
-		// WRONG_KEY forces no encryption
-		proto_peer_ptr->set_net_flags(
-			NET_PEER_WRONG_KEY | NET_PEER_PORT_OPEN);
 		proto_peer_ptr->set_net_ip(
 			nodes_to_connect[i].first,
 			nodes_to_connect[i].second);
+		proto_peer_ptr->id.noexp_all_data();
+		proto_peer_ptr->set_net_flags(
+			NET_PEER_WRONG_KEY | NET_PEER_PORT_OPEN);
+		// no harm in assuming port is open
+		// WRONG_KEY forces no encryption
 		print("created peer with IP " + nodes_to_connect[i].first +
 		      " and port " + std::to_string(nodes_to_connect[i].second),
 		      P_NOTE);
