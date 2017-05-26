@@ -18,6 +18,7 @@
 #include "../net/proto/net_proto_con_req.h"
 #include "../net/proto/net_proto.h"
 #include "../net/proto/net_proto_socket.h"
+#include "../net/net_cache.h"
 #include "../net/net.h"
 #include "../input/input.h"
 #include "../input/input_ir.h"
@@ -60,10 +61,17 @@ static data_id_t *id_find(id_t_ id){
 // might be more optimized data types
 std::vector<id_t_> id_lookup;
 
+/*
+  Should probably change around to optimize somehow
+ */
+
 data_id_t *id_api::array::ptr_id(id_t_ id,
-				 std::string type,
-				 uint8_t flags){
+				 std::string type){
 	if(id == ID_BLANK_ID){
+		return nullptr;
+	}
+	if(convert::type::from(get_id_type(id)) != type){
+		print("type mis-match in ptr_id", P_SPAM);
 		return nullptr;
 	}
 	for(uint64_t i = 0;i < id_lookup.size();i++){
@@ -85,15 +93,13 @@ data_id_t *id_api::array::ptr_id(id_t_ id,
 }
 
 data_id_t *id_api::array::ptr_id(id_t_ id,
-				 type_t_ type,
-				 uint8_t flags){
-	return ptr_id(id, convert::type::from(type), flags);
+				 type_t_ type){
+	return ptr_id(id, convert::type::from(type));
 }
 
 void *id_api::array::ptr_data(id_t_ id,
-			      std::string type,
-			      uint8_t flags){
-	data_id_t *id_ptr = ptr_id(id, type, flags);
+			      std::string type){
+	data_id_t *id_ptr = ptr_id(id, type);
 	if(id_ptr == nullptr){
 		return nullptr;
 	}
@@ -101,9 +107,8 @@ void *id_api::array::ptr_data(id_t_ id,
 }
 
 void *id_api::array::ptr_data(id_t_ id,
-			      type_t_ type,
-			      uint8_t flags){
-	return ptr_data(id, convert::type::from(type), flags);
+			      type_t_ type){
+	return ptr_data(id, convert::type::from(type));
 }
 
 void id_api::array::add(data_id_t *ptr){
@@ -140,10 +145,6 @@ id_t_ id_api::array::add_data(std::vector<uint8_t> data_, bool raw){
 		print("can't import id and type from raw data", P_ERR);
 		throw e;
 	}
-	const id_t_ pub_key_id =
-		encrypt_api::search::pub_key_from_hash(
-			get_id_hash(
-				id));
 	std::vector<id_t_> tmp_type_cache =
 		id_api::cache::get(type);
 	for(uint64_t i = 0;i < tmp_type_cache.size();i++){
@@ -357,6 +358,7 @@ std::vector<id_t_> id_api::get_all(){
  */
 
 static bool id_api_should_write_to_disk_mod_inc(id_t_ id_){
+	P_V_S(convert::array::id::to_hex(id_), P_VAR);
 	// std::string directory =
 	// 	id_disk_api::get_filename(id_);
 	// directory =

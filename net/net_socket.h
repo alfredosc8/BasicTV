@@ -36,13 +36,17 @@ private:
 	SDLNet_SocketSet socket_set = nullptr;
 	TCPsocket socket = nullptr;
 	void socket_check();
-	id_t_ outbound_stat_sample_set_id = ID_BLANK_ID;
-	id_t_ inbound_stat_sample_set_id = ID_BLANK_ID;
 	id_t_ proxy_id = ID_BLANK_ID;
-
-	void register_outbound_data(uint32_t bytes);
-	void register_inbound_data(uint32_t bytes);
-	void init_create_data_sets();
+	
+	/*
+	  inbound is throughput
+	  outbound isn't going to be created, instead we are going to name that
+	  latency and use ping/pong system
+	 */
+	void register_inbound_data(
+		uint32_t bytes,
+		uint64_t start_time_micro_s,
+		uint64_t end_time_micro_s);
 	void update_socket_set();
 public:
 	data_id_t id;
@@ -63,11 +67,6 @@ public:
 	std::vector<uint8_t> recv_all_buffer();
 	bool activity();
 
-	// inbound and outbound stats
-	void set_inbound_stat_sample_set_id(id_t_ inbound_stat_sample_set_id_);
-	id_t_ get_inbound_stat_sample_set_id();
-	void set_outbound_stat_sample_set_id(id_t_ outbound_stat_sample_set_id_);
-	id_t_ get_outbound_stat_sample_set_id();
 	void set_proxy_id(id_t_ proxy_id_);
 	id_t_ get_proxy_id();
 

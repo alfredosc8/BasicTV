@@ -34,17 +34,20 @@ std::vector<uint8_t> compressor::xz::to(std::vector<uint8_t> input,
 	uint64_t retval_size =
 		(input.size()*1.1)+12;
 #endif
+	if(compression_level > 9){
+		compression_level = Z_BEST_COMPRESSION; // defined as 9
+	}
 	uint8_t *retval_char = new uint8_t[retval_size];
 	compressor_zlib_error_checker(
-		::compress(
+		::compress2(
 			retval_char,
 			&retval_size,
 			&(input[0]),
-			input.size()));
-	std::vector<uint8_t> retval;
-	for(uint64_t i = 0;i < retval_size;i++){ // changed by compress()
-		retval.push_back(retval_char[i]);
-	}
+			input.size(),
+			compression_level));
+	std::vector<uint8_t> retval(
+		retval_char,
+		retval_char+retval_size);
 	delete[] retval_char;
 	retval_char = nullptr;
 	return retval;

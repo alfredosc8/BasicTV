@@ -14,6 +14,11 @@
 std::vector<uint8_t> compressor::compress(std::vector<uint8_t> data,
 					  uint8_t compression_level, 
 					  type_t_ type){
+	if(type != 0){
+		// the idea was to have multiple different dictionaries for
+		// the types of data, we can work fine without that for now
+		print("type variable passed, but not used", P_SPAM);
+	}
 	std::vector<uint8_t> retval = 
 		compressor::zstd::to(data,
 				     compression_level,

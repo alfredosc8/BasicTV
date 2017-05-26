@@ -408,8 +408,9 @@ static void tv_init_test_webcam(){
 		vector_array.push_back(video->id.get_id());
 	}
 	id_api::linked_list::link_vector(vector_array);
-	channel->set_desc(
-		"BasicTV Webcam Test Channel");
+	channel->set_description(
+		convert::string::to_bytes(
+			"BasicTV Webcam Test Channel"));
 	// no harm in adding everything
 	item->add_frame_id(vector_array);
 	item->set_tv_channel_id(channel->id.get_id());

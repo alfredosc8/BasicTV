@@ -557,8 +557,8 @@ static void test_id_set_compression(){
 	std::vector<id_t_> id_set_new =
 		expand_id_set(id_set_compact);
 	if(id_set_new == id_set){
-		const long double compression_ratio =
-			(id_set.size()*sizeof(id_t_))/(id_set_compact.size());
+		// const long double compression_ratio =
+		// 	(id_set.size()*sizeof(id_t_))/(id_set_compact.size());
 		// P_V(compression_ratio, P_NOTE);
 	}else{
 		// P_V(id_set.size(), P_NOTE);

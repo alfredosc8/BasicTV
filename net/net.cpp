@@ -6,6 +6,7 @@
  */
 
 #include "net.h"
+#include "net_cache.h"
 #include "../main.h"
 #include "../util.h"
 
@@ -98,44 +99,6 @@ std::string net::get(std::string url, int stale_time){
 	return net::get_url(url, stale_time);
 }
 
-net_cache_t::net_cache_t(std::string url_, std::string data_, uint64_t timestamp_){
-	url = url_;
-	data = data_;
-	timestamp = timestamp_;
-	complete = false;
-}
-
-net_cache_t::~net_cache_t(){
-	url = "";
-	data = "";
-	timestamp = 0;
-	complete = false;
-}
-
-std::string net_cache_t::get_url(){
-	return url;
-}
-
-void net_cache_t::set_data(std::string data_){
-	data += data_;
-}
-
-std::string net_cache_t::get_data(){
-	return data;
-}
-
-uint64_t net_cache_t::get_timestamp(){
-	return timestamp;
-}
-
-void net_cache_t::set_complete(bool complete_){
-	complete = complete_;
-}
-
-bool net_cache_t::get_complete(){
-	return complete;
-}
-
 /*
   TODO: get some backups for this, seriously
   canihazip.com/s has the plaintext stuff, which is nice
@@ -149,3 +112,7 @@ std::string net_get_ip(){
 	// 	ip_addr.find_last_of("<//body>")-strlen("<//body>"));
 	return net::get_url("canihazip.com/s");
 }
+
+/*
+  newer stuff, code above is pretty old and decrepit
+ */

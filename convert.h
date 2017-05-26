@@ -110,6 +110,10 @@ namespace convert{
 		std::tuple<uint64_t, uint64_t, uint64_t, uint8_t> bpc(std::tuple<uint64_t, uint64_t, uint64_t, uint8_t> color,
 								      uint8_t new_bpp);
 	}
+	namespace string{
+		std::vector<uint8_t> to_bytes(std::string str);
+		std::string from_bytes(std::vector<uint8_t> bytes);
+	};
 };
 
 #endif

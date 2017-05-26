@@ -178,10 +178,10 @@ public:
 typedef uint16_t transport_i_t;
 typedef uint32_t transport_size_t;
 
-namespace id_transport{
-	std::vector<uint8_t> get_entry(std::vector<uint8_t> data, transport_i_t trans_i);
-	std::vector<uint8_t> set_entry(std::vector<uint8_t> entry);
-};
+// namespace id_transport{
+// 	std::vector<uint8_t> get_entry(std::vector<uint8_t> data, transport_i_t trans_i);
+// 	std::vector<uint8_t> set_entry(std::vector<uint8_t> entry, transport_i_t trans);
+// };
 
 extern std::array<uint8_t, 32> get_id_hash(id_t_ id);
 extern void set_id_hash(id_t_ *id, std::array<uint8_t, 32> hash);

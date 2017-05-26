@@ -54,13 +54,13 @@ void console_t::execute(std::vector<std::string> cmd_vector){
 		}
 		// registers and output table management, no printing
 		LIST_CMD(output_table_clear);
-		LIST_CMD(reg_set_const);
-		LIST_CMD(reg_set_table);
-		LIST_CMD(reg_copy);
-		LIST_CMD(reg_swap);
-		LIST_CMD(reg_clear);
-		LIST_CMD(reg_left_shift);
-		LIST_CMD(reg_right_shift);
+		LIST_CMD_VECTOR(reg_set_const);
+		LIST_CMD_VECTOR(reg_set_table);
+		LIST_CMD_VECTOR(reg_copy);
+		LIST_CMD_VECTOR(reg_swap);
+		LIST_CMD_VECTOR(reg_clear);
+		LIST_CMD_VECTOR(reg_left_shift);
+		LIST_CMD_VECTOR(reg_right_shift);
 		// printing operations, prints output to the screen
 		LIST_CMD(print_output_table);
 		LIST_CMD(print_reg);

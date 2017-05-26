@@ -148,7 +148,7 @@ void print(std::string data, int level, const char *func){
 		std::cout << print_color_text(print_level_text(level), level) << " "
 			  << " " << print_color_text(data, level) << std::endl;
 		if(settings::get_setting_unsigned_def(
-			   "throw_level", P_CRIT) <= level){
+			   "throw_level", P_CRIT) <= (uint64_t)level){
 			std::cerr << "CRITICAL ERROR" << std::endl;
 			// standard throws aren't as easily debuggable
 			std::raise(SIGKILL);

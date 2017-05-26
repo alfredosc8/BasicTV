@@ -24,6 +24,13 @@
   to prevent piracy and nonsense problems.
  */
 
+
+#define TV_ITEM_STREAMING (1 << 0)
+#define TV_ITEM_AUDIO (1 << 1)
+#define TV_ITEM_VIDEO (1 << 2)
+#define TV_ITEM_TEXT (1 << 3)
+#define TV_ITEM_NUMBER (1 << 4)
+
 struct tv_item_t{
 private:
 	// Vector of ID SETS
@@ -46,5 +53,8 @@ public:
 	std::vector<std::vector<id_t_> > get_frame_id_vector();
 	void add_frame_id(std::vector<id_t_> stream_id_vector_);
 	void clear_frame_sets();
+
+	// metadata from frame sets
+	uint64_t count_frame_sets_of_type(type_t_ type);
 };
 #endif

@@ -13,9 +13,9 @@ static std::string gen_table(std::vector<std::vector<std::string> > entries){
 			}
 		}
 	}
-	uint64_t end = 0;
-	for(int64_t y = 0;y < entries.size();y++){
-		for(int64_t x = 0;x < entries[y].size();x++){
+	int64_t end = 0;
+	for(int64_t y = 0;y < (int64_t)entries.size();y++){
+		for(int64_t x = 0;x < (int64_t)entries[y].size();x++){
 			if(entries[y][x] != "" && x > end){
 				end = x;
 			}
@@ -24,7 +24,7 @@ static std::string gen_table(std::vector<std::vector<std::string> > entries){
 	P_V(end, P_VAR);
 	for(uint64_t y = 0;y < entries.size();y++){
 		std::string row;
-		for(uint64_t x = 0;x <= end;x++){
+		for(uint64_t x = 0;x <= (uint64_t)end;x++){
 			row += " | " + fix_to_length(entries[y][x], row_length[x]);
 		}
 		row += " | ";

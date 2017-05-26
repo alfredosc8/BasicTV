@@ -2,6 +2,7 @@
 #include "../../util.h"
 #include "math_numbers.h"
 #include "../math.h"
+#include "../../id/id_api.h"
 
 #define MINOR_SPECIES_MULTIPLIER (pow(2, 64)-1)
 
@@ -211,4 +212,19 @@ std::vector<uint8_t> math::number::create(int64_t number,
 	NUMBER_CREATE_ADD(minor_size);
 	NUMBER_CREATE_ADD(minor_int);
 	return retval;
+}
+
+// simple helper function
+
+void math::number::add_data_to_set(
+	std::vector<std::vector<uint8_t> > data,
+	id_t_ math_number_set_id){
+	math_number_set_t *math_number_set_ptr =
+		PTR_DATA(math_number_set_id,
+			 math_number_set_t);
+	if(math_number_set_ptr == nullptr){
+		print("math_number_set_ptr is a nullptr", P_ERR);
+	}
+	math_number_set_ptr->add_raw_data(
+		data);
 }

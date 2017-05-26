@@ -91,7 +91,17 @@ static std::vector<uint8_t> tv_audio_get_wav_data_from_opus(tv_frame_audio_t *fr
 	int32_t frame_size = opus_decoder_get_nb_samples(decoder,opus_data.data(),opus_data.size());
 	std::vector<uint8_t> frame_data;
 	frame_data.resize(frame_size*sizeof(opus_int16));
-	opus_decode(decoder,opus_data.data(),opus_data.size(),(opus_int16*)frame_data.data(),frame_size,0);
+	int64_t frame_size_retval =
+		opus_decode(
+			decoder,
+			opus_data.data(),
+			opus_data.size(),
+			(opus_int16*)frame_data.data(),
+			frame_size,
+			0);
+	if(frame_size_retval < 0){
+		print("opus couldn't decode the audio data", P_ERR);
+	}
 	opus_decoder_destroy(decoder);
 	return tv_audio_get_wav_data_raw(frame_data,
 					 sampling_freq,

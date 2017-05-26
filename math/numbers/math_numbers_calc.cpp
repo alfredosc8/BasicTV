@@ -31,17 +31,30 @@ static std::vector<uint8_t> math_simple_add(
 	std::vector<uint8_t> x,
 	std::vector<uint8_t> y){
 	std::vector<uint8_t> retval;
-	bool overflow = false;
-	for(uint64_t i = 0;i < (x.size() > x.size()) ? y.size() : y.size();i++){
-		uint8_t x_comp = 0;
-		if(x.size() > i){
-			x_comp = x[i];
-		}
-		uint8_t y_comp = 0;
-		if(y.size() > i){
-			y_comp = y[i];
+	long double x_ =
+		math::number::get::number(x);
+	long double y_ =
+		math::number::get::number(y);
+	uint64_t x_unit =
+		math::number::get::unit(x);
+	uint64_t y_unit =
+		math::number::get::unit(y);
+	uint64_t real_unit = 0;
+	if(x_unit == 0 && y_unit != 0){
+		real_unit = y_unit;
+	}else if(x_unit != 0 && y_unit == 0){
+		real_unit = x_unit;
+	}else if(x_unit != 0 && y_unit != 0){
+		if(x_unit == y_unit){
+			real_unit = x_unit; // or y_unit
+		}else{
+			print("unit mismatch", P_WARN);
 		}
 	}
+	print("again, I really need to go over this code", P_WARN);
+	return math::number::create(
+		x_+y_,
+		real_unit);
 }
 
 std::vector<uint8_t> math::number::calc::add(

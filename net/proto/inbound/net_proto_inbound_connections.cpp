@@ -46,12 +46,62 @@ static void net_proto_accept_direct_connections(net_socket_t *incoming_conn){
 
 // returns true on success, false on failure (retval is should I destroy it?)
 
+// this function is both inbound and outbound connections, since TCP holepunches
+// are the same in practice
+
+// the function isn't written yet, but sanity checking the pointer to con_req
+// should happen regardless of the implementation
 static bool net_proto_facilitate_tcp_holepunch(net_proto_con_req_t *con_req){
+	net_socket_t *incoming_socket_ptr =
+		PTR_DATA(incoming_id,
+			 net_socket_t);
+	if(incoming_socket_ptr == nullptr){
+		// shouldn't happen ever
+		print("incoming_socket_ptr is a nullptr", P_ERR);
+	}
+	id_t_ first_peer_id = ID_BLANK_ID;
+	id_t_ second_peer_id = ID_BLANK_ID;
+	id_t_ third_peer_id = ID_BLANK_ID;
+	const id_t_ self_as_peer_id =
+		net_proto::peer::get_self_as_peer();
+	con_req->get_peer_ids(
+		&first_peer_id,
+		&second_peer_id,
+		&third_peer_id);
+	if(third_peer_id != ID_BLANK_ID){
+		print("doing a simple TCP holepunch, but a third peer ID is give,, TCP doesn't need this", P_WARN);
+		if(third_peer_id == self_as_peer_id){
+			print("i'm the third peer ID, weird...", P_WARN);
+		}
+	}
+	id_t_ peer_id = ID_BLANK_ID;
+	if(first_peer_id == self_as_peer_id &&
+	   second_peer_id != self_as_peer_id){
+		peer_id = second_peer_id;
+	}else if(first_peer_id != self_as_peer_id &&
+		 second_peer_id == self_as_peer_id){
+		peer_id = first_peer_id;
+	}else{
+		print("invalid peer ID configuration, I need to be only one", P_ERR);
+	}
+	/*
+	  I'm hoping I can just do all of the fancy connecting work over the
+	  incoming socket and let direct_connect whatever take care of importing
+	  the socket and doing that stuff. Worst case scenario is I just write
+	  some extra code here to do that (probably to signify connection type
+	  used in the socket)
+	 */
+	TCPsocket sdl_tcp_socket =
+		incoming_socket_ptr->get_tcp_socket();
+	if(sdl_tcp_socket == nullptr){
+		print("sdl_tcp_socket is a nullptr", P_ERR);
+	}
  	print("TODO: implement a TCP hole punch", P_CRIT);
 	return false;
 }
 
-static bool net_proto_facilitate_reverse_forward(net_proto_con_req_t *con_req){
+static bool net_proto_facilitate_reverse_forward(
+	net_proto_con_req_t *con_req){
 	try{
 		id_t_ first_peer_id = ID_BLANK_ID;
 		con_req->get_peer_ids(&first_peer_id,
@@ -80,7 +130,7 @@ static bool net_proto_facilitate_reverse_forward(net_proto_con_req_t *con_req){
 	return true;
 }
 
-static void net_proto_accept_unorthodox_connections(net_socket_t *incoming_conn){
+static void net_proto_accept_unorthodox_connections(){
 	std::vector<id_t_> con_req_vector =
 		id_api::cache::get(
 			"net_proto_con_req_t");
@@ -107,7 +157,6 @@ static void net_proto_accept_unorthodox_connections(net_socket_t *incoming_conn)
 		default:
 			print("unrecognized and unimplemented connection method", P_WARN);
 		}
-		
 	}
 }
 
@@ -138,5 +187,5 @@ void net_proto_accept_all_connections(){
 		}
         }
 	net_proto_accept_direct_connections(incoming_conn);
-	net_proto_accept_unorthodox_connections(incoming_conn);
+	net_proto_accept_unorthodox_connections();
 }

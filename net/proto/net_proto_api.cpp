@@ -21,7 +21,7 @@ static id_t_ net_proto_preferable_id_from_hash(
 		id_api::cache::get(
 			TYPE_NET_PROTO_PEER_T);
 	for(uint64_t i = 0;i < peer_vector.size();i++){
-		if(unlikely(get_id_hash(matching_hash_peer_id) ==
+		if(unlikely(hash ==
 			    get_id_hash(peer_vector[i]))){
 			matching_hash_peer_id =
 				peer_vector[i];

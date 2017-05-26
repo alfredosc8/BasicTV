@@ -30,9 +30,13 @@
 #define likely(x)      __builtin_expect(!!(x), 1)
 #define unlikely(x)    __builtin_expect(!!(x), 0)
 
-#define GET_SET_ID(x) \
-	void set_##x(id_t_ id_){x = id_;}\
-	id_t_ get_##x(){return x;}\
+#define GET_SET_ID(id_to_set)					\
+	void set_##id_to_set(id_t_ id_){id_to_set = id_;}	\
+	id_t_ get_##id_to_set(){return id_to_set;}		\
+	
+#define GET_SET(data_to_set, type)					\
+	void set_##data_to_set(type datum){data_to_set = datum;}	\
+	type get_##data_to_set(){return data_to_set;}			\
 
 #ifdef __GNUC__
 // This can be used somewhere

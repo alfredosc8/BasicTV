@@ -24,14 +24,20 @@ private:
 	std::vector<uint8_t> name;
 	std::vector<uint8_t> description;
 	id_t_ wallet_set_id = ID_BLANK_ID;
+	id_t_ frame_set_id = ID_BLANK_ID;
 public:
 	data_id_t id;
 	tv_channel_t();
 	~tv_channel_t();
-	id_t_ get_wallet_set_id(){return wallet_set_id;}
-	void set_wallet_set_id(id_t_ wallet_set_id_){wallet_set_id = wallet_set_id_;}
-	void set_desc(std::string desc);
-	std::string get_desc();
+	GET_SET_ID(wallet_set_id);
+	GET_SET_ID(frame_set_id);
+
+	GET_SET(description, std::vector<uint8_t>);
+	
+	/* void set_desc(std::string desc); */
+	/* std::string get_desc(); */
+
+
 };
 
 #endif

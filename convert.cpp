@@ -359,3 +359,12 @@ std::string convert::type::from(uint8_t type){
 std::string convert::net::ip::to_string(std::string ip, uint16_t port){
 	return ip + ":" + std::to_string(port);
 }
+
+std::vector<uint8_t> convert::string::to_bytes(std::string data){
+	if(unlikely(data.size() == 0)){
+		return {};
+	}
+	return std::vector<uint8_t>(
+		(uint8_t*)data.data(),
+		((uint8_t*)data.data())+data.size());
+}

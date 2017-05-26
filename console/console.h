@@ -22,9 +22,13 @@
   to pass cmd_vector (cleans up compiling output by a lot).
  */
 
-#define LIST_CMD(x) if(cmd_vector.at(0) == #x){if(cmd_vector.size() > 1){x(std::vector<std::string>(cmd_vector.begin()+1, cmd_vector.end()));}else{x(std::vector<std::string>{});}ran = true;}
-#define DEF_CMD(x) void x(std::vector<std::string> cmd_vector)
-#define DEC_CMD(x) void console_t::x(std::vector<std::string> cmd_vector)
+#define LIST_CMD(x) if(cmd_vector.at(0) == #x){x();ran = true;}
+#define LIST_CMD_VECTOR(x) if(cmd_vector.at(0) == #x){if(cmd_vector.size() > 1){x(std::vector<std::string>(cmd_vector.begin()+1, cmd_vector.end()));}else{x(std::vector<std::string>{});}ran = true;}
+
+#define DEF_CMD(x) void x()
+#define DEF_CMD_VECTOR(x) void x(std::vector<std::string> cmd_vector)
+#define DEC_CMD(x) void console_t::x()
+#define DEC_CMD_VECTOR(x) void console_t::x(std::vector<std::string> cmd_vector)
 
 /*
   console_t: console interface for BasicTV
@@ -67,15 +71,15 @@ private:
 
 	  Defined in console_reg.cpp
 	*/
-	DEF_CMD(reg_set_const); // first: reg number, second: const
-	DEF_CMD(reg_set_table); // first: reg number, second: output table X, third: output table Y
-	DEF_CMD(reg_copy); // first: from, second: to
-	DEF_CMD(reg_swap);
-	DEF_CMD(reg_get_type);
-	DEF_CMD(reg_clear); // no param
-	DEF_CMD(reg_left_shift);
-	DEF_CMD(reg_right_shift);
-	DEF_CMD(reg_print_type);
+	DEF_CMD_VECTOR(reg_set_const); // first: reg number, second: const
+	DEF_CMD_VECTOR(reg_set_table); // first: reg number, second: output table X, third: output table Y
+	DEF_CMD_VECTOR(reg_copy); // first: from, second: to
+	DEF_CMD_VECTOR(reg_swap);
+	DEF_CMD_VECTOR(reg_get_type);
+	DEF_CMD_VECTOR(reg_clear); // no param
+	DEF_CMD_VECTOR(reg_left_shift);
+	DEF_CMD_VECTOR(reg_right_shift);
+	DEF_CMD_VECTOR(reg_print_type);
 	/* /\* */
 	/*   ID interface */
 

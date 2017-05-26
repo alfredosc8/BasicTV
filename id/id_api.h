@@ -63,17 +63,13 @@
 namespace id_api{
 	namespace array{
 		data_id_t *ptr_id(id_t_ id,
-				  std::string type,
-				  uint8_t flags = 0);
+				  std::string type);
 		data_id_t *ptr_id(id_t_ id,
-				  type_t_ type,
-				  uint8_t flags = 0);
+				  type_t_ type);
 		void *ptr_data(id_t_ id,
-				  std::string type,
-				  uint8_t flags = 0);
+				  std::string type);
 		void *ptr_data(id_t_ id,
-				  type_t_ type,
-				  uint8_t flags = 0);
+				  type_t_ type);
 		void add(data_id_t *ptr);
 		void del(id_t_ id); // no type
 		id_t_ add_data(std::vector<uint8_t> data_, bool raw = false);

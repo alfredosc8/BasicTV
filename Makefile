@@ -1,4 +1,4 @@
-CXXFLAGS += -Wall -Wextra -std=c++14 -Wno-unused-function -O0 -g -rdynamic
+CXXFLAGS += -Wall -Wextra -std=c++14 -Wno-unused-function -O0 -g -rdynamic -Werror
 LDLIBS = -lcurl -lSDL2_net -lSDL2_mixer -lSDL2 -lz -lcrypto -lopus -lzstd
 CPPFLAGS = -DDEBUG
 

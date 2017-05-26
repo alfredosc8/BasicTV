@@ -349,4 +349,5 @@ id_t_ encrypt_api::search::priv_key_from_hash(std::array<uint8_t, 32> hash){
 
 uint16_t encrypt_key_t::get_modulus(){
 	print("implement modulus getter (differentiate between private and public)", P_CRIT);
+	return 0;
 }

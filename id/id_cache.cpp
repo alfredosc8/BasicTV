@@ -88,7 +88,7 @@ void id_api::cache::load_id(id_t_ id){
 	for(uint64_t i = 0;i < cache_state.size();i++){
 		const id_t_ cache_state_id =
 			id_api::raw::fetch_id(cache_state[i]);
-		if(unlikely(id_api::raw::fetch_id(cache_state[i]) == id)){
+		if(unlikely(cache_state_id == id)){
 			print("found ID in cache_state vector", P_SPAM);
 			try{
 				id_api::array::add_data(cache_state[i]);

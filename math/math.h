@@ -34,6 +34,9 @@
 
 namespace math{
 	namespace number{
+		void add_data_to_set(
+			std::vector<std::vector<uint8_t> > data,
+			id_t_ math_number_set_id);
 		namespace get{
 			/*
 			  PLEASE NOTE:
