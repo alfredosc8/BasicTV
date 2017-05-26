@@ -73,6 +73,11 @@ making it simpler. It is highly recommended to #undef the function macros after
 the function has been declared, to prevent spamming the "namespace" with short
 and non-documented macros.
 
+If a piece of code is unimplemented, but is referenced in the code, a #pragma
+is generated, letting the builder know what is not implemented yet. #pragma
+stays there until it has been implemented entirely, feel free to re-phrase the
+#pragma to give more detailed warnings about the problem.
+
 There are many places in the source code that don't follow these rules, and they
 all should with reasonable exceptions:
 - Exception thrown in print() is fine
