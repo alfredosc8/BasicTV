@@ -758,6 +758,38 @@ void test_lock(){
 	}
 }
 
+void test_id_api_raw_fetch(){
+	const id_t_ generic_id =
+		test_create_generic_id();
+	const extra_t_ extra =
+		ID_EXTRA_ENCRYPT | ID_EXTRA_COMPRESS;
+	data_id_t *data_id_ptr =
+		PTR_ID(generic_id, );
+	const mod_inc_t_ mod_inc =
+		data_id_ptr->get_mod_inc();
+	const type_t_ type =
+		data_id_ptr->get_type_byte();
+	const std::vector<uint8_t> export_payload =
+		data_id_ptr->export_data(
+			ID_DATA_NONET | ID_DATA_NOEXP,
+			ID_EXTRA_ENCRYPT | ID_EXTRA_COMPRESS);
+	if(generic_id != id_api::raw::fetch_id(export_payload)){
+		print("id mismatch", P_ERR);
+	}
+	if(extra != id_api::raw::fetch_extra(export_payload)){
+		print("extra mismatch", P_ERR);
+	}
+	if(mod_inc != id_api::raw::fetch_mod_inc(export_payload)){
+		P_V(mod_inc, P_WARN);
+		P_V(id_api::raw::fetch_mod_inc(export_payload), P_WARN);
+		print("mod_inc mismatch", P_ERR);
+	}
+	if(type != id_api::raw::fetch_type(export_payload)){
+		print("type mismatch", P_ERR);
+	}
+}
+
+
 void test(){
 	std::vector<id_t_> full_id_set =
 		id_api::get_all();
@@ -772,6 +804,7 @@ void test(){
 	RUN_TEST(test_net_proto_socket_transcoding);
 	RUN_TEST(test_lock);
 	RUN_TEST(test_number_cmp);
+	RUN_TEST(test_id_api_raw_fetch);
 	std::vector<id_t_> extra_id_set =
 		id_api::get_all();
 	for(uint64_t i = 0;i < full_id_set.size();i++){

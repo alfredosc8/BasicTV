@@ -42,6 +42,8 @@ const std::array<uint8_t, 32> blank_hash = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 #define ID_EXTRA_ENCRYPT (1 << 0)
 #define ID_EXTRA_COMPRESS (1 << 1)
 
+#define ID_PREAMBLE_SIZE (sizeof(extra_t_)+sizeof(id_t_)+sizeof(mod_inc_t_))
+
 // pointer added through add_data
 struct data_id_ptr_t{
 private:
@@ -84,7 +86,7 @@ private:
 	uint64_t last_access_timestamp_micro_s = 0;
 	// incremented every time a getter or setter is called in either this
 	// function or the parent data type (manually call mod_inc();
-	uint64_t modification_incrementor = 0;
+	mod_inc_t_ modification_incrementor = 0;
 	uint8_t global_flags = 0;
 	void add_data(void *ptr_, std::vector<uint32_t> size_, uint64_t flags_ = 0);
 public:
@@ -101,7 +103,7 @@ public:
 	uint8_t get_type_byte(){return get_id_type(id);}
 	void *get_ptr();
 	void mod_inc(){modification_incrementor++;}
-	uint64_t get_mod_inc(){return modification_incrementor;}
+	mod_inc_t_ get_mod_inc(){return modification_incrementor;}
 	id_t_ get_encrypt_pub_key_id();
 	uint64_t get_data_index_size();
 	id_t_ get_next_linked_list();

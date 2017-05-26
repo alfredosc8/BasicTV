@@ -24,16 +24,17 @@ bool math::number::cmp::greater_than(
 	std::pair<std::vector<uint8_t>,
 		  std::vector<uint8_t> > y_species =
 		math::number::get::raw_species(y);
-	for(uint64_t i = 0;
-	    i < (x_species.first.size() > y_species.first.size()) ?
-		    x_species.first.size() :
-		    y_species.first.size();i++){
+	for(int64_t i = (x_species.first.size() > y_species.first.size()) ?
+		    x_species.first.size()-1 :
+		    y_species.first.size()-1;
+	    i >= 0;
+	    i--){
 		uint8_t x_comp = 0;
-		if(x_species.first.size() > i){
+		if(x_species.first.size() > (uint64_t)i){
 			x_comp = x_species.first[i];
 		}
 		uint8_t y_comp = 0;
-		if(y_species.first.size() > i){
+		if(y_species.first.size() > (uint64_t)i){
 			y_comp = y_species.first[i];
 		}
 		if(x_comp > y_comp){
@@ -73,16 +74,17 @@ bool math::number::cmp::equal_to(
 	std::pair<std::vector<uint8_t>,
 		  std::vector<uint8_t> > y_species =
 		math::number::get::raw_species(y);
-	for(uint64_t i = 0;
-	    i < (x_species.first.size() > y_species.first.size()) ?
-		    x_species.first.size() :
-		    y_species.first.size();i++){
+	for(int64_t i = (x_species.first.size() > y_species.first.size()) ?
+		    x_species.first.size()-1 :
+		    y_species.first.size()-1;
+	    i >= 0;
+	    i--){
 		uint8_t x_comp = 0;
-		if(x_species.first.size() > i){
+		if(x_species.first.size() > (uint64_t)i){
 			x_comp = x_species.first[i];
 		}
 		uint8_t y_comp = 0;
-		if(y_species.first.size() > i){
+		if(y_species.first.size() > (uint64_t)i){
 			y_comp = y_species.first[i];
 		}
 		if(x_comp != y_comp){

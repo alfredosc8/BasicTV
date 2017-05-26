@@ -683,7 +683,7 @@ std::vector<uint8_t> id_api::raw::encrypt(std::vector<uint8_t> data){
 			P_V_S(convert::array::id::to_hex(priv_key_id), P_VAR);
 			std::vector<uint8_t> unencrypt_chunk =
 				std::vector<uint8_t>(
-					data.begin()+1+sizeof(id_t_),
+					data.begin()+ID_PREAMBLE_SIZE,
 					data.end());
 			P_V(unencrypt_chunk.size(), P_VAR);
 			if(unencrypt_chunk.size() == 0){
@@ -696,7 +696,7 @@ std::vector<uint8_t> id_api::raw::encrypt(std::vector<uint8_t> data){
 			P_V(encrypt_chunk.size(), P_VAR);
 			if(encrypt_chunk.size() != 0){
 				data.erase(
-					data.begin()+1+sizeof(id_t_),
+					data.begin()+ID_PREAMBLE_SIZE,
 					data.end());
 				data.insert(
 					data.end(),
@@ -725,12 +725,12 @@ std::vector<uint8_t> id_api::raw::decrypt(std::vector<uint8_t> data){
 		std::vector<uint8_t> decrypt_chunk =
 			encrypt_api::decrypt(
 				std::vector<uint8_t>(
-					data.begin()+1+sizeof(id_t_),
+					data.begin()+ID_PREAMBLE_SIZE,
 					data.end()),
 				encrypt_api::search::pub_key_from_hash(
 					get_id_hash(id)));
 		data.erase(
-			data.begin()+1+sizeof(id_t_),
+			data.begin()+ID_PREAMBLE_SIZE,
 			data.end());
 		data.insert(
 			data.end(),
@@ -749,12 +749,12 @@ std::vector<uint8_t> id_api::raw::compress(std::vector<uint8_t> data){
 		std::vector<uint8_t> compress_chunk =
 			compressor::compress(
 				std::vector<uint8_t>(
-					data.begin()+1+sizeof(id_t_),
+					data.begin()+ID_PREAMBLE_SIZE,
 					data.end()),
 				9,
 				0); // type isn't used currently
 		data.erase(
-			data.begin()+1+sizeof(id_t_),
+			data.begin()+ID_PREAMBLE_SIZE,
 			data.end());
 		data.insert(
 			data.end(),
@@ -772,10 +772,10 @@ std::vector<uint8_t> id_api::raw::decompress(std::vector<uint8_t> data){
 		std::vector<uint8_t> compress_chunk =
 			compressor::decompress(
 				std::vector<uint8_t>(
-					data.begin()+1+sizeof(id_t_),
+					data.begin()+ID_PREAMBLE_SIZE,
 					data.end()));
 		data.erase(
-			data.begin()+1+sizeof(id_t_),
+			data.begin()+ID_PREAMBLE_SIZE,
 			data.end());
 		data.insert(
 			data.end(),
@@ -791,9 +791,9 @@ std::vector<uint8_t> id_api::raw::decompress(std::vector<uint8_t> data){
 
 static void fetch_size_sanity_check(uint64_t needed_size, uint64_t vector_size){
 	if(needed_size > vector_size){
-		print("vector is not large enough to contain requested information", P_ERR);
 		P_V(needed_size, P_WARN);
 		P_V(vector_size, P_WARN);
+		print("vector is not large enough to contain requested information", P_ERR);
 	}
 }
 
@@ -839,5 +839,6 @@ mod_inc_t_ id_api::raw::fetch_mod_inc(std::vector<uint8_t> data){
 	const uint64_t size = sizeof(retval);
 	fetch_size_sanity_check(start+size, data.size());
 	generic_fetch((uint8_t*)&retval, start, size, data.data());
+	P_V_B(retval, P_VAR);
 	return retval;
 }
