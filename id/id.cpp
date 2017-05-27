@@ -592,7 +592,8 @@ uint8_t data_id_ptr_t::get_flags(){
 }
 
 /*
-  Data coming in has to be relatively sane
+  Currently, there's no need for individual getters and setters, and in all
+  cases I came across, it makes more sense to decrypt everything
  */
 
 // std::vector<uint8_t> id_transport::get_entry(std::vector<uint8_t> data, transport_i_t trans_i){

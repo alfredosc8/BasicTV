@@ -572,6 +572,8 @@ void id_api::free_mem(){
 				}
 			}
 		}
+		print("freeing memory by deleting " +
+		      convert::array::id::to_hex(lowest_timestamp_id), P_SPAM);
 		id_api::destroy(
 			lowest_timestamp_id);
 		/*
@@ -722,20 +724,26 @@ std::vector<uint8_t> id_api::raw::decrypt(std::vector<uint8_t> data){
 		print("can't decrypt pre-decrypted data", P_WARN);
 	}else{
 		data[0] &= ~ID_EXTRA_ENCRYPT;
-		std::vector<uint8_t> decrypt_chunk =
-			encrypt_api::decrypt(
-				std::vector<uint8_t>(
-					data.begin()+ID_PREAMBLE_SIZE,
-					data.end()),
-				encrypt_api::search::pub_key_from_hash(
-					get_id_hash(id)));
-		data.erase(
-			data.begin()+ID_PREAMBLE_SIZE,
-			data.end());
-		data.insert(
-			data.end(),
-			decrypt_chunk.begin(),
-			decrypt_chunk.end());
+		id_t_ pub_key_id =
+			encrypt_api::search::pub_key_from_hash(
+				get_id_hash(id));
+		if(pub_key_id == ID_BLANK_ID){
+			print("couldn't find public key for ID decryption", P_ERR);
+		}else{
+			std::vector<uint8_t> decrypt_chunk =
+				encrypt_api::decrypt(
+					std::vector<uint8_t>(
+						data.begin()+ID_PREAMBLE_SIZE,
+						data.end()),
+					pub_key_id);
+			data.erase(
+				data.begin()+ID_PREAMBLE_SIZE,
+				data.end());
+			data.insert(
+				data.end(),
+				decrypt_chunk.begin(),
+				decrypt_chunk.end());
+		}
 	}
 	return data;
 }
@@ -841,4 +849,37 @@ mod_inc_t_ id_api::raw::fetch_mod_inc(std::vector<uint8_t> data){
 	generic_fetch((uint8_t*)&retval, start, size, data.data());
 	P_V_B(retval, P_VAR);
 	return retval;
+}
+
+
+/*
+  Helper function I wrote that return all current data about any ID loaded in
+  memory.
+ */
+
+std::vector<std::string> id_gdb_lookup(const char* hex_id){
+	id_t_ lookup_id =
+		convert::array::id::from_hex(
+			(std::string)hex_id);
+	if(lookup_id == ID_BLANK_ID){
+		return {"couldn't parse"};
+	}else{
+		for(uint64_t i = 0;i < id_list.size();i++){
+			if(id_list[i]->get_id() == lookup_id){
+				std::stringstream ss;
+				ss << id_list[i];
+				std::string pointer =
+					ss.str();
+				const std::vector<std::string> retval =
+					{
+						hex_id,
+						"type: " + id_list[i]->get_type(),
+						"mod inc:" + std::to_string(id_list[i]->get_mod_inc()),
+						"pointer: " + pointer
+					};
+				return retval;
+			}
+		}
+	}
+	return {"ID not found"};
 }

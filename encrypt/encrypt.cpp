@@ -228,17 +228,11 @@ std::vector<uint8_t> encrypt_api::decrypt(std::vector<uint8_t> data,
 		data[0];
 	data.erase(
 		data.begin());
-	if(key_id == ID_BLANK_ID){
-		if(data.size() < sizeof(id_t_)){
-			print("size is too small for attached key id", P_NOTE); 
-		}
-		print("key_id supplied is blank (normal), using supplied ID in payload", P_NOTE);
-		memcpy(&(key_id[0]), data.data(), sizeof(id_t_));
-	}
-	encrypt_pull_key_info(key_id,
-			      &key,
-			      &encryption_scheme,
-			      &key_type);
+	encrypt_pull_key_info(
+		key_id,
+		&key,
+		&encryption_scheme,
+		&key_type);
 	switch(message_encryption_scheme){
 	case ENCRYPT_AES192_SHA256:
 		retval = decrypt_aes192_sha256(

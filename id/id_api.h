@@ -143,4 +143,6 @@ namespace id_api{
 	};
 };
 
+extern std::vector<std::string> id_gdb_lookup(const char *hex_id);
+
 #endif

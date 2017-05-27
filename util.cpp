@@ -164,9 +164,9 @@ void print(std::string data, int level, const char *func){
 						trace, trace_size);
 				for(uint32_t i = 0;i < trace_size;i++){
 					std::cout << backtrace_symbol_retval[i] << std::endl;
-					free(backtrace_symbol_retval[i]);
-					backtrace_symbol_retval = nullptr;
 				}
+				free(backtrace_symbol_retval);
+				backtrace_symbol_retval = nullptr;
 				std::cout << "Finished backtrace" << std::endl;
 			}
 			throw std::runtime_error(data);

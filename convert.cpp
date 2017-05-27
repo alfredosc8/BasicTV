@@ -347,7 +347,7 @@ std::string convert::type::from(uint8_t type){
 	case TYPE_TV_ITEM_T:
 		return "tv_item_t";
 	case 0:
-		print("zero type, something went wrong earlier", P_ERR);
+		print("zero type, something went wrong earlier", P_WARN);
 		return "";
 	default:
 		P_V(type, P_WARN);
