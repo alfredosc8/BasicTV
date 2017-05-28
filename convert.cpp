@@ -109,11 +109,11 @@ std::tuple<uint64_t, uint64_t, uint64_t, uint8_t> convert::color::bpc(std::tuple
 	if(old_bpc == new_bpc){
 		return color;
 	}
-	double mul;
+	double mul = 0;
 	if(new_bpc > old_bpc && unlikely(new_bpc-old_bpc <= 31)){
-		mul = (uint32_t)((uint32_t)1 << (new_bpc-old_bpc));
+		mul = (double)((uint32_t)1 << (new_bpc-old_bpc));
 	}else{
-		mul = pow(2, new_bpc-old_bpc);
+		mul = (double)pow(2, new_bpc-old_bpc);
 	}
 	std::get<0>(color) *= mul;
 	std::get<1>(color) *= mul;
@@ -164,6 +164,8 @@ static uint8_t to_byte_char(int8_t hex){
 		return 14;
 	case 'f':
 		return 15;
+	default:
+		break;
 	}
 	print("invalid hex character " + std::string(1, hex), P_ERR);
 	return 0;

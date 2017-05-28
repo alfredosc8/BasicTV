@@ -103,6 +103,7 @@ std::string print_color_text(std::string data, int level){
 		prefix = "\033[1;32m";
 		break;
 	case P_VAR:
+	default:
 		// not seen by most people, only really ran through 'diff', so
 		// looks don't matter
 		prefix = "";
@@ -239,12 +240,12 @@ long double get_mul_to_btc(std::string currency){
 	}else{
 		throw std::runtime_error("invalid currency");
 	}
-	if(mul == 0){
-		throw std::logic_error("mul == 0");
-	}
-	if(mul < 0){
-		throw std::logic_error("mul < 0");
-	}
+	// if(mul == 0){
+	// 	throw std::logic_error("mul == 0");
+	// }
+	// if(mul < 0){
+	// 	throw std::logic_error("mul < 0");
+	// }
 	return mul;
 }
 

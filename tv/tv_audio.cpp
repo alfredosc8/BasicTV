@@ -376,9 +376,9 @@ static std::vector<id_t_> tv_audio_get_current_frame_audios(){
 			window->get_active_streams();
 		const uint64_t play_time =
 			cur_timestamp_micro_s+window->get_timestamp_offset();
-		for(uint64_t i = 0;i < active_streams.size();i++){
+		for(uint64_t c = 0;c < active_streams.size();c++){
 			tv_frame_audio_t *audio_frame_tmp =
-				PTR_DATA(active_streams[i],
+				PTR_DATA(active_streams[c],
 					 tv_frame_audio_t);
 			frame_audios.push_back(
 				tv_frame_scroll_to_time(

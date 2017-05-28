@@ -131,12 +131,12 @@ void net_proto_linked_list_request_t::increase_id(){
 	if(curr_length == 0){
 		return;
 	}
-	data_id_t *id =
+	data_id_t *id_ =
 		PTR_ID(curr_id, );
-	if(id == nullptr){
+	if(id_ == nullptr){
 		return;
 	}
-	curr_id = id->get_next_linked_list();
+	curr_id = id_->get_next_linked_list();
 	curr_length--;
 }
 

@@ -38,8 +38,8 @@ static std::vector<id_t_> optimal_disks_id_load(id_t_ id){
 		}
 		std::vector<id_t_> index =
 			disk_index_ptr->get_index();
-		for(uint64_t i = 0;i < index.size();i++){
-			if(unlikely(index[i] == id)){
+		for(uint64_t c = 0;c < index.size();c++){
+			if(unlikely(index[c] == id)){
 				retval.push_back(
 					disk_id_vector[i]);
 			}
@@ -223,9 +223,9 @@ void id_disk_index_t::set(uint8_t medium_, uint8_t tier_, uint8_t transport_, st
 
 std::string id_disk_index_t::get_path_of_id(id_t_ id_){
 	std::string retval;
-	data_id_t *id =
+	data_id_t *id_ptr =
 		PTR_ID_MEM(id_, );
-	if(id == nullptr){
+	if(id_ptr == nullptr){
 		print("ID doesn't exist in memory already, searching disk for ID", P_NOTE);
 		std::vector<std::string> rgrep_output =
 			system_handler::find_all_files(
@@ -241,8 +241,8 @@ std::string id_disk_index_t::get_path_of_id(id_t_ id_){
 	}else{
 		print("ID exists in memory already, generating new filename", P_SPAM);
 		retval += file::ensure_slash_at_end((char*)(path.data()));
-		retval += id->get_type() + "/";
-		retval += convert::array::id::to_hex(id_) + "_" + std::to_string(id->get_mod_inc()); // + _ + id incrementor (if it existed)
+		retval += id_ptr->get_type() + "/";
+		retval += convert::array::id::to_hex(id_) + "_" + std::to_string(id_ptr->get_mod_inc()); // + _ + id incrementor (if it existed)
 	}
 	P_V_S(retval, P_VAR);
 	return retval;

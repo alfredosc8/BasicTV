@@ -299,6 +299,8 @@ void id_api::linked_list::link_vector(std::vector<id_t_> vector){
 		PTR_ID(vector[0], )->set_next_linked_list(vector[1]);
 		PTR_ID(vector[1], )->set_next_linked_list(vector[0]);
 		return;
+	default:
+		break;
 	}
 	data_id_t *first = PTR_ID(vector[0], );
 	if(first != nullptr){

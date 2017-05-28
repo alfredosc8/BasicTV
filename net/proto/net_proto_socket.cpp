@@ -214,11 +214,11 @@ void net_proto_socket_t::load_blocks(){
 			  although that wouldn't be a bad idea
 			 */
 			print("found a complete block_buffer set", P_SPAM);
-			net_proto_standard_data_t std_data;
+			net_proto_standard_data_t inbound_std_data;
 			net_proto_read_packet_metadata(
 				block_buffer[i].first,
-				&std_data);
-			if(std_data.peer_id != peer_id){
+				&inbound_std_data);
+			if(inbound_std_data.peer_id != peer_id){
 				print("sent peer ID and current peer ID do not"
 				      " match, assume this is a bootstrap", P_NOTE);
 				/*
@@ -231,7 +231,7 @@ void net_proto_socket_t::load_blocks(){
 						 net_proto_peer_t);
 				delete wrong_peer_ptr;
 				wrong_peer_ptr = nullptr;
-				peer_id = std_data.peer_id;
+				peer_id = inbound_std_data.peer_id;
 			}
 			P_V(block_buffer[i].second.size(), P_VAR); // temporary
 			/*

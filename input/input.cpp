@@ -66,6 +66,8 @@ void signal_handler(int signal){
 			}
 		}
 		running = false;
+	default:
+		break;
 	}
 }
 

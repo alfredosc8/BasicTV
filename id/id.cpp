@@ -367,22 +367,22 @@ std::vector<uint8_t> data_id_t::export_data(uint8_t flags_, uint8_t extra){
 				//print("vector is empty, skipping", P_SPAM);
 				continue;
 			}
-			for(uint64_t i = 0;i < vector->size();i++){
+			for(uint64_t c = 0;c < vector->size();c++){
 				transport_size_t trans_size =
-					(*vector)[i].size();
+					(*vector)[c].size();
 				data_to_export.insert(
 					data_to_export.end(),
 					&trans_size,
 					&trans_size+1);
-				if((*vector)[i].data() == nullptr){
+				if((*vector)[c].data() == nullptr){
 					//print("vector is empty, skipping", P_SPAM);
 					continue;
 					// don't export anything
 				}
 				data_to_export.insert(
 					data_to_export.end(),
-					(uint8_t*)(*vector)[i].data(),
-					(uint8_t*)(*vector)[i].data()+trans_size);
+					(uint8_t*)(*vector)[c].data(),
+					(uint8_t*)(*vector)[c].data()+trans_size);
 			}
 
 		}else{

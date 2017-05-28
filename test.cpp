@@ -618,7 +618,7 @@ static void benchmark_encryption(){
   setup).
  */
 
-#define TV_NUMBER_CHECK_VALUE(x) if(math::number::get::x(device_sensor) != x){print((std::string)#x + " doesn't match", P_WARN);P_V(math::number::get::x(device_sensor), P_WARN);P_V(x, P_WARN);}
+#define TV_NUMBER_CHECK_VALUE(x) if(!BETWEEN(x-0.001, math::number::get::x(device_sensor), x+0.001)){print((std::string)#x + " doesn't match", P_WARN);P_V(math::number::get::x(device_sensor), P_WARN);P_V(x, P_WARN);}
 
 static void test_math_number_set(){
 	for(uint64_t i = 0;i < 128;i++){
