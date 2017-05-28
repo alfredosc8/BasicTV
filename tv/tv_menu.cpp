@@ -488,7 +488,7 @@ void tv_menu_t::update_frame(){
 	for(uint64_t y = 0;y < 64;y++){
 		tv_menu_entry_t *entry_ =
 			PTR_DATA(entry[y], tv_menu_entry_t);
-		CONTINUE_IF_NULL(entry_);
+		CONTINUE_IF_NULL(entry_, P_SPAM);
 		if(entry_->get_orientation() != TV_MENU_ORIENT_LEFT){
 			print("only left orientation is supported in menus", P_WARN);
 			// do it anyways

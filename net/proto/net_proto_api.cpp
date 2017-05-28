@@ -5,13 +5,10 @@
 #include "net_proto_api.h"
 #include "net_proto_socket.h"
 #include "net_proto_peer.h"
-#include "net_proto_routine_requests.h"
+#include "net_proto_request.h"
 #include "net_proto_con_req.h"
 
 static id_t_ self_peer_id = ID_BLANK_ID;
-static std::vector<id_t_> id_request_buffer;
-static std::vector<std::pair<id_t_, int64_t> > linked_list_request_buffer;
-static std::vector<type_t_ > type_request_buffer; // ?
 
 static id_t_ net_proto_preferable_id_from_hash(
 	std::array<uint8_t, 32> hash){
@@ -38,86 +35,6 @@ static id_t_ net_proto_preferable_id_from_hash(
 }
 
 
-void net_proto::request::add_id(id_t_ id){
-	// could probably speed this up
-	for(uint64_t i = 0;i < id_request_buffer.size();i++){
-		if(get_id_hash(id) == get_id_hash(id_request_buffer[i])){
-			id_request_buffer.insert(
-				id_request_buffer.begin()+i,
-				id);
-			break;
-		}
-	}
-	id_request_buffer.push_back(id);
-}
-
-void net_proto::request::add_id(std::vector<id_t_> id){
-	// could probably speed this up
-	for(uint64_t c = 0;c < id.size();c++){
-		for(uint64_t i = 0;i < id_request_buffer.size();i++){
-			while(get_id_hash(id[c]) == get_id_hash(id_request_buffer[i])){
-				id_request_buffer.insert(
-					id_request_buffer.begin()+i,
-					id[c]);
-				if(c < id.size()){
-					c++;
-				}
-			}
-		}
-		id_request_buffer.push_back(id[c]);
-	}
-}
-
-/*
-  Signed-ness is important for dictating direction
- */
-
-void net_proto::request::add_id_linked_list(id_t_ id, int64_t length){
-	for(uint64_t i = 0;i < linked_list_request_buffer.size();i++){
-		if(unlikely(get_id_hash(linked_list_request_buffer[i].first) ==
-			    get_id_hash(id))){
-			std::pair<id_t_, int64_t> request_entry =
-				std::make_pair(
-					id, length);
-			linked_list_request_buffer.insert(
-				linked_list_request_buffer.begin()+i,
-				request_entry);
-			return;
-		}
-	}
-	linked_list_request_buffer.push_back(
-		std::make_pair(
-			id, length));
-}
-
-void net_proto::request::del_id(id_t_ id){
-	std::vector<id_t_> id_request_vector =
-		id_api::cache::get(
-			"net_proto_id_request_t");
-	for(uint64_t i = 0;i < id_request_vector.size();i++){
-		net_proto_id_request_t *id_request =
-			PTR_DATA(id_request_vector[i],
-				 net_proto_id_request_t);
-		if(id_request == nullptr){
-			continue;
-		}
-		std::vector<id_t_> id_vector =
-			id_request->get_ids();
-		auto id_ptr =
-			std::find(
-				id_vector.begin(),
-				id_vector.end(),
-				id);
-		if(id_ptr != id_vector.end()){
-			id_vector.erase(
-				id_ptr);
-			id_request->set_ids(
-				id_vector);
-			return;
-		}
-	}
-	print("cannot delete request for ID I didn't request", P_ERR);
-}
 
 void net_proto::peer::set_self_peer_id(id_t_ self_peer_id_){
 	self_peer_id = self_peer_id_;
@@ -233,38 +150,20 @@ void net_proto::socket::connect(id_t_ peer_id_, uint32_t min){
 	}
 }
 
-void net_proto::request::add_fast_routine_type(std::string type){
-	routine_request_fast_vector.push_back(
-		convert::type::to(
-			type));
-}
 
-void net_proto::request::add_slow_routine_type(std::string type){
-	routine_request_slow_vector.push_back(
-		convert::type::to(
-			type));
-}
+#pragma message("optimal_peer_for_id only searches for matching hash, this isn't sustainable for large-scale deployment")
 
-void net_proto::request::del_fast_routine_type(std::string type){
-	auto iterator =
-		std::find(
-			routine_request_fast_vector.begin(),
-			routine_request_fast_vector.end(),
-			convert::type::to(type));
-	if(iterator != routine_request_fast_vector.end()){
-		routine_request_fast_vector.erase(
-			iterator);
+id_t_ net_proto::peer::optimal_peer_for_id(id_t_ id){
+	const std::vector<id_t_> proto_peer_vector =
+		id_api::cache::get(TYPE_NET_PROTO_PEER_T);
+	const hash_t_ id_hash =
+		get_id_hash(id);
+	for(uint64_t i = 0;i < proto_peer_vector.size();i++){
+		if(id_hash == get_id_hash(proto_peer_vector[i])){
+			// wrong, but fail-safe, assumption that there can
+			// be only one peer per hash
+			return proto_peer_vector[i];
+		}
 	}
-}
-
-void net_proto::request::del_slow_routine_type(std::string type){
-	auto iterator =
-		std::find(
-			routine_request_slow_vector.begin(),
-			routine_request_slow_vector.end(),
-			convert::type::to(type));
-	if(iterator != routine_request_slow_vector.end()){
-		routine_request_slow_vector.erase(
-			iterator);
-	}
+	return ID_BLANK_ID;
 }

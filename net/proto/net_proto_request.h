@@ -15,15 +15,15 @@
 struct net_proto_request_bare_t{
 private:
 	uint64_t request_time = 0;
-	id_t_ sender_peer_id = ID_BLANK_ID;
-	id_t_ receiver_peer_id = ID_BLANK_ID;
+	id_t_ origin_peer_id = ID_BLANK_ID;
+	id_t_ destination_peer_id = ID_BLANK_ID;
 public:
 	net_proto_request_bare_t();
 	~net_proto_request_bare_t();
-	void set_sender_peer_id(id_t_);
-	id_t_ get_sender_peer_id();
-	void set_receiver_peer_id(id_t_);
-	id_t_ get_receiver_peer_id();
+	void set_origin_peer_id(id_t_);
+	id_t_ get_origin_peer_id();
+	void set_destination_peer_id(id_t_);
+	id_t_ get_destination_peer_id();
 	
 	void update_request_time();
 	uint64_t get_request_time(){return request_time;}
@@ -106,9 +106,17 @@ public:
 	void increase_id();
 	void set_curr_id(id_t_ id_, uint32_t length);
 	id_t_ get_curr_id();
+	uint64_t get_curr_length(){return curr_length;}
 	net_proto_linked_list_request_t();
 	~net_proto_linked_list_request_t();
 };
+
+// 5 second
+#define NET_PROTO_ROUTINE_REQUEST_DEFAULT_SLOW_INTERVAL (5*1000*1000)
+// .5 seconds
+#define NET_PROTO_ROUTINE_REQUEST_DEFAULT_FAST_INTERVAL (5*1000*100)
+
+extern void net_proto_requests_loop();
 
 
 #endif

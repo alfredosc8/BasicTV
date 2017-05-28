@@ -139,6 +139,7 @@ void init(){
 	// shouldn't need to disable other stuff
 	settings::set_setting("run_tests", "true");
 	settings::set_setting("data_folder", ((std::string)getenv("HOME"))+"/.BasicTV/");
+	settings::set_setting("print_backtrace", "false");
 	settings_init();
 
 	/*

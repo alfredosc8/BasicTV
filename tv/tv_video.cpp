@@ -307,9 +307,9 @@ static void tv_render_all(){
 		tv_frame_video_t *frame_video = nullptr;
 		// TODO: restructure this
 		window = PTR_DATA(all_windows[i], tv_window_t);
-		CONTINUE_IF_NULL(window);
+		CONTINUE_IF_NULL(window, P_SPAM);
 		item = PTR_DATA(window->get_item_id(), tv_item_t);
-		CONTINUE_IF_NULL(item);
+		CONTINUE_IF_NULL(item, P_SPAM);
 		uint64_t timestamp_micro_s = 
 			get_time_microseconds();
 		frame_video =
@@ -318,7 +318,7 @@ static void tv_render_all(){
 						 item),
 					 timestamp_micro_s),
 				 tv_frame_video_t);
-		CONTINUE_IF_NULL(frame_video);
+		CONTINUE_IF_NULL(frame_video, P_SPAM);
 		SDL_Rect sdl_window_rect = 
 			tv_render_gen_window_rect(window,
 						  sdl_window_surface);

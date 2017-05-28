@@ -164,10 +164,8 @@ static void test_nc_socket_array(std::vector<std::pair<id_t_, id_t_> > socket_ar
 
 
 static void test_compressor(){
-	std::vector<uint8_t> input_data;
-	for(uint64_t i = 0;i < 1024*1024;i++){
-		input_data.push_back(i&0xFF);
-	}
+	std::vector<uint8_t> input_data =
+		true_rand_byte_vector(1024*1024);
 	std::vector<uint8_t> output_data =
 		compressor::xz::from(
 			compressor::xz::to(
@@ -299,8 +297,8 @@ static void test_nbo_transport(){
 				test_2));
 	if(test != test_2){
 		for(uint64_t i = 0;i < test.size();i++){
-			// P_V_C(test[i], P_WARN);
-			// P_V_C(test_2[i], P_WARN);
+			P_V_C(test[i], P_WARN);
+			P_V_C(test_2[i], P_WARN);
 		}
 		print("Network byte order functions failed (embarassing, I know)", P_ERR);
 	}
@@ -313,10 +311,8 @@ static void test_nbo_transport(){
 
 static void test_break_id_transport(){
 	while(true){
-		std::vector<uint8_t> tmp;
-		for(uint64_t i = 0;i < 1024;i++){
-			tmp.push_back(true_rand(0, 255));
-		}
+		std::vector<uint8_t> tmp =
+			true_rand_byte_vector(1024);
 		data_id_t tmp_id(nullptr, 255);
 		tmp_id.import_data(tmp);
 	}
@@ -354,15 +350,12 @@ static void test_rsa_key_gen(){
 
 static void test_rsa_encryption(){
 	uint64_t key_len = 4096;
-	std::vector<uint8_t> test_data;
+	std::vector<uint8_t> test_data =
+		true_rand_byte_vector(1024);
 	std::pair<id_t_, id_t_> rsa_key_pair =
 		rsa::gen_key_pair(key_len);
 	ID_NOEXP_NONET(rsa_key_pair.first);
 	ID_NOEXP_NONET(rsa_key_pair.second);
-	for(uint64_t x = 0;x < 1024;x++){
-		test_data.push_back(
-			(uint8_t)true_rand(0, 255));
-	}
 	std::vector<uint8_t> test_data_output =
 		encrypt_api::encrypt(
 			test_data,
@@ -446,7 +439,7 @@ static std::pair<uint64_t, uint64_t> encryption_benchmark_datum(std::vector<uint
 static void benchmark_encryption(std::string method){
 	// payload of data, encryption time, decryptiont ime
 	std::vector<uint32_t> benchmark_data;
-	for(uint64_t i = 1;i <=1024;i++){
+	for(uint64_t i = 1;i <= 1024;i++){
 		benchmark_data.push_back(i);
 	}
 	std::pair<id_t_, id_t_> rsa_key_pair =

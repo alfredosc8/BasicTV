@@ -9,6 +9,9 @@
 
 static void net_proto_send_logic(std::vector<id_t_> id_vector,
 				 id_t_ net_proto_peer_id){
+	if(net_proto_peer_id == net_proto::peer::get_self_as_peer()){
+		print("refusing to fill a request to send data to myself", P_ERR);
+	}
 	net_proto_peer_t *proto_peer_ptr =
 		PTR_DATA(net_proto_peer_id,
 			 net_proto_peer_t);
@@ -71,6 +74,36 @@ static std::vector<id_t_> remove_ids_from_vector(std::vector<id_t_> first,
   too complicated.
  */
 
+template<typename T>
+static bool net_proto_valid_request_to_fill(T request){
+	const id_t_ origin_peer_id =
+		request->get_origin_peer_id();
+	const id_t_ destination_peer_id =
+		request->get_destination_peer_id();
+	if(origin_peer_id == net_proto::peer::get_self_as_peer()){
+		return false;
+	}
+	if(destination_peer_id != net_proto::peer::get_self_as_peer()){
+		return false;
+	}
+	return true;
+}
+
+template<typename T>
+static bool net_proto_valid_request_to_send(T request){
+	const id_t_ origin_peer_id =
+		request->get_origin_peer_id();
+	const id_t_ destination_peer_id =
+		request->get_destination_peer_id();
+	if(origin_peer_id != net_proto::peer::get_self_as_peer()){
+		return false;
+	}
+	if(destination_peer_id == net_proto::peer::get_self_as_peer()){
+		return false;
+	}
+	return true;
+}
+
 static void net_proto_fill_type_requests(){
 	std::vector<id_t_> net_proto_type_requests =
 	 	id_api::cache::get("net_proto_type_request_t");
@@ -81,44 +114,34 @@ static void net_proto_fill_type_requests(){
 	 	if(proto_type_request == nullptr){
 	 		continue;
 	 	}
-		const id_t_ holder_peer_id =
-			proto_type_request->get_receiver_peer_id();
-		const id_t_ requester_peer_id =
-			proto_type_request->get_sender_peer_id();
-	 	if(holder_peer_id != net_proto::peer::get_self_as_peer()){
-			//print("network request's data holder ID doesn't match, skipping", P_SPAM);
-			continue;
-		} // check if we are the intended recepient
-		if(requester_peer_id == net_proto::peer::get_self_as_peer()){
-			//print("request was created with my peer ID, skipping", P_SPAM);
-			continue;
-		} // check if we created the request
-		const std::vector<id_t_> raw_id_vector =
-			proto_type_request->get_ids();
-		const std::vector<id_t_> type_vector =
-			id_api::cache::get(
-				proto_type_request->get_type());
-		const std::vector<id_t_> real_payload =
-			remove_ids_from_vector(
-				type_vector,
-				raw_id_vector);
-		P_V_S(convert::type::from(proto_type_request->get_type()), P_VAR);
-		P_V(type_vector.size(), P_VAR);
-		P_V(raw_id_vector.size(), P_VAR);
-		P_V(real_payload.size(), P_VAR);
-		if(real_payload.size() == 0){
-			print("we don't have any new data to send out, "
-			      "not sending anything (should probably have "
-			      "some sort of response for not finding it)", P_SPAM);
-		}else{
-			try{
-				net_proto_send_logic(
-					real_payload,
-					requester_peer_id);
-				id_api::destroy(net_proto_type_requests[i]);
-				proto_type_request = nullptr;
-			}catch(...){
-				print("couldn't send type request", P_WARN);
+		if(net_proto_valid_request_to_fill(proto_type_request)){
+			const std::vector<id_t_> raw_id_vector =
+				proto_type_request->get_ids();
+			const std::vector<id_t_> type_vector =
+				id_api::cache::get(
+					proto_type_request->get_type());
+			const std::vector<id_t_> real_payload =
+				remove_ids_from_vector(
+					type_vector,
+					raw_id_vector);
+			P_V_S(convert::type::from(proto_type_request->get_type()), P_VAR);
+			P_V(type_vector.size(), P_VAR);
+			P_V(raw_id_vector.size(), P_VAR);
+			P_V(real_payload.size(), P_VAR);
+			if(real_payload.size() == 0){
+				print("we don't have any new data to send out, "
+				      "not sending anything (should probably have "
+				      "some sort of response for not finding it)", P_SPAM);
+			}else{
+				try{
+					net_proto_send_logic(
+						real_payload,
+						proto_type_request->get_origin_peer_id());
+					id_api::destroy(net_proto_type_requests[i]);
+					proto_type_request = nullptr;
+				}catch(...){
+					print("couldn't send type request", P_WARN);
+				}
 			}
 		}
 	}
@@ -135,17 +158,16 @@ static void net_proto_fill_id_requests(){
 	 	if(proto_id_request == nullptr){
 	 		continue;
 	 	}
-		const id_t_ peer_id = proto_id_request->get_sender_peer_id();
-	 	if(peer_id == net_proto::peer::get_self_as_peer()){
-			print("id request has me sending a request to myself, weird", P_WARN);
+		if(net_proto_valid_request_to_fill(proto_id_request)){
+			const std::vector<id_t_> id_vector =
+				proto_id_request->get_ids();
+			try{
+				net_proto_send_logic(
+					id_vector,
+					proto_id_request->get_origin_peer_id());
+				id_api::destroy(net_proto_id_requests[i]);
+			}catch(...){}
 		}
-		const std::vector<id_t_> id_vector =
-			proto_id_request->get_ids();
-		try{
-			net_proto_send_logic(
-				id_vector, peer_id);
-			id_api::destroy(net_proto_id_requests[i]);
-		}catch(...){}
 	}
 }
 
@@ -159,18 +181,23 @@ static void net_proto_fill_linked_list_requests(){
 	 	if(proto_linked_list_request == nullptr){
 	 		continue;
 	 	}
-		const id_t_ peer_id = proto_linked_list_request->get_sender_peer_id();
-	 	if(peer_id != net_proto::peer::get_self_as_peer()){
+		if(net_proto_valid_request_to_fill(proto_linked_list_request)){
+			const id_t_ origin_id =
+				proto_linked_list_request->get_origin_peer_id();
 			const id_t_ curr_id =
 				proto_linked_list_request->get_curr_id();
 			try{
 				if(PTR_ID(curr_id, ) != nullptr){
 					proto_linked_list_request->increase_id();
 				}
-				net_proto_send_logic({curr_id}, peer_id);
-				id_api::destroy(net_proto_linked_list_requests[i]);
+				net_proto_send_logic(
+					std::vector<id_t_>({curr_id}),
+					origin_id);
+				if(proto_linked_list_request->get_curr_length() == 0){
+					id_api::destroy(net_proto_linked_list_requests[i]);
+				}
 			}catch(...){}
-	 	}
+		}
 	}
 }
 
@@ -181,7 +208,7 @@ static void net_proto_fill_linked_list_requests(){
  */
 
 template <typename T>
-void net_proto_handle_request(T* request_ptr){
+void net_proto_handle_request_send(T request_ptr){
 	if(request_ptr == nullptr){
 		print("request_ptr is a nullptr", P_NOTE);
 		return;
@@ -197,15 +224,20 @@ void net_proto_handle_request(T* request_ptr){
 		id_api::destroy(request_ptr->id.get_id());
 		return;
 	}
-	if(request_ptr->get_sender_peer_id() != net_proto::peer::get_self_as_peer()){
+	const id_t_ origin_peer_id =
+		request_ptr->get_origin_peer_id();
+	const id_t_ destination_peer_id =
+		request_ptr->get_destination_peer_id();
+	if(net_proto_valid_request_to_send(request_ptr)){
 		try{
-			net_proto_send_logic({request_ptr->id.get_id()},
-					     request_ptr->get_sender_peer_id());
+			net_proto_send_logic(
+				std::vector<id_t_>({request_ptr->id.get_id()}),
+				origin_peer_id);
 			request_ptr->update_request_time();
 		}catch(...){
 			print("couldn't send request to peer, probably no available socket", P_SPAM);
 			net_proto::socket::connect(
-				request_ptr->get_sender_peer_id(),
+				destination_peer_id,
 				1);
 		}
 	}
@@ -216,7 +248,7 @@ void net_proto_handle_request(T* request_ptr){
 		id_api::cache::get(		\
 			#type);					\
 	for(uint64_t i = 0;i < request_vector.size();i++){	\
-		net_proto_handle_request(			\
+		net_proto_handle_request_send(			\
 			PTR_DATA(request_vector[i],		\
 				 type));			\
 	}							\

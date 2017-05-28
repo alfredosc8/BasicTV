@@ -102,7 +102,7 @@ uint64_t flip_bit_section(uint8_t begin, uint8_t end);
 
 std::vector<uint8_t> true_rand_byte_vector(uint32_t size_bytes);
 
-#define CONTINUE_IF_NULL(x) if(x == nullptr){continue;}
+#define CONTINUE_IF_NULL(x, p_level) if(x == nullptr){print((std::string)#x + " is a nullptr", p_level);continue;}
 // TODO: convert codebase to use this instead of three or more lines
 #define PRINT_IF_NULL(x, p_l) if(x == nullptr){print((std::string)#x + " is a nullptr", p_l);}
 #define CONTINUE_IF_TRUE(x) if(x){continue;}
