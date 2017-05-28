@@ -1,4 +1,4 @@
-Join the IRC chat at #basictv on Freenode [here](http://webchat.freenode.net/?channels=#basictv)
+Join the IRC chat at #basictv on Freenode [here](http://webchat.freenode.net/?channels=#basictv). IRC channel wasn't properly set up before, everybody should have been able to speak, and should now.
 
 Pretty rough around the edges, not a working testnet yet, but it'll be working okay soon enough (4/30/17)
 
