@@ -2,6 +2,7 @@
 #include "tv_audio.h"
 #include "tv_window.h"
 #include "tv_channel.h"
+#include "tv_item.h"
 #include "tv.h"
 #include "../convert.h"
 #include "../settings.h"
@@ -154,7 +155,8 @@ static uint32_t tv_audio_sdl_format_from_depth(uint8_t bit_depth){
   of the data as non exportable
  */
 
-std::vector<id_t_> tv_audio_load_wav(id_t_ channel_id, uint64_t start_time_micro_s, std::string file){
+std::vector<id_t_> tv_audio_load_wav(id_t_ tv_item_id, uint64_t start_time_micro_s, std::string file){
+	P_V_S(file, P_SPAM); // downgrade to P_VAR when i'm done
 	Mix_Chunk *chunk =
 		Mix_LoadWAV(file.c_str());
 	if(chunk == nullptr){
@@ -209,14 +211,13 @@ std::vector<id_t_> tv_audio_load_wav(id_t_ channel_id, uint64_t start_time_micro
 			audio->id.get_id());
 	}
 	id_api::linked_list::link_vector(audio_frame_vector);
-	tv_channel_t *channel =
-		PTR_DATA(channel_id,
-			 tv_channel_t);
-	if(channel == nullptr){
-		print("channel is a nullptr", P_ERR);
+	tv_item_t *item_ptr =
+		PTR_DATA(tv_item_id,
+			 tv_item_t);
+	if(item_ptr == nullptr){
+		print("item_ptr is a nullptr", P_ERR);
 	}
-	print("fix tv channel implementation", P_ERR);
-	//channel->add_stream_id(audio_frame_vector[0]);
+	item_ptr->add_frame_id(audio_frame_vector);
 	Mix_FreeChunk(chunk);
 	chunk = nullptr;
 	return audio_frame_vector;

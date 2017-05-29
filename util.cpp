@@ -119,6 +119,15 @@ std::string print_color_text(std::string data, int level){
   thread).
  */
 
+static bool print_is_sane(std::string data){
+	for(uint64_t i = 0;i < data.size();i++){
+		if(data[i] < 32 || data[i] == 127){
+			return false;
+		}
+	}
+	return true;
+}
+
 void print(std::string data, int level, const char *func){
 	if(print_level == P_SPAM){
 		try{
@@ -129,6 +138,10 @@ void print(std::string data, int level, const char *func){
 		}catch(...){}
 	}
 	if(unlikely(level >= print_level)){
+		if(!print_is_sane(data)){
+			std::cout << "[OHCOMEON] something happened" << std::endl;
+			std::raise(SIGINT);
+		}
 		// Personally, I use the print delay to keep tmux from
 		// slowing to a halt and destroying my bandwidth
 		uint64_t print_delay_milli_s =

@@ -76,6 +76,7 @@ data_id_t *id_api::array::ptr_id(id_t_ id,
 	}
 	for(uint64_t i = 0;i < id_lookup.size();i++){
 		if(id_lookup[i] == id){
+			print("preventing dead-lock with ID request, pretending we don't have it", P_SPAM);
 			return nullptr;
 		}
 	}

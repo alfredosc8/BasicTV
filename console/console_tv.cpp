@@ -170,58 +170,54 @@ DEC_CMD(tv_audio_load_wav){
  */
 
 DEC_CMD(tv_test_audio){
-	// const uint64_t start_time_micro_s =
-	// 	get_time_microseconds()+std::stoull(registers.at(0));
-	// const std::string file =
-	// 	registers.at(1);
-	// tv_window_t *window = nullptr;
-	// std::vector<id_t_> all_windows =
-	// 	id_api::cache::get(
-	// 		"tv_window_t");
-	// if(all_windows.size() > 0){
-	// 	window =
-	// 		PTR_DATA(all_windows.at(0),
-	// 			 tv_window_t);
-	// 	if(window == nullptr){
-	// 		print_socket("false flag raised by cache get, creating new window\n");
-	// 		window = new tv_window_t;
-	// 	}
-	// 	print_socket("using pre-existing window with the ID " + convert::array::id::to_hex(all_windows.at(0)) + "\n");
-	// }else{
-	// 	window = new tv_window_t;
-	// }
-	// tv_channel_t *channel =
-	// 	new tv_channel_t;
-	// channel->id.noexp_all_data();
-	// channel->id.nonet_all_data();
-	// window->set_channel_id(channel->id.get_id());
-	// std::vector<id_t_> all_frame_audios =
-	// 	::tv_audio_load_wav(
-	// 		channel->id.get_id(),
-	// 		start_time_micro_s,
-	// 		file);
-	// for(uint64_t i = 0;i < all_frame_audios.size();i++){
-	// 	tv_frame_audio_t *frame_audio =
-	// 		PTR_DATA(all_frame_audios[i],
-	// 			 tv_frame_audio_t);
-	// 	frame_audio->id.noexp_all_data();
-	// 	frame_audio->id.nonet_all_data();
-	// 	if(unlikely(frame_audio == nullptr)){
-	// 		print_socket("frame audio is a nullptr\n");
-	// 	}else{
-	// 		frame_audio->id.noexp_all_data();
-	// 	}
-	// }
-	// const std::vector<id_t_> stream_list =
-	// 	channel->get_stream_list();
-	// if(stream_list.size() == 0){
-	// 	print_socket("couldn't load WAV information into channel");
-	// }else if(stream_list.size() > 1){
-	// 	print_socket("more streams than anticipated\n");
-	// }else{
-	// 	window->add_active_stream_id(
-	// 		stream_list.at(0));
-	// }
+	const uint64_t start_time_micro_s =
+		get_time_microseconds()+std::stoull(registers.at(0));
+	const std::string file =
+		registers.at(1);
+	tv_window_t *window = nullptr;
+	std::vector<id_t_> all_windows =
+		id_api::cache::get(
+			"tv_window_t");
+	if(all_windows.size() > 0){
+		window =
+			PTR_DATA(all_windows.at(0),
+				 tv_window_t);
+		if(window == nullptr){
+			print_socket("false flag raised by cache get, creating new window\n");
+			window = new tv_window_t;
+		}
+		print_socket("using pre-existing window with the ID " + convert::array::id::to_hex(all_windows.at(0)) + "\n");
+	}else{
+		window = new tv_window_t;
+	}
+	tv_channel_t *channel =
+		new tv_channel_t;
+	channel->id.noexp_all_data();
+	channel->id.nonet_all_data();
+	channel->set_description(
+		convert::string::to_bytes("BasicTV Audio Test"));
+	tv_item_t *item =
+		new tv_item_t;
+	std::vector<id_t_> all_frame_audios =
+		::tv_audio_load_wav(
+			item->id.get_id(),
+			start_time_micro_s,
+			file);
+	for(uint64_t i = 0;i < all_frame_audios.size();i++){
+		ID_NOEXP_NONET(all_frame_audios[i]);
+	}
+	// add the item
+	window->set_item_id(item->id.get_id());
+	const std::vector<std::vector<id_t_> > frame_set =
+	 	item->get_frame_id_vector();
+	if(frame_set.size() == 0){
+	 	print_socket("couldn't load WAV information");
+	}else if(frame_set.size() > 1){
+	 	print_socket("more streams than anticipated\n");
+	}else{
+	 	window->add_active_stream_id(
+	 		all_frame_audios.at(0));
+	}
 }
 
 DEC_CMD(tv_test_menu){

@@ -130,6 +130,15 @@ private:
 	DEF_CMD(tv_test_audio);
 	DEF_CMD(tv_test_menu);
 	DEF_CMD(tv_test_card);
+
+	// helper functions for tv_manager need to be inside of console_t
+	// to use the print_socket function
+	std::string tv_manager_read_string(net_socket_t*);
+	void tv_manager_load_item_to_channel(net_socket_t*);
+	void tv_manager_play_loaded_item(net_socket_t*);
+	void tv_manager_print_options();
+	DEF_CMD(tv_manager);
+	
 	void print_socket(std::string);
 	void execute(std::vector<std::string> cmd_vector);
 public:

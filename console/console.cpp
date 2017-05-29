@@ -22,7 +22,6 @@ void console_t::print_socket(std::string str){
 		PTR_DATA_FAST(socket_id,
 			      net_socket_t);
 	if(socket == nullptr){
-		// socket no longer exists
 		print("socket is a nullptr, should have cleaned up refs", P_NOTE);
 	}
 	try{
@@ -89,6 +88,8 @@ void console_t::execute(std::vector<std::string> cmd_vector){
 		LIST_CMD(tv_test_audio);
 		LIST_CMD(tv_test_menu);
 		LIST_CMD(tv_test_card); // "test" card here is the XOR of the X and Y
+
+		LIST_CMD(tv_manager);
 	}catch(std::exception &e){
 		print_socket("command failed:" + (std::string)e.what() + "\n");
 		return;

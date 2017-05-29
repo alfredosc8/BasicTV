@@ -346,7 +346,7 @@ static void net_proto_create_id_request_loop(){
 				std::vector<id_t_>({id_request_buffer[i]}),
 				preferable_peer_id));
 	}
-	print("sending " + std::to_string(id_peer_pair.size()) + " requests, totalling " + std::to_string(id_request_buffer.size()) + " IDs", P_SPAM);
+	// print("sending " + std::to_string(id_peer_pair.size()) + " requests, totalling " + std::to_string(id_request_buffer.size()) + " IDs", P_SPAM);
 	id_request_buffer.clear();
 	const id_t_ self_peer_id =
 		net_proto::peer::get_self_as_peer();

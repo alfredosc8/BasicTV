@@ -225,18 +225,27 @@ std::string convert::array::id::to_hex(id_t_ id_){
 		convert::number::to_hex(
 			std::vector<uint8_t>(
 				hash_array.begin(),
-				hash_array.end()));
+				hash_array.end())) +
+		"-" +
+		convert::number::to_hex(
+			std::vector<uint8_t>({get_id_type(id_)}));
 	return retval;
 }
 
+#pragma message("convert::array::id::from_hex doesn't sanitize inputs, probably should")
+
 id_t_ convert::array::id::from_hex(std::string id_){
+	if(unlikely(id_.size() != 41*2+(2*1))){ // 2*1 for seperators
+		P_V(id_.size(), P_WARN);
+		print("invalid length for ID", P_ERR);
+	}
 	id_t_ retval = ID_BLANK_ID;
-	uint64_t pos_of_hyphen = id_.find_first_of("-");
 	std::string uuid_substr =
-		id_.substr(0, pos_of_hyphen);
+		id_.substr(0, (8*2));
 	std::vector<uint8_t> uuid_raw =
 		convert::number::from_hex(uuid_substr);
 	if(uuid_raw.size() != 8){
+		P_V_S(uuid_substr, P_WARN);
 		print("invalid size for UUID", P_ERR);
 	}
 	set_id_uuid(
@@ -244,19 +253,23 @@ id_t_ convert::array::id::from_hex(std::string id_){
 		*((uint64_t*)(&(uuid_raw[0]))));
 	std::string hash_substr =
 		id_.substr(
-			pos_of_hyphen+1,
-			id_.size());
+			16+1,
+			(2*32));
 	std::vector<uint8_t> hash =
 		convert::number::from_hex(
 			hash_substr);
-	if(hash.size() != 32){
-		print("invalid size for hash", P_ERR);
-	}
 	std::array<uint8_t, 32> hash_array;
 	memcpy(&(hash_array[0]), &(hash[0]), 32);
 	set_id_hash(
 		&retval,
 		hash_array);
+	
+	uint8_t tmp_type =
+		convert::number::from_hex(
+			id_.substr(id_.size()-2, id_.size())).at(0);
+	set_id_type(
+		&retval,
+		tmp_type);
 	return retval;
 }
 
