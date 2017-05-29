@@ -116,7 +116,7 @@ std::vector<id_t_> expand_id_set(std::vector<uint8_t> id_set){
 			raw_read.push_back(
 				std::make_pair(
 					raw_uuid_type,
-					std::array<uint8_t, 32>({})));
+					ID_BLANK_HASH));
 			id_set.erase(
 				id_set.begin(),
 				id_set.begin()+first_seperator);
