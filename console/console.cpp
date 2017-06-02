@@ -90,6 +90,8 @@ void console_t::execute(std::vector<std::string> cmd_vector){
 		LIST_CMD(tv_test_card); // "test" card here is the XOR of the X and Y
 
 		LIST_CMD(tv_manager);
+
+		print_output_table();
 	}catch(std::exception &e){
 		print_socket("command failed:" + (std::string)e.what() + "\n");
 		return;

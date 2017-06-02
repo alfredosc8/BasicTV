@@ -18,6 +18,19 @@ static uint32_t output_chunk_size = 0;
 
 // tv_audio_channel_t is simple enough to stay in this file
 
+tv_audio_prop_t::tv_audio_prop_t(){
+}
+
+tv_audio_prop_t::~tv_audio_prop_t(){
+}
+
+void tv_audio_prop_t::list_virtual_data(data_id_t *id){
+	id->add_data_raw(&flags, sizeof(flags));
+	id->add_data_raw(&format, sizeof(format));
+	id->add_data_raw(&bit_depth, sizeof(bit_depth));
+	id->add_data_raw(&sampling_freq, sizeof(sampling_freq));
+}
+
 static void tv_audio_wave(std::vector<uint8_t> *retval, const char *data){
 	retval->push_back(((uint8_t*)data)[0]);
 	retval->push_back(((uint8_t*)data)[1]);
@@ -70,8 +83,12 @@ static std::vector<uint8_t> tv_audio_get_wav_data_raw(std::vector<uint8_t> frame
 }
 
 static std::vector<uint8_t> tv_audio_get_wav_data_from_uncompressed(tv_frame_audio_t *frame){
-	const uint32_t sampling_freq = frame->get_sampling_freq();
-	const uint8_t bit_depth = frame->get_bit_depth();
+	tv_audio_prop_t audio_prop =
+		frame->get_audio_prop();
+	const uint32_t sampling_freq =
+		audio_prop.get_sampling_freq();
+	const uint8_t bit_depth =
+		audio_prop.get_bit_depth();
 	const std::vector<uint8_t> frame_data =
 		frame->get_data();
 	if(frame_data.size() % (bit_depth/8)){
@@ -82,43 +99,42 @@ static std::vector<uint8_t> tv_audio_get_wav_data_from_uncompressed(tv_frame_aud
 					 bit_depth);
 }
 
-
-static std::vector<uint8_t> tv_audio_get_wav_data_from_opus(tv_frame_audio_t *frame){
-        uint32_t sampling_freq = frame->get_sampling_freq();
-	uint8_t bit_depth = frame->get_bit_depth();
-	std::vector<uint8_t> opus_data =
-	        frame->get_data();
-	OpusDecoder *decoder = opus_decoder_create(sampling_freq, 1, NULL);
-	int32_t frame_size = opus_decoder_get_nb_samples(decoder,opus_data.data(),opus_data.size());
-	std::vector<uint8_t> frame_data;
-	frame_data.resize(frame_size*sizeof(opus_int16));
-	int64_t frame_size_retval =
-		opus_decode(
-			decoder,
-			opus_data.data(),
-			opus_data.size(),
-			(opus_int16*)frame_data.data(),
-			frame_size,
-			0);
-	if(frame_size_retval < 0){
-		print("opus couldn't decode the audio data", P_ERR);
-	}
-	opus_decoder_destroy(decoder);
-	return tv_audio_get_wav_data_raw(frame_data,
-					 sampling_freq,
-					 bit_depth);
-}
+// static std::vector<uint8_t> tv_audio_get_wav_data_from_opus(tv_frame_audio_t *frame){
+//         uint32_t sampling_freq = frame->get_sampling_freq();
+// 	uint8_t bit_depth = frame->get_bit_depth();
+// 	std::vector<uint8_t> opus_data =
+// 	        frame->get_data();
+// 	OpusDecoder *decoder = opus_decoder_create(sampling_freq, 1, NULL);
+// 	int32_t frame_size = opus_decoder_get_nb_samples(decoder,opus_data.data(),opus_data.size());
+// 	std::vector<uint8_t> frame_data;
+// 	frame_data.resize(frame_size*sizeof(opus_int16));
+// 	int64_t frame_size_retval =
+// 		opus_decode(
+// 			decoder,
+// 			opus_data.data(),
+// 			opus_data.size(),
+// 			(opus_int16*)frame_data.data(),
+// 			frame_size,
+// 			0);
+// 	if(frame_size_retval < 0){
+// 		print("opus couldn't decode the audio data", P_ERR);
+// 	}
+// 	opus_decoder_destroy(decoder);
+// 	return tv_audio_get_wav_data_raw(frame_data,
+// 					 sampling_freq,
+// 					 bit_depth);
+// }
 
 static std::vector<uint8_t> tv_audio_get_wav_data(tv_frame_audio_t *frame){
-	switch(GET_TV_FRAME_AUDIO_FORMAT(frame->get_flags())){
-	case TV_FRAME_AUDIO_FORMAT_UNDEFINED:
+	switch(frame->get_audio_prop().get_format()){
+	case TV_AUDIO_FORMAT_UNDEFINED:
 		print("can't play undefined file", P_ERR);
 		break;
-	case TV_FRAME_AUDIO_FORMAT_RAW:
+	case TV_AUDIO_FORMAT_RAW:
 		return tv_audio_get_wav_data_from_uncompressed(frame);
-	case TV_FRAME_AUDIO_FORMAT_OPUS:
-		return tv_audio_get_wav_data_from_opus(frame);
-	case TV_FRAME_AUDIO_FORMAT_FLAC:
+	// case TV_AUDIO_FORMAT_OPUS:
+	// 	// return tv_audio_get_wav_data_from_opus(frame);
+	case TV_AUDIO_FORMAT_FLAC:
 		print("FLAC is not supported yet", P_ERR);
 		break;
 	default:
@@ -153,6 +169,11 @@ static uint32_t tv_audio_sdl_format_from_depth(uint8_t bit_depth){
 /*
   Return value is only used by the testing functions (currently) to set all
   of the data as non exportable
+ */
+
+/*
+  TODO: for some reason, I can't load 900MB+ files without SDL screaming 'out of
+  memory', so I should make a decoder for WAV into raw samples
  */
 
 std::vector<id_t_> tv_audio_load_wav(id_t_ tv_item_id, uint64_t start_time_micro_s, std::string file){
@@ -193,14 +214,15 @@ std::vector<id_t_> tv_audio_load_wav(id_t_ tv_item_id, uint64_t start_time_micro
 				&(chunk->abuf[current_start+length])
 				)
 			);
-		uint8_t audio_flags = 0;
-		SET_TV_FRAME_AUDIO_FORMAT(
-			audio_flags,
-			TV_FRAME_AUDIO_FORMAT_RAW);
-		audio->set_type(
-			output_sampling_rate,
-			output_bit_depth,
-			audio_flags);
+		tv_audio_prop_t audio_prop;
+		audio_prop.set_format(
+			TV_AUDIO_FORMAT_RAW);
+		audio_prop.set_sampling_freq(
+			output_sampling_rate);
+		audio_prop.set_bit_depth(
+			output_bit_depth);
+		audio->set_audio_prop(
+			audio_prop);
 		audio->set_standard(start_time_micro_s+(frame_duration_micro_s*audio_frame_vector.size()),
 				    frame_duration_micro_s,
 				    audio_frame_vector.size());

@@ -383,3 +383,7 @@ std::vector<uint8_t> convert::string::to_bytes(std::string data){
 		(uint8_t*)data.data(),
 		((uint8_t*)data.data())+data.size());
 }
+
+std::string convert::string::from_bytes(std::vector<uint8_t> data){
+	return std::string((char*)data.data(), data.size());
+}

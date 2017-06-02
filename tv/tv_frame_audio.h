@@ -1,5 +1,6 @@
 #ifndef TV_FRAME_AUDIO_H
 #define TV_FRAME_AUDIO_H
+#include "tv_audio.h"
 #include "tv_frame_standard.h"
 #include <opus/opus.h>
 
@@ -8,16 +9,7 @@
 
 #define TV_FRAME_AUDIO_DATA_SIZE (TV_FRAME_AUDIO_DEFAULT_SAMPLING_RATE*(TV_FRAME_AUDIO_DEFAULT_BIT_DEPTH/8))
 
-#define TV_FRAME_AUDIO_DEFAULT_FORMAT TV_FRAME_AUDIO_FORMAT_OPUS
-
-// shouldn't ever be the case
-#define TV_FRAME_AUDIO_FORMAT_UNDEFINED 0
-// At least use FLAC if you are looking for quality, this is for testing
-#define TV_FRAME_AUDIO_FORMAT_RAW 1
-// default, works pretty well, nice licensing
-#define TV_FRAME_AUDIO_FORMAT_OPUS 2
-// not implemented yet, but not a bad idea either
-#define TV_FRAME_AUDIO_FORMAT_FLAC 3
+#define TV_FRAME_AUDIO_DEFAULT_FORMAT TV_AUDIO_FORMAT_OPUS
 
 // first 2-bits are reserved for the raw format
 
@@ -41,10 +33,6 @@
 
 #define TV_FRAME_AUDIO_FORMAT_MASK 0b00000011
 
-// no shift, other macros need shift operators
-#define GET_TV_FRAME_AUDIO_FORMAT(fl) (fl & TV_FRAME_AUDIO_FORMAT_MASK)
-#define SET_TV_FRAME_AUDIO_FORMAT(fl, fo) fl &= ~TV_FRAME_AUDIO_FORMAT_MASK;fl |= fo & TV_FRAME_AUDIO_FORMAT_MASK;
-
 /*
   tv_frame_audio_t should always be unsigned with syste byte order. Bit depth is
   the only variable that can change (16 is where SDL2 taps out)
@@ -52,24 +40,13 @@
 
 class tv_frame_audio_t : public tv_frame_standard_t{
 private:
-	uint8_t flags = 0;
 	std::vector<uint8_t> data;
-	uint8_t bit_depth = 0;
-	uint32_t sampling_freq = 0;
+	tv_audio_prop_t audio_prop;
 public:
 	data_id_t id;
 	tv_frame_audio_t();
 	~tv_frame_audio_t();
-	void get_type(uint64_t *sampling_freq_,
-		      uint8_t *bit_depth_,
-		      uint8_t *flags_);
-	void set_type(uint64_t sampling_freq_,
-		      uint8_t bit_depth_,
-		      uint8_t flags_);
-	uint8_t get_flags(){return flags;}
-	uint8_t get_bit_depth(){return bit_depth;}
-	uint32_t get_sampling_freq(){return sampling_freq;}
-	std::vector<uint8_t> get_data();
-	void set_data(std::vector<uint8_t> data_);
+	GET_SET(audio_prop, tv_audio_prop_t);
+	GET_SET(data, std::vector<uint8_t>);
 };
 #endif

@@ -121,8 +121,9 @@ std::string print_color_text(std::string data, int level){
 
 static bool print_is_sane(std::string data){
 	for(uint64_t i = 0;i < data.size();i++){
-		if(data[i] < 32 || data[i] == 127){
-			return false;
+		if((data[i] < 32 || data[i] == 127) && (data[i] != 10 || data[i] != '\n' || data[i] != '\r')){
+			// std::cout << (int)data[i] << std::endl;
+			// return false;
 		}
 	}
 	return true;
