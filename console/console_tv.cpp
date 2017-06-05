@@ -5,7 +5,10 @@
 #include "../tv/tv_audio.h"
 #include "../tv/tv_frame_audio.h"
 #include "../tv/tv_window.h"
+#include "../tv/transcode/tv_transcode.h"
 #include "../util.h"
+
+#include "../file.h"
 
 /*
   tv_window_t handlers
@@ -146,15 +149,16 @@ DEC_CMD(tv_item_get_stream_list){
 }
 
 DEC_CMD(tv_audio_load_wav){
-	id_t_ channel_id =
-		convert::array::id::from_hex(registers.at(0));
-	uint64_t start_time_micro_s =
-		std::stoull(registers.at(1));
-	std::string file = registers.at(2);
-	::tv_audio_load_wav(
-		channel_id,
-		start_time_micro_s,
-		file);			
+	print("again, no more tv_audio_load_wav, do it right this time", P_CRIT);
+	// id_t_ channel_id =
+	// 	convert::array::id::from_hex(registers.at(0));
+	// uint64_t start_time_micro_s =
+	// 	std::stoull(registers.at(1));
+	// std::string file = registers.at(2);
+	// ::tv_audio_load_wav(
+	// 	channel_id,
+	// 	start_time_micro_s,
+	// 	file);			
 }
 
 /*
@@ -168,6 +172,77 @@ DEC_CMD(tv_audio_load_wav){
   the directory of BasicTV, not the directory of where the telnet client
   is being ran, obviously)
  */
+
+static std::vector<id_t_> console_tv_test_load_opus(std::string file){
+	std::vector<uint8_t> raw_samples;
+	int32_t ogg_opus_error;
+	OggOpusFile *opus_file =
+		op_open_file(
+			file.c_str(),
+			&ogg_opus_error);
+	if(opus_file == nullptr){
+		print("couldn't open the OGG Opus file, error code " + std::to_string(ogg_opus_error), P_ERR);
+	}
+	opus_int16 pcm[5760*2];
+	int samples_read = 0;
+	while((samples_read =
+	       op_read(opus_file,
+		       &(pcm[0]),
+		       5760*2,
+		       nullptr)) > 0){
+		raw_samples.insert(
+			raw_samples.end(),
+			(uint8_t*)(&(pcm[0])),
+			(uint8_t*)(&(pcm[0])+samples_read));
+	}
+
+	op_free(opus_file);
+	opus_file = nullptr;
+
+	// Intermediate (raw to codec)
+	tv_audio_prop_t opus_audio_prop;
+	opus_audio_prop.set_flags(
+		TV_AUDIO_PROP_FORMAT_ONLY);
+	opus_audio_prop.set_format(
+		TV_AUDIO_FORMAT_OPUS);
+
+	// Final frame output
+	tv_audio_prop_t frame_audio_prop;
+	frame_audio_prop.set_flags(
+		TV_AUDIO_PROP_FORMAT_ONLY);
+	frame_audio_prop.set_format(
+		TV_AUDIO_FORMAT_OPUS);
+
+	// standard output properties for Opus to raw samples
+	const uint32_t sampling_freq =
+		48000;
+	const uint8_t bit_depth =
+		16;
+	const uint8_t channel_count =
+		1;
+	
+	/*
+	  to_frames with the same format SHOULD repacketize each individual
+	  frame, one at a time, until everything is finished, and do no
+	  conversions whatsoever if the outputs can be valid as the inputs
+	  (i.e. no specified output sampling freq, bit depth, or special encoder
+	  jargon)
+
+	  Right now it just decodes and encodes everything, which is OK for
+	  small loads, but becomes unreasonable very quickly
+	 */
+	std::vector<id_t_> retval =
+		transcode::audio::codec::to_frames(
+			transcode::audio::raw::to_codec(
+				raw_samples,
+				sampling_freq,
+				bit_depth,
+				channel_count,
+				&opus_audio_prop),
+			&opus_audio_prop,
+			&frame_audio_prop);
+	return retval;
+}
 
 DEC_CMD(tv_test_audio){
 	const uint64_t start_time_micro_s =
@@ -199,10 +274,11 @@ DEC_CMD(tv_test_audio){
 	tv_item_t *item =
 		new tv_item_t;
 	std::vector<id_t_> all_frame_audios =
-		::tv_audio_load_wav(
-			item->id.get_id(),
-			start_time_micro_s,
+		console_tv_test_load_opus(
 			file);
+	item->add_frame_id(
+		all_frame_audios);
+	P_V(start_time_micro_s, P_VAR);
 	for(uint64_t i = 0;i < all_frame_audios.size();i++){
 		ID_NOEXP_NONET(all_frame_audios[i]);
 	}

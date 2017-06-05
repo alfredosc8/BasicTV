@@ -2,237 +2,231 @@
 #include "opus/opus.h"
 
 /*
-  Go over this in another commit, I just want to get back on the tree
+  For simplicity, raw samples don't have a tv_audio_prop_t
  */
 
-// static struct tv_transcode_opus_settings_t{
-// public:
-// 	uint8_t application = 0;
-// 	uint8_t complexity = 0;
-// 	uint8_t signal = 0;
-// 	uint8_t dtx = 0;
-// 	uint8_t vbr = 0;
-// 	uint8_t vbr_constrained = 0;
-// 	uint8_t loss_perc = 0;
-// 	uint8_t force_channels = 0;
-// 	uint8_t inband_fec = 0;
-// 	uint8_t max_bandwidth = 0;
-// 	uint32_t bitrate = 0;
-// 	uint32_t sampling_freq = 0;
-// 	uint8_t channel_count = 0;
-// 	uint8_t bit_depth = 0;
+#pragma message("assert_opus_input doesn't check beyond format flag, worth fixing?")
 
-// 	tv_audio_prop_t audio_prop_tmp;
-	
-// 	void read_from_prop(
-// 		tv_audio_prop_t audio_prop);
-// 	tv_audio_prop_t write_to_prop();
-// };
+static bool assert_fix_opus_prop(tv_audio_prop_t *audio_prop){
+	if(audio_prop == nullptr){
+		print("no audio prop whatsoever, can't assert", P_ERR);
+	}
+	if(audio_prop->get_format() != TV_AUDIO_FORMAT_OPUS){
+		print("invalid format for opus", P_ERR);
+	}
+	bool tainted = false;
+	if((audio_prop->get_flags() & TV_AUDIO_PROP_FORMAT_ONLY) == false){
+		print("TODO: actually check the other variables, don't trust it's correct Opus by format flag", P_WARN);
+		if(audio_prop->get_sampling_freq() != 4000*2 ||
+		   audio_prop->get_sampling_freq() != 6000*2 ||
+		   audio_prop->get_sampling_freq() != 8000*2 ||
+		   audio_prop->get_sampling_freq() != 12000*2 ||
+		   audio_prop->get_sampling_freq() != 20000*2){
+			print("output sampling freq isn't compatiable with Opus, selecting fullband", P_WARN);
+			audio_prop->set_sampling_freq(
+				20000*2);
+			// could do some rounding, but that's not a big deal
+			// right now
+			tainted = true;
+		}
+		if(BETWEEN(6000, audio_prop->get_bit_rate(), 510000) == false){
+			print("output bit rate isn't compatiable with Opus, selecting 64", P_WARN);
+			audio_prop->set_bit_rate(
+				64);
+			tainted = true;
+		}
+		// uint16_t keeps GCC from complaining
+		// if(BETWEEN(1, audio_prop->get_channel_count(), 255) == false){
+		if(audio_prop->get_channel_count() == 0){
+			print("invalid channel count for Opus (zero), selecting one", P_WARN);
+			audio_prop->set_channel_count(
+				1);
+			tainted = true;
+		}
+	}else{
+		print("only format is valid, inserting sane defaults", P_NOTE);
+		audio_prop->set_sampling_freq(
+			20000*2);
+		audio_prop->set_bit_rate(
+			64);
+		audio_prop->set_channel_count(
+			1);
+		tainted = true;
+	}
+	return tainted;
+}
 
+static void assert_opus_prop(tv_audio_prop_t audio_prop){
+	if(assert_fix_opus_prop(&audio_prop)){
+		print("assertion on sane opus values failed", P_ERR);
+	}
+}
 
-// void tv_transcode_opus_settings_t::read_from_prop(tv_audio_prop_t audio_prop){
-// 	const uint64_t flags =
-// 		audio_prop.get_flags();
-// 	application =
-// 		TV_AUDIO_FLAGS_OPUS_APPLICATION(flags);
-// 	complexity =
-// 		TV_AUDIO_FLAGS_OPUS_COMPLEXITY(flags);
-// 	signal =
-// 		TV_AUDIO_FLAGS_OPUS_SIGNAL(flags);
-// 	dtx =
-// 		TV_AUDIO_FLAGS_OPUS_DTX(flags);
-// 	vbr =
-// 		TV_AUDIO_FLAGS_OPUS_VBR(flags);
-// 	vbr_constrained =
-// 		TV_AUDIO_FLAGS_OPUS_VBR_CONSTRAINED(flags);
-// 	loss_perc =
-// 		TV_AUDIO_FLAGS_OPUS_LOSS_PERC(flags);
-// 	force_channels =
-// 		TV_AUDIO_FLAGS_OPUS_FORCE_CHANNELS(flags);
-// 	inband_fec =
-// 		TV_AUDIO_FLAGS_OPUS_INBAND_FEC(flags);
-// 	bitrate =
-// 		audio_prop->get_bit_rate();
-// 	bit_depth =
-// 		audio_prop->get_bit_depth();
-// 	max_bandwidth =
-// 		opus_verify_fix_sampling_freq(
-// 			audio_prop.get_sampling_freq());
-// 	audio_prop_tmp = audio_prop;
-// }
+/*
+  TODO: should make these settings, but that's for another time
+ */
 
-// tv_audio_prop_t tv_transcode_opus_settings_t::write_to_prop(){
-	
-// }
+static tv_audio_prop_t gen_standard_opus_format(){
+	tv_audio_prop_t retval;
+	retval.set_sampling_freq(
+		48000); // OPUS_BANDWIDTH_FULLBAND
+	retval.set_bit_depth(
+		16); // good enough
+	retval.set_bit_rate(
+		65536); // actual bits
+	retval.set_channel_count(
+		1);
+	return retval;
+}
 
-// static void opus_input_audio_prop_sanity_check(tv_audio_prop_t audio_prop){
-// 	if(BETWEEN(8, audio_prop.get_sampling_freq(), 48) == false){
-// 		print("invalid sampling rate for opus", P_ERR);
-// 		// TODO: when raw conversion functions are made, just
-// 		// cut the sampling rate in half until we have a freq
-// 		// that is in the bounds
-// 	}
-// 	if(BETWEEN(1, audio_prop.get_channel_count(), 255) == false){
-// 		print("invalid number of channels for opus", P_ERR);
-// 	}
-// }
+CODEC_ENCODE_INIT_STATE(opus){
+	tv_transcode_encode_state_t state;
+	if(assert_fix_opus_prop(&audio_prop)){
+		print("given a bad audio_prop value, using standard Opus for ease of debugging", P_NOTE);
+		audio_prop = gen_standard_opus_format();
+	}
+	int32_t error = 0;
+	OpusEncoder *encode_state =
+		opus_encoder_create(
+			audio_prop.get_sampling_freq(),
+			audio_prop.get_channel_count(),
+			OPUS_APPLICATION_AUDIO,
+			&error);
+	if(error != OPUS_OK){
+		HANG();
+		print("opus failed to create the tv_transcode_encode_t", P_ERR);
+	}
+	state.set_state_ptr((void*)encode_state);
+	state.set_audio_prop(audio_prop);
+	return state;
+}
 
-// static void opus_output_audio_prop_sanity_check(tv_audio_prop_t audio_prop){
-// 	opus_output_audio_prop_sanity_check(audio_prop);
-// 	if(!(audio_prop->get_flags() & TV_AUDIO_FLAG_OPUS_VBR ||
-// 	     BETWEEN(6000, audio_prop->get_bit_rate(), 510000))){
-// 		print("invalid bit rate for opus", P_ERR);
-// 	}
-// }
-	
-// #pragma message("opus encoder has not been written yet")
+CODEC_DECODE_INIT_STATE(opus){
+	tv_transcode_decode_state_t state;
+	if(assert_fix_opus_prop(&audio_prop)){
+		print("given a bad audio_prop value, using standard Opus for ease of debugging", P_NOTE);
+		audio_prop = gen_standard_opus_format();
+	}
+	int32_t error = 0;
+	OpusDecoder *decode_state =
+		opus_decoder_create(
+			audio_prop.get_sampling_freq(),
+			audio_prop.get_channel_count(),
+			&error);
+	if(error != OPUS_OK){
+		HANG();
+		print("opus failed to create the tv_transcode_decode_t", P_ERR);
+	}
+	state.set_state_ptr((void*)decode_state);
+	state.set_audio_prop(audio_prop);
+	return state;
+}
 
-// static uint8_t opus_verify_fix_sampling_freq(uint32_t sampling_freq){
-// 	switch(sampling_freq){
-// 	case 8000:
-// 		return OPUS_BANDWIDTH_NARROWBAND;
-// 	case 12000:
-// 		return OPUS_BANDWIDTH_MEDIUMBAND;
-// 	case 16000:
-// 		return OPUS_BANDWIDTH_WIDEBAND;
-// 	case 24000:
-// 		return OPUS_BANDWIDTH_SUPERWIDEBAND;
-// 	case 40000:
-// 		return OPUS_BANDWIDTH_FULLBAND;
-// 	default:
-// 		print("invalid opus sampling_freq, using standard", P_WARN);
-// 		return OPUS_BANDWIDTH_FULLBAND;
-// 	}
-// }
+CODEC_DECODE_PACKET(opus){
+        state_sanity_check(state);
+	std::vector<std::vector<uint8_t> > retval;
+	opus_int16 pcm_out[5760];
+	memset(&(pcm_out[0]), 0, 5760);
+	*sampling_freq = 0;
+	*bit_depth = 0;
+	*channel_count = 0;
+	int32_t opus_retval = 0;
+	for(uint64_t i = 0;i < packet.size();i++){
+		opus_retval =
+			opus_decode(
+				(OpusDecoder*)state->get_state_ptr(),
+				packet[i].data(),
+				packet[i].size(),
+				&(pcm_out[0]),
+				5760,
+				0); // FEC
+		if(opus_retval < 0){
+			break;
+		}
+		retval.push_back(
+			std::vector<uint8_t>(
+				&(pcm_out[0]),
+				&(pcm_out[0])+opus_retval));
+	}
+	if(opus_retval > 0){
+		print("successfuly decode opus data", P_SPAM);
+		*sampling_freq = state->get_audio_prop().get_sampling_freq();
+		*bit_depth = state->get_audio_prop().get_bit_depth();
+		*channel_count = state->get_audio_prop().get_channel_count();
+	}else if(opus_retval == 0){
+		print("no opus data to decode", P_WARN);
+	}else{
+		HANG();
+		print("opus decode failed with error code " + std::to_string(opus_retval), P_WARN);
+	}
+	return retval;
+}
 
-// // std::vector<uint8_t> raw
-// // tv_audio_prop_t *input_audio_prop (can be null)
-// // tv_audio_prop_t *output_audio_prop (can't be null)
+CODEC_DECODE_CLOSE_STATE(opus){
+	if(state == nullptr){
+		print("state is a nullptr", P_ERR);
+	}
+	if(state->get_state_ptr() == nullptr){
+		print("state_ptr is a nullptr", P_ERR);
+	}
+	opus_decoder_destroy(
+		(OpusDecoder*)state->get_state_ptr());
+	state->set_state_ptr(
+		nullptr);
+}
 
-// CODEC_RAW_TO_RAW(opus){
-// 	std::vector<uint8_t> retval;
-// 	if(output_audio_prop == nullptr){
-// 		print("having no output_audio_prop only works on frame sets (repacketize)", P_ERR);
-// 	}
-// 	if(
-// 	opus_input_audio_prop_sanity_check();
-// 	opus_output_audio_prop_sanity_check();
-// 	return retval;
-// } 
+CODEC_ENCODE_SAMPLES(opus){
+	state_sanity_check(state);
+	std::vector<std::vector<uint8_t> > retval;
+	if(bit_depth != 16){
+		// not good, should probably fix
+		print("not bothering with non-16 bit bit depth", P_ERR);
+	}
+	P_V(channel_count, P_VAR); // not really needed right now
+	const uint64_t frame_size_milli_s = 
+		60; // ought to work fine
+	const uint64_t inc_val =
+		(frame_size_milli_s)*(sampling_freq/1000)*sizeof(opus_int16);
+	P_V(inc_val, P_VAR);
+	for(uint64_t i = 0;i < sample_set.size()-inc_val;i += inc_val){
+		uint8_t encoded_data_tmp[65536];
+		const opus_int32 encode_retval =
+			opus_encode(
+				(OpusEncoder*)state->get_state_ptr(),
+				(const opus_int16*)&(sample_set[i]),
+				(inc_val/2),
+				&(encoded_data_tmp[0]),
+				65536);
+		if(encode_retval > 0){
+			print("opus_encode succeeded", P_SPAM);
+			retval.push_back(
+				std::vector<uint8_t>(
+					&(encoded_data_tmp[0]),
+					&(encoded_data_tmp[0])+encode_retval));
+		}else if(encode_retval == 0){
+			print("no data encoded", P_WARN);
+		}else{
+			HANG();
+			print("opus encode failed with error " + std::to_string(encode_retval), P_ERR);
+			/*
+			  Opus' state is a shallow copy, so we could back up
+			  the state information and re-create it later, but i'm 
+			  not sure how common that would be across codecs.
+			  It's useful enough for me to look into it at least.
 
-// #pragme message("opus decoder has not been tested to work yet")
+			  I'm fine with cloning tv_transcode_*_state_t with
+			  different depths for this sort of use case as
+			  a generic state codec function.
+			 */
+		}
+	}
+	return retval;
+}
 
-// /*
-//   TODO: since frequency, bitrate, and other jargon is stored on a packet
-//   by packet basis, just fetch those packets, convert them to raw, do
-//   whatever conversions are needed with transcode::convert (only with raw).
-//   Convert up lower quality samples (or come to a default output, either
-//   is fine).
-
-//   Opus, being a stateful codec, must have all data encoded and decoded
-//   at the same time.
-//  */
-
-// std::vector<uint8_t> transcode::decode::opus(std::vector<uint8_t> raw_data,
-// 					     tv_audio_prop_t *audio_prop){
-// 	std::vector<uint8_t> samples;
-// 	OpusDecoder *decoder = nullptr;
-// 	try{
-// 		opus_decoder_create(
-// 			TV_AUDIO_DEFAULT_SAMPLING_RATE,
-// 			1,
-// 			NULL);
-// 		if(decoder == nullptr){
-// 			print("couldn't create opus decoder", P_ERR);
-// 		}
-// 		const int32_t frame_size =
-// 			opus_decoder_get_nb_samples(
-// 				decoder,
-// 				raw_data.data(),
-// 				raw_data.size());
-// 		if(frame_size_retval == OPUS_BAD_ARG){
-// 			print("bad arguments for opus_decoder_get_nb_samples", P_ERR);
-// 		}else if(frame_size_retval == OPUS_INVALID_PACKET){
-// 			print("corrupted opus payload for opus_decoder_get_nb_samples", P_ERR);
-// 		}
-// 		std::vector<uint8_t> sample_vector(
-// 			frame_size, 0);
-// 		const int64_t decode_retval =
-// 			opus_decode(
-// 				decoder,
-// 				raw_data.data(),
-// 				raw_data.size(),
-// 				(opus_int16*)sample_vector.data(),
-// 				sample_vector.size(),
-// 				0);
-// 		if(decode_retval < 0){
-// 			print("couldn't decode opus data", P_ERR);
-// 		}
-// 	}catch(...){
-// 		print("opus decoding failed", P_ERR);
-// 	}
-// 	if(decoder != nullptr){
-// 		opus_decoder_destroy(decoder);
-// 		decoder = nullptr;
-// 	}
-// 	return samples;
-// }
-
-
-// // std::vector<uint8_t> raw
-// // uint64_t size_bytes
-
-// #pragma message("Opus only segments data chunks into their smallest parts (1276 bytes)")
-
-// CODEC_REPACKETIZE_BY_SIZE(opus){
-// 	std::vector<std::vector<uint8_t> > retval;
-// 	if(raw.size() == 0){
-// 		print("Opus cannot repacketize an empty set", P_ERR);
-// 	}
-// 	if(size_bytes != 1276){
-// 		P_V(size_bytes, P_SPAM);
-// 		print("current implementation only supports segmenting in 1276 chunks", P_ERR);
-// 	}
-// 	OpusRepacketizer *repacketizer =
-// 		(OpusRepacketizer*) new uint8_t[opus_repacketizer_get_size());
-// 	if(opus_repacketizer_cat(
-// 		   repacketizer,
-// 		   raw.data(),
-// 		   raw.size()) != OPUS_OK){
-// 		print("Opus couldn't add data to repacketize", P_ERR);
-// 	}else{
-// 		const uint64_t frame_count =
-// 			opus_repacketizer_get_nb_frames(
-// 				repacketizer);
-// 		for(uint64_t i = 0;i < frame_count;i++){
-// 			const opus_int32 out_len =
-// 				opus_repacketizer_out_range(
-// 					repacketizer,
-// 					i,
-// 					i+1,
-// 					&tmp_out,
-// 					sizeof(tmp_out));
-// 			retval.push_back(
-// 				std::vector<uint8_t>());
-// 			retval[retval.size()-1] =
-// 				std::vector<uint8_t>(
-// 					&tmp_out,
-// 					&tmp_out + out_len);
-// 		}
-// 	}
-// 	return retval;
-// }
-
-
-// CODEC_FRAME_TO_FRAME(opus){
-// 	return {};
-// }
-// CODEC_FRAME_TO_RAW(opus){
-// 	return {};
-// }
-// CODEC_RAW_TO_FRAME(opus){
-// 	return {};
-// }
-// CODEC_RAW_TO_RAW(opus){
-// 	return {};
-// }
+CODEC_ENCODE_CLOSE_STATE(opus){
+	state_sanity_check(state);
+	opus_encoder_destroy(
+		(OpusEncoder*)state->get_state_ptr());
+	state->set_state_ptr(
+		nullptr);
+}

@@ -14,7 +14,6 @@ void tv_frame_standard_t::list_virtual_data(data_id_t *id){
 	id->add_data_raw(&start_time_micro_s, sizeof(start_time_micro_s));
 	id->add_data_raw(&ttl_micro_s, sizeof(ttl_micro_s));
 	id->add_data_raw(&frame_entry, sizeof(frame_entry));
-	id->add_data_id(&(dep[0]), TV_FRAME_DEP_SIZE);
 }
 
 void tv_frame_standard_t::set_standard(uint64_t start_time_micro_s_,
@@ -46,23 +45,3 @@ bool tv_frame_standard_t::valid(uint64_t timestamp_micro_s){
 				    start_time_micro_s+(uint64_t)ttl_micro_s);
 	return retval;
 }
-
-void tv_frame_standard_t::add_dep(id_t_ id_){
-	for(uint64_t i = 0;i < TV_FRAME_DEP_SIZE;i++){
-		if(dep[i] == ID_BLANK_ID){
-			dep[i] = id_;
-			return;
-		}
-	}
-	print("unable to append data to dependencies list", P_ERR);
-}
-
-void tv_frame_standard_t::del_dep(id_t_ id_){
-	for(uint64_t i = 0;i < TV_FRAME_DEP_SIZE;i++){
-		if(dep[i] == id_){
-			dep[i] = ID_BLANK_ID;
-			return;
-		}
-	}
-}
-

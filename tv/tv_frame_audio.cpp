@@ -4,7 +4,7 @@
 tv_frame_audio_t::tv_frame_audio_t() : id(this, TYPE_TV_FRAME_AUDIO_T){
 	list_virtual_data(&id);
 	audio_prop.list_virtual_data(&id);
-	id.add_data_one_byte_vector(&data, ~((uint32_t)0));
+	id.add_data_one_byte_vector_vector(&packet_set, ~((uint32_t)0), ~((uint32_t)0));
 }
 
 tv_frame_audio_t::~tv_frame_audio_t(){

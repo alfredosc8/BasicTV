@@ -102,6 +102,9 @@ namespace convert{
 	  color is used instead of bytes per pixel because, unlike SDL2 and
 	  most other libaries, there is no native support for the alpha channel
 	  (but that wouldn't be a bad idea for advanced menus)
+
+	  TODO: move color into transcode namespace since the scope is limited
+	  to the tv_* functions
 	 */
 	namespace color{
 		uint64_t to(std::tuple<uint64_t, uint64_t, uint64_t, uint8_t> color);
@@ -113,7 +116,7 @@ namespace convert{
 	namespace string{
 		std::vector<uint8_t> to_bytes(std::string str);
 		std::string from_bytes(std::vector<uint8_t> bytes);
-	};
+	}
 };
 
 #endif

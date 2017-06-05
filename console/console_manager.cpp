@@ -58,15 +58,16 @@ void console_t::tv_manager_load_item_to_channel(
 	}
 	tv_item_t *new_item =
 		new tv_item_t;
-	try{
-		::tv_audio_load_wav(
-			new_item->id.get_id(),
-			std::stoi(start_time_micro_s_offset)+get_time_microseconds(),
-			file_path);
-	}catch(...){
-		print_socket("failed to load WAV file\n");
-		print("failed to load WAV file", P_ERR);
-	}
+	// try{
+	// 	::tv_audio_load_wav(
+	// 		new_item->id.get_id(),
+	// 		std::stoi(start_time_micro_s_offset)+get_time_microseconds(),
+	// 		file_path);
+	// }catch(...){
+	// 	print_socket("failed to load WAV file\n");
+	// 	print("failed to load WAV file", P_ERR);
+	// }
+	print("no more tv_audio_load_wav, do it right this time", P_CRIT);
 	new_item->set_tv_channel_id(
 		convert::array::id::from_hex(channel_id));
 	print_socket("added data properly");

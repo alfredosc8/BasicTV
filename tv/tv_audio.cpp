@@ -7,6 +7,8 @@
 #include "../convert.h"
 #include "../settings.h"
 
+#include "transcode/tv_transcode.h"
+
 static uint32_t output_sampling_rate = 0;
 static uint8_t output_bit_depth = 0;
 static uint32_t output_chunk_size = 0;
@@ -31,119 +33,6 @@ void tv_audio_prop_t::list_virtual_data(data_id_t *id){
 	id->add_data_raw(&sampling_freq, sizeof(sampling_freq));
 }
 
-static void tv_audio_wave(std::vector<uint8_t> *retval, const char *data){
-	retval->push_back(((uint8_t*)data)[0]);
-	retval->push_back(((uint8_t*)data)[1]);
-	retval->push_back(((uint8_t*)data)[2]);
-	retval->push_back(((uint8_t*)data)[3]);
-}
-
-static void tv_audio_wave(std::vector<uint8_t> *retval, uint32_t data){
-#ifdef IS_BIG_ENDIAN
-	throw std::runtime_error("this isn't big endian");
-	data = __builtin_bswap32(data);
-#endif
-	retval->push_back(((uint8_t*)&data)[0]);
-	retval->push_back(((uint8_t*)&data)[1]);
-	retval->push_back(((uint8_t*)&data)[2]);
-	retval->push_back(((uint8_t*)&data)[3]);
-}
-
-static void tv_audio_wave(std::vector<uint8_t> *retval, uint16_t data){
-#ifdef IS_BIG_ENDIAN
-	data = __builtin_bswap16(data);
-#endif
-	retval->push_back(((uint8_t*)&data)[0]);
-	retval->push_back(((uint8_t*)&data)[1]);
-}
-
-static std::vector<uint8_t> tv_audio_get_wav_data_raw(std::vector<uint8_t> frame_data,
-						      uint32_t sampling_freq,
-						      uint8_t bit_depth){
-	std::vector<uint8_t> retval;
-	tv_audio_wave(&retval, "RIFF");
-	tv_audio_wave(&retval, (uint32_t)(frame_data.size()+36));
-	tv_audio_wave(&retval, "WAVE");
-	tv_audio_wave(&retval, "fmt ");
-	tv_audio_wave(&retval, (uint32_t)16); // length of data section
-	tv_audio_wave(&retval, (uint16_t)1); // uncompressed PCM
-	tv_audio_wave(&retval, (uint16_t)1); // channel count
-	tv_audio_wave(&retval, (uint32_t)sampling_freq);
-	tv_audio_wave(&retval, (uint32_t)(sampling_freq*1*bit_depth/8));
-	tv_audio_wave(&retval, (uint16_t)(1*bit_depth/8)); // block align
-	tv_audio_wave(&retval, (uint16_t)bit_depth);
-	tv_audio_wave(&retval, "data");
-	tv_audio_wave(&retval, (uint32_t)frame_data.size());
-	// WAV forces this data to be in signed 16-bit form, which this isn't
-	retval.insert(
-		retval.end(),
-		frame_data.begin(),
-		frame_data.end());
-	return retval;
-}
-
-static std::vector<uint8_t> tv_audio_get_wav_data_from_uncompressed(tv_frame_audio_t *frame){
-	tv_audio_prop_t audio_prop =
-		frame->get_audio_prop();
-	const uint32_t sampling_freq =
-		audio_prop.get_sampling_freq();
-	const uint8_t bit_depth =
-		audio_prop.get_bit_depth();
-	const std::vector<uint8_t> frame_data =
-		frame->get_data();
-	if(frame_data.size() % (bit_depth/8)){
-		print("frame_data isn't the proper size", P_ERR);
-	}
-	return tv_audio_get_wav_data_raw(frame_data,
-					 sampling_freq,
-					 bit_depth);
-}
-
-// static std::vector<uint8_t> tv_audio_get_wav_data_from_opus(tv_frame_audio_t *frame){
-//         uint32_t sampling_freq = frame->get_sampling_freq();
-// 	uint8_t bit_depth = frame->get_bit_depth();
-// 	std::vector<uint8_t> opus_data =
-// 	        frame->get_data();
-// 	OpusDecoder *decoder = opus_decoder_create(sampling_freq, 1, NULL);
-// 	int32_t frame_size = opus_decoder_get_nb_samples(decoder,opus_data.data(),opus_data.size());
-// 	std::vector<uint8_t> frame_data;
-// 	frame_data.resize(frame_size*sizeof(opus_int16));
-// 	int64_t frame_size_retval =
-// 		opus_decode(
-// 			decoder,
-// 			opus_data.data(),
-// 			opus_data.size(),
-// 			(opus_int16*)frame_data.data(),
-// 			frame_size,
-// 			0);
-// 	if(frame_size_retval < 0){
-// 		print("opus couldn't decode the audio data", P_ERR);
-// 	}
-// 	opus_decoder_destroy(decoder);
-// 	return tv_audio_get_wav_data_raw(frame_data,
-// 					 sampling_freq,
-// 					 bit_depth);
-// }
-
-static std::vector<uint8_t> tv_audio_get_wav_data(tv_frame_audio_t *frame){
-	switch(frame->get_audio_prop().get_format()){
-	case TV_AUDIO_FORMAT_UNDEFINED:
-		print("can't play undefined file", P_ERR);
-		break;
-	case TV_AUDIO_FORMAT_RAW:
-		return tv_audio_get_wav_data_from_uncompressed(frame);
-	// case TV_AUDIO_FORMAT_OPUS:
-	// 	// return tv_audio_get_wav_data_from_opus(frame);
-	case TV_AUDIO_FORMAT_FLAC:
-		print("FLAC is not supported yet", P_ERR);
-		break;
-	default:
-		print("unknown format", P_ERR);
-		break;
-	}
-	return {};
-}
-
 static uint32_t tv_audio_sdl_format_from_depth(uint8_t bit_depth){
 	switch(bit_depth){
 	case 24:
@@ -158,91 +47,6 @@ static uint32_t tv_audio_sdl_format_from_depth(uint8_t bit_depth){
 		print("unknown bit depth for SDL conversion, using 16-bit", P_WARN);
 		return AUDIO_U16LSB;
 	}
-}
-
-/*
-  Loads up a chosen .wav file (sine wave) into one second chunks, writes that
-  information into a tv_frame_audio_t entry (along with proper timing info), and
-  links them all together with a linked list function (through std::vector<id_t_>)
-*/
-
-/*
-  Return value is only used by the testing functions (currently) to set all
-  of the data as non exportable
- */
-
-/*
-  TODO: for some reason, I can't load 900MB+ files without SDL screaming 'out of
-  memory', so I should make a decoder for WAV into raw samples
- */
-
-std::vector<id_t_> tv_audio_load_wav(id_t_ tv_item_id, uint64_t start_time_micro_s, std::string file){
-	P_V_S(file, P_SPAM); // downgrade to P_VAR when i'm done
-	Mix_Chunk *chunk =
-		Mix_LoadWAV(file.c_str());
-	if(chunk == nullptr){
-		print("cannot load file (" + file + "):" + (std::string)Mix_GetError(), P_ERR);
-	}
-	/*
-	  LoadWAV converts the data into the settings set in Mix_OpenAudio,
-	  derived from the settings.cfg file for all around audio, so we should
-	  be good on that front
-	 */
-	// five seconds ought to be enough
-	const uint64_t frame_duration_micro_s =
-		1000*1000;
-	P_V(output_sampling_rate, P_VAR);
-	P_V(output_bit_depth, P_VAR);
-	const uint64_t sample_length_per_frame =
-		((output_sampling_rate*output_bit_depth)/8.0)*(frame_duration_micro_s/(1000.0*1000.0));
-	uint64_t current_start = 0;
-	std::vector<id_t_> audio_frame_vector;
-	while(current_start < chunk->alen){
-		tv_frame_audio_t *audio =
-			new tv_frame_audio_t;
-		uint64_t length = 0;
-		if(current_start + sample_length_per_frame < chunk->alen){
-			print("adding full value of sample_length_per_frame", P_SPAM);
-			length = sample_length_per_frame;
-		}else{
-			print("can't add full frame, ran out of room", P_SPAM);
-			length = chunk->alen-current_start;
-		}
-		audio->set_data(
-			std::vector<uint8_t>(
-				&(chunk->abuf[current_start]),
-				&(chunk->abuf[current_start+length])
-				)
-			);
-		tv_audio_prop_t audio_prop;
-		audio_prop.set_format(
-			TV_AUDIO_FORMAT_RAW);
-		audio_prop.set_sampling_freq(
-			output_sampling_rate);
-		audio_prop.set_bit_depth(
-			output_bit_depth);
-		audio->set_audio_prop(
-			audio_prop);
-		audio->set_standard(start_time_micro_s+(frame_duration_micro_s*audio_frame_vector.size()),
-				    frame_duration_micro_s,
-				    audio_frame_vector.size());
-		P_V(current_start, P_VAR);
-		P_V(length, P_VAR);
-		current_start += length;
-		audio_frame_vector.push_back(
-			audio->id.get_id());
-	}
-	id_api::linked_list::link_vector(audio_frame_vector);
-	tv_item_t *item_ptr =
-		PTR_DATA(tv_item_id,
-			 tv_item_t);
-	if(item_ptr == nullptr){
-		print("item_ptr is a nullptr", P_ERR);
-	}
-	item_ptr->add_frame_id(audio_frame_vector);
-	Mix_FreeChunk(chunk);
-	chunk = nullptr;
-	return audio_frame_vector;
 }
 
 void tv_audio_init(){
@@ -351,9 +155,20 @@ static void tv_audio_add_frame_audios(std::vector<id_t_> frame_audios){
 		}
 		const uint64_t ttl_micro_s =
 			audio->get_ttl_micro_s();
+		tv_audio_prop_t wav_audio_prop;
+		wav_audio_prop.set_flags(
+			TV_AUDIO_PROP_FORMAT_ONLY);
+		wav_audio_prop.set_format(
+			TV_AUDIO_FORMAT_WAV);
 		std::vector<uint8_t> wav_data =
-			tv_audio_get_wav_data(audio);
+			transcode::audio::frames::to_codec(
+				{frame_audios[i]},
+				&wav_audio_prop);
 		P_V(wav_data.size(), P_VAR);
+		P_V(wav_audio_prop.get_sampling_freq(), P_VAR);
+		P_V(wav_audio_prop.get_bit_rate(), P_VAR);
+		P_V(wav_audio_prop.get_bit_depth(), P_VAR);
+		P_V(wav_audio_prop.get_channel_count(), P_VAR);
 		SDL_RWops *rw =
 			SDL_RWFromMem(
 				wav_data.data(),
@@ -419,8 +234,21 @@ void tv_audio_loop(){
 		tv_audio_add_frame_audios(
 			tv_audio_remove_redundant_ids(
 				tv_audio_get_current_frame_audios()));
+		P_V(audio_data.size(), P_VAR);
 	}
 }
 
 void tv_audio_close(){
+}
+
+/*
+  No defined or known outputs, let's the encoder and decoder fill in the gaps,
+  useful for making tv_audio_prop_t for output functions.
+ */
+
+tv_audio_prop_t gen_format_only_audio_prop(uint8_t fmt){
+	tv_audio_prop_t retval;
+	retval.set_format(fmt);
+	retval.set_flags(TV_AUDIO_PROP_FORMAT_ONLY);
+	return retval;
 }

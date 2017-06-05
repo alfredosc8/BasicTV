@@ -9,158 +9,147 @@
 #include "../../tv/tv_frame_audio.h"
 #include "../../tv/tv_video.h"
 #include "../../tv/tv_frame_video.h"
-/*
-  tv_transcode.h
-
-  Interface for encoding and decoding functions
-
-  Encoding functions return the encoded data, while the decoding functions
-  return the raw samples, simple enough.
-
-  The core transcoding functions don't directly work with tv_frame_*_t, since
-  the applications of transcoding the stream data can often fall outside of
-  those (exporting to disk, loading from disk, etc.)
-*/
-
-/*
-  HERE IS HOW IT IS GOING TO WORK
-
-  frames and raw are just two different type of containers, so we are going
-  to treat them as containers and not make specific calls to different
-  encoding schemes (that's taken care of internally).
-
-  The entire AV section isn't needed right now, since BasicTV works
-  internally with seperate audio and video streams running in parallel.
-  AV should be written for exporting and importing.
-
-  Any tv_frame_*_t type has associated properties with it, so there is no
-  need to pass any along with it. The encoded audio may not have enough
-  details as we would like, so there is an option to pass tv_*_prop_t to
-  the function to allow for more information (DTX, complexity, etc).
-  If we don't have tv_*_prop_t for input, that isn't a critical error,
-  since the encoded data (should be) freestanding. 
-
-  input_*_prop can be a nullptr, but output_*_prop shouldn't be a nullptr.
-  output_*_prop has the valid encoded/decoded settings written to it,
-  and it is an important tool for sanity checking. 
-*/
-
-/*
-  Macros only do audio, but that's for simplicity at this point. All of this
-  nonsense should work with video as well
- */
-
-// C can't take < or > as preprocessor tokens, so I'm dedicating a typedef
-// to this so GCC can interpret it properly
-typedef std::vector<id_t_> id_vector_t;
-typedef std::vector<uint8_t> byte_vector_t;
-typedef std::vector<std::vector<uint8_t> > byte_vector_vector_t;
-
-#define CODEC_FRAME_TO_FRAME(codec) id_vector_t codec##_frame_to_frame(id_vector_t frame_set, tv_audio_prop_t *output_audio_prop)
-#define CODEC_FRAME_TO_RAW(codec) byte_vector_t codec##_frame_to_raw(id_vector_t frame_set, tv_audio_prop_t *output_audio_prop)
-
-#define CODEC_RAW_TO_FRAME(codec) id_vector_t codec##_raw_to_frame(byte_vector_t raw, tv_audio_prop_t *input_audio_prop, tv_audio_prop_t *output_audio_prop)
-#define CODEC_RAW_TO_RAW(codec) byte_vector_t codec##_raw_to_raw(byte_vector_t raw, tv_audio_prop_t *input_audio_prop, tv_audio_prop_t *output_audio_prop)
-
-/*
-  These functions are not strictly compliant with their parameters. Opus
-  (i'm somewhat sure) cannot packetize by size, only by time. Some nitty
-  gritty math is done to get the best packet duration in milliseconds that
-  would give roughly the proper size.
- */
-
-#define CODEC_REPACKETIZE_BY_TIME(codec) byte_vector_vector_t codec##_repacketize_by_time(byte_vector_t raw, uint64_t time_micro_s)
-#define CODEC_REPACKETIZE_BY_SIZE(codec) byte_vector_vector_t codec##_repacketize_by_size(byte_vector_t raw, uint64_t size_bytes)
-
 
 /*
   Planned audio codec support (listed by desired popularity):
   Opus
-  Codec2 (excited for this one) 
+  Codec2 (super low bitrate codec for digital HAM speech, excited for this one)
+  WAV (partial already, but pretty bad and incomplete)
   FLAC
   MP3
   AAC
   Vorbis
-  Raw (intermediary only, not for storage/transmission)
 
   Planned video codec support (listed by desired popularity):
   VP9
   HEVC (h.265)
   h.264
  */
-// raw here means encoded
+
+struct tv_transcode_encode_state_t{
+private:
+	void *state_ptr = nullptr;
+	id_t_ start_frame_id = ID_BLANK_ID;
+	uint64_t frame_depth = 0;
+	// derived from start frame ID (easy lookup)
+	uint8_t state_format = 0;
+	uint64_t codec_state_ref = 0;
+
+	tv_audio_prop_t audio_prop;
+public:
+	GET_SET(state_ptr, void*);
+	GET_SET(audio_prop, tv_audio_prop_t);
+	id_t_ get_start_frame_id();
+	void set_start_frame_id(id_t_ id_);
+	void inc_frame_depth(){frame_depth++;}
+	uint8_t get_state_format(){return state_format;}
+	uint64_t get_codec_state_ref(){return codec_state_ref;}
+};
+
+
+struct tv_transcode_decode_state_t{
+private:
+	void *state_ptr = nullptr;
+	id_t_ start_frame_id = ID_BLANK_ID;
+	uint64_t frame_depth = 0;
+	// derived from start frame ID (easy lookup)
+	uint8_t state_format = 0;
+	uint64_t codec_state_ref = 0;
+
+	tv_audio_prop_t audio_prop;
+public:
+	GET_SET(state_ptr, void*);
+	GET_SET(audio_prop, tv_audio_prop_t);
+	id_t_ get_start_frame_id();
+	void set_start_frame_id(id_t_ id_);
+	void inc_frame_depth(){frame_depth++;}
+	uint8_t get_state_format(){return state_format;}
+	uint64_t get_codec_state_ref(){return codec_state_ref;}
+};
+
+typedef std::vector<id_t_> id_vector_t;
+typedef std::vector<uint8_t> byte_vector_t;
+typedef std::vector<std::vector<uint8_t> > byte_vector_vector_t;
+
+/*
+  Wrappers for functions all state codecs ought to have
+ */
+
+#define CODEC_ENCODE_INIT_STATE(codec) tv_transcode_encode_state_t codec##_encode_init_state(tv_audio_prop_t audio_prop)
+#define CODEC_ENCODE_SAMPLES(codec) std::vector<std::vector<uint8_t> > codec##_encode_samples(tv_transcode_encode_state_t *state, std::vector<uint8_t> sample_set, uint32_t sampling_freq, uint8_t bit_depth, uint8_t channel_count)
+#define CODEC_ENCODE_CLOSE_STATE(codec) void codec##_encode_close_state(tv_transcode_encode_state_t *state)
+
+#define CODEC_DECODE_INIT_STATE(codec) tv_transcode_decode_state_t codec##_decode_init_state(tv_audio_prop_t audio_prop)
+#define CODEC_DECODE_PACKET(codec) std::vector<std::vector<uint8_t> > codec##_decode_packet(tv_transcode_decode_state_t *state, std::vector<std::vector<uint8_t> > packet, uint32_t *sampling_freq, uint8_t *bit_depth, uint8_t *channel_count)
+#define CODEC_DECODE_CLOSE_STATE(codec) void codec##_decode_close_state(tv_transcode_decode_state_t *state)
+
+/*
+  TODO: make a generic interface for stripping containers from the files.
+  OGG Opus is the main one right now, but I can make that inline for now in
+  the demo function and create an abstraction layer later...
+ */
+
+template <typename T>
+void state_sanity_check(T state){
+	if(state == nullptr){
+		print("state is a nullptr", P_ERR);
+	}
+	if(state->get_state_ptr() == nullptr){
+		print("state_ptr is a nullptr",P_ERR);
+	}
+}
+
+/*
+  Raw means actual raw data, discrepencies are because I waited too long to 
+  change the name to something that makes sense
+ */
+
 namespace transcode{
 	namespace audio{
 		namespace frames{
 			std::vector<id_t_> to_frames(
 				std::vector<id_t_> frame_set,
 				tv_audio_prop_t *output_audio_prop);
-			std::vector<uint8_t> to_raw(
+			std::vector<uint8_t> to_codec(
 				std::vector<id_t_> frame_set,
 				tv_audio_prop_t *output_audio_prop);
 			
 		};
-		namespace raw{
+		namespace codec{
 			std::vector<id_t_> to_frames(
-				std::vector<uint8_t> raw_set,
+				std::vector<std::vector<uint8_t> > codec_set,
+				tv_audio_prop_t *input_audio_prop,
+				tv_audio_prop_t *output_audio_prop);
+			std::vector<uint8_t> to_codec(
+				std::vector<std::vector<uint8_t> > codec_set,
 				tv_audio_prop_t *input_audio_prop,
 				tv_audio_prop_t *output_audio_prop);
 			std::vector<uint8_t> to_raw(
-				std::vector<uint8_t> raw_set,
+				std::vector<std::vector<uint8_t> > codec_set,
 				tv_audio_prop_t *input_audio_prop,
 				tv_audio_prop_t *output_audio_prop);
 		};
-	};
-	namespace video{
-		namespace frames{
-			std::vector<id_t_> to_frames(
-				std::vector<id_t_> frame_set,
-				tv_video_prop_t *output_video_prop);
-			std::vector<uint8_t> to_raw(
-				std::vector<id_t_> frame_set,
-				tv_video_prop_t *output_video_prop);
-			
-		};
 		namespace raw{
-			std::vector<id_t_> to_frames(
+			std::vector<std::vector<uint8_t> > to_codec(
 				std::vector<uint8_t> raw_set,
-				tv_video_prop_t *input_video_prop,
-				tv_video_prop_t *output_video_prop);
-			std::vector<uint8_t> to_raw(
-				std::vector<uint8_t> raw_set,
-				tv_video_prop_t *input_video_prop,
-				tv_video_prop_t *output_video_prop);
+				uint32_t sampling_freq,
+				uint8_t bit_depth,
+				uint8_t channel_count,
+				tv_audio_prop_t *output_audio_prop);
+			/*
+			  When repacketizing is popular among all codecs, there
+			  should be minimal overheads in just calling that from
+			  an external function
+			 */
 		};
-	};
-	namespace av{
-		namespace frames{
-			std::vector<id_t_> to_frames(
-				std::vector<id_t_> audio_frame_set,
-				tv_audio_prop_t *output_audio_prop,
-				std::vector<id_t_> video_frame_set,
-				tv_video_prop_t *output_video_prop);
-			std::vector<uint8_t> to_raw(
-				std::vector<id_t_> audio_frame_set,
-				tv_audio_prop_t *output_audio_prop,
-				std::vector<id_t_> video_frame_set,
-				tv_video_prop_t *output_video_prop);
-			
-		};
-		namespace raw{
-			std::vector<id_t_> to_frames(
-				std::vector<uint8_t> raw_set,
-				tv_audio_prop_t *input_audio_prop,
-				tv_video_prop_t *input_video_prop,
-				tv_audio_prop_t *output_audio_prop,
-				tv_video_prop_t *output_video_prop);
-			std::vector<uint8_t> to_raw(
-				std::vector<uint8_t> raw_set,
-				tv_audio_prop_t *input_audio_prop,
-				tv_video_prop_t *input_video_prop,
-				tv_audio_prop_t *output_audio_prop,
-				tv_video_prop_t *output_video_prop);
-		};
+		
 	};
 };
+
+extern std::vector<tv_transcode_encode_state_t> transcode_encode_state_vector;
+extern std::vector<tv_transcode_decode_state_t> transcode_decode_state_vector;
+
+#include "tv_transcode_wav.h"
+#include "tv_transcode_opus.h"
 
 #endif

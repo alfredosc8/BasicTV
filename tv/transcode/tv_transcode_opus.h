@@ -3,12 +3,16 @@
 
 #include "tv_transcode.h"
 
-extern CODEC_FRAME_TO_FRAME(opus);
-extern CODEC_FRAME_TO_RAW(opus);
-extern CODEC_RAW_TO_FRAME(opus);
-extern CODEC_RAW_TO_RAW(opus);
-extern CODEC_REPACKETIZE_BY_TIME(opus);
-extern CODEC_REPACKETIZE_BY_SIZE(opus);
+#include "opus/opus.h"
+#include "opus/opusfile.h"
+
+extern CODEC_ENCODE_INIT_STATE(opus);
+extern CODEC_ENCODE_SAMPLES(opus);
+extern CODEC_ENCODE_CLOSE_STATE(opus);
+
+extern CODEC_DECODE_INIT_STATE(opus);
+extern CODEC_DECODE_PACKET(opus);
+extern CODEC_DECODE_CLOSE_STATE(opus);
 
 
 #endif

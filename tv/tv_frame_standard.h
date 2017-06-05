@@ -3,18 +3,39 @@
 #define TV_FRAME_STANDARD_H
 #define TV_FRAME_DEFAULT_FREQ 60
 #define TV_FRAME_DEFAULT_TTL (1/TV_FRAME_DEFAULT_FREQ)
-#define TV_FRAME_DEP_SIZE 256
+
+// starts encoder state on stateful codecs
+#define TV_FRAME_STANDARD_START_PACKET (1 << 1)
+// ends encoder state on stateful codecs
+#define TV_FRAME_STANDARD_END_PACKET (1 << 2)
+
+/*
+  codec_state_ref is a random reference number (not to be confused with the
+  ID subsystem) that is created for every new encoded segment of a
+  tv_frame_standard_t.
+
+  Opus allows me to start giving it packets in order and it'll figure it out,
+  but for other codecs that either don't allow that or don't adapt as well,
+  the decoder can go back in the linked list until it finds the first entry
+  that has the codec_state_ref AND the TV_FRAME_STANDARD_START_PACKET flipped.
+  Then it would create a proper decoding state (tv_transcode_state_t) with the
+  same identifier (and hash of the tv_frame_*_t as well) and load the
+  information chronologically from there, fast forward to the current time, and
+  do whatever.
+*/
+
 class tv_frame_standard_t{
 private:
 	uint64_t start_time_micro_s = 0;
 	uint32_t ttl_micro_s = 0;
 	uint64_t frame_entry = 0;
-	// dependencies on other frames, read in order and used for
-	// Opus and VP9 encoding
-	std::array<id_t_, TV_FRAME_DEP_SIZE> dep = {{ID_BLANK_ID}};
+	uint64_t codec_state_ref = 0;
+	uint64_t flags = 0;
 public:
 	tv_frame_standard_t();
 	~tv_frame_standard_t();
+	GET_SET(codec_state_ref, uint64_t);
+	GET_SET(flags, uint64_t);
 	void list_virtual_data(data_id_t *id);
 	void set_standard(uint64_t start_time_micro_s_,
 			  uint32_t ttl_micro_s_,
@@ -22,8 +43,6 @@ public:
 	void get_standard(uint64_t *start_time_micro_s_,
 			  uint32_t *ttl_micros_,
 			  uint64_t *frame_entry_);
-	void add_dep(id_t_ id_);
-	void del_dep(id_t_ id_);
 	bool valid(uint64_t timestamp_micro_s);
 	uint64_t get_start_time_micro_s(){return start_time_micro_s;}
 	uint64_t get_ttl_micro_s(){return ttl_micro_s;}

@@ -2,6 +2,9 @@
 #include "file.h"
 #include "util.h"
 
+#include <iterator>
+#include <string>
+
 void file::write_file(std::string file, std::string data){
 	std::ofstream out(file, std::ofstream::trunc);
 	if(out.is_open() == false){
@@ -142,4 +145,19 @@ std::string file::ensure_slash_at_end(std::string str){
 		str += std::string(1, SLASH);
 	}
 	return str;
+}
+
+std::vector<uint8_t> file::read_file_vector(std::string file){
+	std::ifstream in(file, std::ios::in | std::ios::binary);
+	if(in.is_open() == false){
+		P_V_S(file, P_WARN);
+		print("can't open output file for reading", P_ERR);
+	}
+	in >> std::noskipws;
+	std::vector<uint8_t> retval;
+	std::copy(
+		std::istream_iterator<uint8_t>(in),
+		std::istream_iterator<uint8_t>(),
+		std::back_inserter(retval));
+	return retval;
 }

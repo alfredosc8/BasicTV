@@ -22,5 +22,7 @@ namespace file{
 	bool is_dir(std::string path);
 	bool is_file(std::string path);
 	std::string ensure_slash_at_end(std::string str);
+
+	std::vector<uint8_t> read_file_vector(std::string file);
 }
 #endif

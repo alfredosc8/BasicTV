@@ -34,19 +34,19 @@
 #define TV_FRAME_AUDIO_FORMAT_MASK 0b00000011
 
 /*
-  tv_frame_audio_t should always be unsigned with syste byte order. Bit depth is
-  the only variable that can change (16 is where SDL2 taps out)
+  tv_frame_audio_t should always be unsigned with system byte order. Bit depth
+  is the only variable that can change (16 is where SDL2 taps out)
 */
 
 class tv_frame_audio_t : public tv_frame_standard_t{
 private:
-	std::vector<uint8_t> data;
+	std::vector<std::vector<uint8_t> > packet_set;
 	tv_audio_prop_t audio_prop;
 public:
 	data_id_t id;
 	tv_frame_audio_t();
 	~tv_frame_audio_t();
 	GET_SET(audio_prop, tv_audio_prop_t);
-	GET_SET(data, std::vector<uint8_t>);
+	GET_SET(packet_set, std::vector<std::vector<uint8_t> >);
 };
 #endif
