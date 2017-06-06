@@ -105,6 +105,7 @@ std::vector<uint8_t> true_rand_byte_vector(uint32_t size_bytes);
 #define CONTINUE_IF_NULL(x, p_level) if(x == nullptr){print((std::string)#x + " is a nullptr", p_level);continue;}
 // TODO: convert codebase to use this instead of three or more lines
 #define PRINT_IF_NULL(x, p_l) if(x == nullptr){print((std::string)#x + " is a nullptr", p_l);}
+#define PRINT_IF_EMPTY(x, p_l) if(x.size() == 0){print((std::string)#x + " is empty", p_l);}
 #define CONTINUE_IF_TRUE(x) if(x){continue;}
 
 std::string fix_to_length(std::string string, uint64_t size);

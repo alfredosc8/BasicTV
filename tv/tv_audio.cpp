@@ -161,9 +161,10 @@ static void tv_audio_add_frame_audios(std::vector<id_t_> frame_audios){
 		wav_audio_prop.set_format(
 			TV_AUDIO_FORMAT_WAV);
 		std::vector<uint8_t> wav_data =
-			transcode::audio::frames::to_codec(
-				{frame_audios[i]},
-				&wav_audio_prop);
+			convert::vector::collapse_2d_vector(
+				transcode::audio::frames::to_codec(
+					{frame_audios[i]},
+					&wav_audio_prop));
 		P_V(wav_data.size(), P_VAR);
 		P_V(wav_audio_prop.get_sampling_freq(), P_VAR);
 		P_V(wav_audio_prop.get_bit_rate(), P_VAR);
@@ -234,7 +235,9 @@ void tv_audio_loop(){
 		tv_audio_add_frame_audios(
 			tv_audio_remove_redundant_ids(
 				tv_audio_get_current_frame_audios()));
-		P_V(audio_data.size(), P_VAR);
+		if(audio_data.size() != 0){
+			P_V(audio_data.size(), P_VAR);
+		}
 	}
 }
 

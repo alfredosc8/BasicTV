@@ -106,6 +106,13 @@ namespace convert{
 	  TODO: move color into transcode namespace since the scope is limited
 	  to the tv_* functions
 	 */
+	namespace vector{
+		// currently only used for converting audio codecs from
+		// a packetized system to a stream, but has wider use cases
+		// as it progresses
+		std::vector<uint8_t> collapse_2d_vector(
+			std::vector<std::vector<uint8_t> > vector);
+	};
 	namespace color{
 		uint64_t to(std::tuple<uint64_t, uint64_t, uint64_t, uint8_t> color);
 		std::tuple<uint64_t, uint64_t, uint64_t, uint8_t> from(uint64_t color,

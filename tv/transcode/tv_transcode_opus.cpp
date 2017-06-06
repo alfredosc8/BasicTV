@@ -198,7 +198,6 @@ CODEC_ENCODE_SAMPLES(opus){
 				&(encoded_data_tmp[0]),
 				65536);
 		if(encode_retval > 0){
-			print("opus_encode succeeded", P_SPAM);
 			retval.push_back(
 				std::vector<uint8_t>(
 					&(encoded_data_tmp[0]),

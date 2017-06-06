@@ -135,11 +135,11 @@ static void transcode_raw_samples_sanity_check(
 	}
 }
 
-std::vector<uint8_t> transcode_create_samples(std::vector<tv_frame_audio_t *> audio_data,
+std::vector<std::vector<uint8_t> > transcode_create_samples(std::vector<tv_frame_audio_t *> audio_data,
 					      uint32_t *sampling_freq,
 					      uint8_t *bit_depth,
 					      uint8_t *channel_count){
-	std::vector<uint8_t> retval;
+	std::vector<std::vector<uint8_t> > retval;
 	*sampling_freq =
 		audio_data[0]->get_audio_prop().get_sampling_freq();
 	*bit_depth =
@@ -187,12 +187,10 @@ std::vector<uint8_t> transcode_create_samples(std::vector<tv_frame_audio_t *> au
 				}catch(...){
 					print("TODO: fill in sample set with an appropriate blank space until a converter is set up", P_NOTE);
 				}
-				for(uint64_t c = 0;c < tmp_sample_set.size();c++){
-					retval.insert(
-						retval.begin(),
-						tmp_sample_set[c].begin(),
-						tmp_sample_set[c].end());
-				}
+				retval.insert(
+					retval.begin(),
+					tmp_sample_set.begin(),
+					tmp_sample_set.end());
 			}
 			CHECK_FORMAT_AND_DECODE_CLOSE_STATE(
 				audio_data[0]->get_audio_prop(),
@@ -233,8 +231,8 @@ std::vector<id_t_> transcode::audio::frames::to_frames(std::vector<id_t_> frame_
 	return retval;
 }
 
-std::vector<uint8_t> transcode::audio::frames::to_codec(std::vector<id_t_> frame_set,
-							tv_audio_prop_t *output_audio_prop){
+std::vector<std::vector<uint8_t> > transcode::audio::frames::to_codec(std::vector<id_t_> frame_set,
+								      tv_audio_prop_t *output_audio_prop){
 	/*
 	  create_sets organizes everything in a 2D array, each array being
 	  as much data as we have on one encoder state at one time
@@ -262,7 +260,7 @@ std::vector<uint8_t> transcode::audio::frames::to_codec(std::vector<id_t_> frame
 		P_V(frame_audio_full.size(), P_VAR);
 		print("this is a hack, but the frame_audio_full vector should be one or zero", P_ERR);
 	}
-	std::vector<uint8_t> retval =
+	std::vector<std::vector<uint8_t> > retval =
 		transcode_create_samples(
 			frame_audio_full[0],
 			&sampling_freq,
@@ -304,6 +302,7 @@ std::vector<id_t_> transcode::audio::codec::to_frames(std::vector<std::vector<ui
 		&sampling_freq,
 		&bit_depth,
 		&channel_count);
+	PRINT_IF_EMPTY(raw_sample_dv, P_ERR);
 	for(uint64_t i = 0;i < raw_sample_dv.size();i++){
 		raw_samples.insert(
 			raw_samples.end(),
@@ -313,13 +312,9 @@ std::vector<id_t_> transcode::audio::codec::to_frames(std::vector<std::vector<ui
 	CHECK_ALL_FORMAT_AND_DECODE_CLOSE_STATE(
 		(*input_audio_prop),
 		&decode_state);
-
-	/*
-	  Re-encode as whatever packets and use the native length
-	 */
+	PRINT_IF_EMPTY(raw_samples, P_ERR);
 
 	std::vector<std::vector<uint8_t> > packetized_encode;
-	
 	tv_transcode_encode_state_t encode_state;
 	CHECK_ALL_FORMAT_AND_ENCODE_INIT_STATE(
 		(*output_audio_prop),
@@ -333,6 +328,7 @@ std::vector<id_t_> transcode::audio::codec::to_frames(std::vector<std::vector<ui
 		sampling_freq,
 		bit_depth,
 		channel_count);
+	PRINT_IF_EMPTY(packetized_encode, P_ERR);
 	for(uint64_t i = 0;i < packetized_encode.size();i++){
 		if(packetized_encode[i].size() == 0){
 			print("invalid packetized_encode size", P_ERR);
@@ -356,6 +352,8 @@ std::vector<id_t_> transcode::audio::codec::to_frames(std::vector<std::vector<ui
 			std::vector<std::vector<uint8_t> >(
 				{packetized_encode[i]}));
 		
+		retval.push_back(
+			audio_frame->id.get_id());
 	}
 	id_api::linked_list::link_vector(
 		retval);

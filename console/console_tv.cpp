@@ -231,16 +231,27 @@ static std::vector<id_t_> console_tv_test_load_opus(std::string file){
 	  Right now it just decodes and encodes everything, which is OK for
 	  small loads, but becomes unreasonable very quickly
 	 */
+
+	std::vector<std::vector<uint8_t> > packetized_codec_data =
+		transcode::audio::raw::to_codec(
+			raw_samples,
+			sampling_freq,
+			bit_depth,
+			channel_count,
+			&opus_audio_prop);
+	if(packetized_codec_data.size() == 0){
+		HANG();
+		print("packetized_codec_data is empty", P_ERR);
+	}
 	std::vector<id_t_> retval =
 		transcode::audio::codec::to_frames(
-			transcode::audio::raw::to_codec(
-				raw_samples,
-				sampling_freq,
-				bit_depth,
-				channel_count,
-				&opus_audio_prop),
+			packetized_codec_data,
 			&opus_audio_prop,
 			&frame_audio_prop);
+	if(retval.size() == 0){
+		HANG();
+		print("frame vector is empty", P_ERR);
+	}
 	return retval;
 }
 

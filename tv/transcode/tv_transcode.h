@@ -67,10 +67,6 @@ public:
 	uint64_t get_codec_state_ref(){return codec_state_ref;}
 };
 
-typedef std::vector<id_t_> id_vector_t;
-typedef std::vector<uint8_t> byte_vector_t;
-typedef std::vector<std::vector<uint8_t> > byte_vector_vector_t;
-
 /*
   Wrappers for functions all state codecs ought to have
  */
@@ -104,13 +100,21 @@ void state_sanity_check(T state){
   change the name to something that makes sense
  */
 
+/*
+  Codecs are returned as a 2D vector, each individual entry is one
+  packet. The first entry (as it is now) is probably the start frame,
+  and the last entry is the end frame. No codec exists outside of 
+  a set of functions beyond tv_frame_audio_t, so we don't really
+  need to define an easy to interpret start and end frame flag system.
+ */
+
 namespace transcode{
 	namespace audio{
 		namespace frames{
 			std::vector<id_t_> to_frames(
 				std::vector<id_t_> frame_set,
 				tv_audio_prop_t *output_audio_prop);
-			std::vector<uint8_t> to_codec(
+			std::vector<std::vector<uint8_t> > to_codec(
 				std::vector<id_t_> frame_set,
 				tv_audio_prop_t *output_audio_prop);
 			
@@ -120,7 +124,7 @@ namespace transcode{
 				std::vector<std::vector<uint8_t> > codec_set,
 				tv_audio_prop_t *input_audio_prop,
 				tv_audio_prop_t *output_audio_prop);
-			std::vector<uint8_t> to_codec(
+			std::vector<std::vector<uint8_t> > to_codec(
 				std::vector<std::vector<uint8_t> > codec_set,
 				tv_audio_prop_t *input_audio_prop,
 				tv_audio_prop_t *output_audio_prop);

@@ -387,3 +387,15 @@ std::vector<uint8_t> convert::string::to_bytes(std::string data){
 std::string convert::string::from_bytes(std::vector<uint8_t> data){
 	return std::string((char*)data.data(), data.size());
 }
+
+std::vector<uint8_t> convert::vector::collapse_2d_vector(
+	std::vector<std::vector<uint8_t> > vector){
+	std::vector<uint8_t> retval;
+	for(uint64_t i = 0;i < vector.size();i++){
+		retval.insert(
+			retval.end(),
+			vector[i].begin(),
+			vector[i].end());
+	}
+	return retval;
+}
