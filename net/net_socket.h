@@ -5,6 +5,7 @@
 #include "net_proxy.h"
 #ifndef NET_SOCKET_H
 #define NET_SOCKET_H
+
 #include <SDL2/SDL_net.h>
 
 /*

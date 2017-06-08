@@ -150,7 +150,9 @@ static void tv_audio_add_frame_audios(std::vector<id_t_> frame_audios){
 		tv_frame_audio_t *audio =
 			PTR_DATA(frame_audios[i],
 				 tv_frame_audio_t);
+		P_V_S(convert::type::from(get_id_type(frame_audios[i])), P_WARN);
 		if(audio == nullptr){
+			print("audio is a nullptr", P_WARN);
 			continue;
 		}
 		const uint64_t ttl_micro_s =
@@ -219,22 +221,45 @@ static std::vector<id_t_> tv_audio_get_current_frame_audios(){
 			tv_frame_audio_t *audio_frame_tmp =
 				PTR_DATA(active_streams[c],
 					 tv_frame_audio_t);
-			frame_audios.push_back(
+			if(audio_frame_tmp == nullptr){
+				print("supposed active stream is a nullptr", P_ERR);
+				continue;
+			}
+			id_t_ curr_id =
 				tv_frame_scroll_to_time(
 					audio_frame_tmp,
-					play_time));
+					play_time);
+			if(curr_id == ID_BLANK_ID){
+				print("active stream is a blank ID", P_ERR);
+			}
+			frame_audios.push_back(
+				curr_id);
 		}
 	}
 	return frame_audios;
+}
+
+static void print_id_vector(std::vector<id_t_> id_vector){
+	for(uint64_t i = 0;i < id_vector.size();i++){
+		P_V_S(convert::array::id::to_hex(id_vector[i]), P_NOTE);
+	}
 }
 
 void tv_audio_loop(){
 	if(settings::get_setting("audio") == "true"){
 		Mix_Volume(-1, MIX_MAX_VOLUME); // -1 sets all channels
 		tv_audio_clean_audio_data();
-		tv_audio_add_frame_audios(
+		std::vector<id_t_> current_id_set =
+			tv_audio_get_current_frame_audios();
+		print("CURRENT FRAME AUDIOS", P_WARN);
+		print_id_vector(current_id_set);
+		current_id_set =
 			tv_audio_remove_redundant_ids(
-				tv_audio_get_current_frame_audios()));
+				current_id_set);
+		print("NON-REDUNDANT ID SET", P_WARN);
+		print_id_vector(current_id_set);
+		tv_audio_add_frame_audios(
+			current_id_set);
 		if(audio_data.size() != 0){
 			P_V(audio_data.size(), P_VAR);
 		}

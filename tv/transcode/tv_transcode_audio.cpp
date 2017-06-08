@@ -201,7 +201,7 @@ std::vector<std::vector<uint8_t> > transcode_create_samples(std::vector<tv_frame
 			print("couldn't decode self-contained data", P_ERR);
 		}
 	}else{
-		print("there's a lot of work to do before I dive into this", P_CRIT);
+		print("there's a lot of work to do before I dive into this (statefulness across multiple calls)", P_CRIT);
 	}
 	return retval;
 }
@@ -351,7 +351,6 @@ std::vector<id_t_> transcode::audio::codec::to_frames(std::vector<std::vector<ui
 		audio_frame->set_packet_set(
 			std::vector<std::vector<uint8_t> >(
 				{packetized_encode[i]}));
-		
 		retval.push_back(
 			audio_frame->id.get_id());
 	}

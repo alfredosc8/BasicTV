@@ -248,6 +248,20 @@ static std::vector<id_t_> console_tv_test_load_opus(std::string file){
 			packetized_codec_data,
 			&opus_audio_prop,
 			&frame_audio_prop);
+	const uint64_t packet_duration =
+		(raw_samples.size()*(uint64_t)sampling_freq*((uint64_t)bit_depth/(uint64_t)8)/(uint64_t)channel_count)/(uint64_t)packetized_codec_data.size();
+	for(uint64_t i = 0;i < retval.size();i++){
+		tv_frame_audio_t *frame_audio =
+			PTR_DATA(retval[i],
+				 tv_frame_audio_t);
+		if(frame_audio == nullptr){
+			print("frame_audio is a nullptr", P_ERR);
+		}
+		frame_audio->set_standard(
+			get_time_microseconds()+(i*packet_duration),
+			packet_duration,
+			i);
+	}
 	if(retval.size() == 0){
 		HANG();
 		print("frame vector is empty", P_ERR);
@@ -299,8 +313,10 @@ DEC_CMD(tv_test_audio){
 	 	item->get_frame_id_vector();
 	if(frame_set.size() == 0){
 	 	print_socket("couldn't load WAV information");
+		HANG();
 	}else if(frame_set.size() > 1){
 	 	print_socket("more streams than anticipated\n");
+		HANG();
 	}else{
 	 	window->add_active_stream_id(
 	 		all_frame_audios.at(0));
