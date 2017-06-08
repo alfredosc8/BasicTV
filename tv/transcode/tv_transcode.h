@@ -10,6 +10,8 @@
 #include "../../tv/tv_video.h"
 #include "../../tv/tv_frame_video.h"
 
+#include "../../state.h"
+
 /*
   Planned audio codec support (listed by desired popularity):
   Opus
@@ -24,6 +26,10 @@
   VP9
   HEVC (h.265)
   h.264
+ */
+
+/*
+  TODO: use state_t abstraction here
  */
 
 struct tv_transcode_encode_state_t{
@@ -45,7 +51,6 @@ public:
 	uint8_t get_state_format(){return state_format;}
 	uint64_t get_codec_state_ref(){return codec_state_ref;}
 };
-
 
 struct tv_transcode_decode_state_t{
 private:
@@ -83,21 +88,6 @@ public:
   TODO: make a generic interface for stripping containers from the files.
   OGG Opus is the main one right now, but I can make that inline for now in
   the demo function and create an abstraction layer later...
- */
-
-template <typename T>
-void state_sanity_check(T state){
-	if(state == nullptr){
-		print("state is a nullptr", P_ERR);
-	}
-	if(state->get_state_ptr() == nullptr){
-		print("state_ptr is a nullptr",P_ERR);
-	}
-}
-
-/*
-  Raw means actual raw data, discrepencies are because I waited too long to 
-  change the name to something that makes sense
  */
 
 /*
