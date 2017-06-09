@@ -68,10 +68,20 @@ id_t_ tv_frame_scroll_to_time(T data, uint64_t play_time){
 		}else{
 			const bool go_forward =
 				(play_time > end_time_micro_s);
+			std::pair<std::vector<id_t_>, std::vector<id_t_> > linked_list =
+				data->id.get_linked_list();
 			if(go_forward){
-				new_id = data->id.get_next_linked_list();
+				if(linked_list.second.size() > 1){
+					new_id = linked_list.second[0];
+				}else{
+					new_id = ID_BLANK_ID;
+				}
 			}else{
-				new_id = data->id.get_prev_linked_list();
+				if(linked_list.first.size() > 1){
+					new_id = linked_list.first[0];
+				}else{
+					new_id = ID_BLANK_ID;
+				}
 			}
 		}
 		data_id_t *new_id_ptr =

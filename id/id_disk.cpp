@@ -252,8 +252,12 @@ void id_disk_index_t::export_id(id_t_ id_){
 	data_id_t *ptr =
 		PTR_ID(id_, );
 	std::vector<uint8_t> exportable_data =
-		ptr->export_data(ID_DATA_NONET,
-				 ID_EXTRA_COMPRESS | ID_EXTRA_ENCRYPT);
+		ptr->export_data(
+			0,
+			ID_EXTRA_COMPRESS | ID_EXTRA_ENCRYPT,
+			ID_DATA_RULE_UNDEF, // wildcard
+			ID_DATA_EXPORT_RULE_ALWAYS,
+			ID_DATA_RULE_UNDEF);
 	if(exportable_data.size() == 0){
 		print("no data to export from ID", P_SPAM);
 		return;

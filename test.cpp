@@ -68,7 +68,10 @@
 static id_t_ test_create_generic_id(){
 	wallet_set_t *wallet_set_ptr =
 		new wallet_set_t;
-	wallet_set_ptr->id.noexp_all_data();
+	wallet_set_ptr->id.set_lowest_global_flag_level(
+		ID_DATA_RULE_UNDEF,
+		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_RULE_UNDEF);
 	std::string totally_legit_bitcoin_wallet_please_give_me_money =
 		"13dfmkk84rXyHoiZQmuYfTxGYykug1mDEZ";
 	wallet_set_ptr->add_wallet(
@@ -96,7 +99,10 @@ static void test_nc_socket(){
 	  address (breaking 4-tuple), so just test this with laptop
 	 */
 	net_socket_t *test_socket_ = new net_socket_t;
-	test_socket_->id.noexp_all_data();
+	test_socket_->id.set_lowest_global_flag_level(
+		ID_DATA_RULE_UNDEF,
+		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_RULE_UNDEF);
 	std::string ip;
 	uint16_t port = 0;
 	bool recv = false;
@@ -254,7 +260,10 @@ static void test_id_transport_print_exp(std::vector<uint8_t> exp){
 static void test_id_transport(){
 	wallet_set_t *wallet_set_ptr =
 		new wallet_set_t;
-	wallet_set_ptr->id.noexp_all_data();
+	wallet_set_ptr->id.set_lowest_global_flag_level(
+		ID_DATA_RULE_UNDEF,
+		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_RULE_UNDEF);
 	// noexp is overridden in the export function parameters
 	std::string totally_legit_bitcoin_wallet_please_give_me_money =
 		"13dfmkk84rXyHoiZQmuYfTxGYykug1mDEZ";
@@ -266,8 +275,11 @@ static void test_id_transport(){
 			totally_legit_bitcoin_wallet_please_give_me_money.size()));
 	std::vector<uint8_t> payload =
 		wallet_set_ptr->id.export_data(
-			ID_DATA_NOEXP,
-			ID_EXTRA_COMPRESS | ID_EXTRA_ENCRYPT);
+			0,
+			ID_EXTRA_COMPRESS | ID_EXTRA_ENCRYPT,
+			ID_DATA_RULE_UNDEF,
+			ID_DATA_EXPORT_RULE_ALWAYS,
+			ID_DATA_RULE_UNDEF);
 	id_api::destroy(wallet_set_ptr->id.get_id());
 	wallet_set_ptr = nullptr;
 	wallet_set_ptr =
@@ -327,8 +339,8 @@ static void test_rsa_key_gen(){
 	encrypt_priv_key_t *priv =
 		PTR_DATA(rsa_key_pair.first,
 			 encrypt_priv_key_t);
-	ID_NOEXP_NONET(rsa_key_pair.first);
-	ID_NOEXP_NONET(rsa_key_pair.second);
+	ID_MAKE_TMP(rsa_key_pair.first);
+	ID_MAKE_TMP(rsa_key_pair.second);
 	if(priv == nullptr){
 		print("priv key is a nullptr", P_ERR);
 	}
@@ -354,8 +366,8 @@ static void test_rsa_encryption(){
 		true_rand_byte_vector(1024);
 	std::pair<id_t_, id_t_> rsa_key_pair =
 		rsa::gen_key_pair(key_len);
-	ID_NOEXP_NONET(rsa_key_pair.first);
-	ID_NOEXP_NONET(rsa_key_pair.second);
+	ID_MAKE_TMP(rsa_key_pair.first);
+	ID_MAKE_TMP(rsa_key_pair.second);
 	std::vector<uint8_t> test_data_output =
 		encrypt_api::encrypt(
 			test_data,
@@ -444,8 +456,8 @@ static void benchmark_encryption(std::string method){
 	}
 	std::pair<id_t_, id_t_> rsa_key_pair =
 		rsa::gen_key_pair(4096); // TODO: modify encrypt API to not assume this
-	ID_NOEXP_NONET(rsa_key_pair.first);
-	ID_NOEXP_NONET(rsa_key_pair.second);
+	ID_MAKE_TMP(rsa_key_pair.first);
+	ID_MAKE_TMP(rsa_key_pair.second);
 	std::ofstream out(method + ".bench");
 	if(out.is_open() == false){
 		print("can't open benchmark output file", P_ERR);
@@ -489,7 +501,11 @@ static void test_escape_string(){
 	}
 	std::vector<uint8_t> payload =
 		wallet_set_ptr->id.export_data(
-			ID_DATA_NOEXP, 0);
+			0,
+			0,
+			ID_DATA_RULE_UNDEF,
+			ID_DATA_EXPORT_RULE_ALWAYS,
+			ID_DATA_RULE_UNDEF);
 	std::vector<uint8_t> escaped_data =
 		escape_vector(
 			payload,
@@ -667,9 +683,14 @@ void test_net_proto_socket_transcoding(){
 				new net_socket_t),
 		 std::make_pair(new net_proto_socket_t,
 				new net_socket_t)};
-	socket_vector[0].first->id.noexp_all_data();
-	socket_vector[1].first->id.noexp_all_data();
-
+	socket_vector[0].first->id.set_lowest_global_flag_level(
+		ID_DATA_RULE_UNDEF,
+		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_RULE_UNDEF);
+	socket_vector[1].first->id.set_lowest_global_flag_level(
+		ID_DATA_RULE_UNDEF,
+		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_RULE_UNDEF);
 	// as of right now, there shouldn't be any problems with recycling my
 	// peer, so long as we are just testing this. This wouldn't normally
 	// fly in software since it (should) never try and send something
@@ -764,8 +785,11 @@ void test_id_api_raw_fetch(){
 		data_id_ptr->get_type_byte();
 	const std::vector<uint8_t> export_payload =
 		data_id_ptr->export_data(
-			ID_DATA_NONET | ID_DATA_NOEXP,
-			ID_EXTRA_ENCRYPT | ID_EXTRA_COMPRESS);
+			0,
+			ID_EXTRA_ENCRYPT | ID_EXTRA_COMPRESS,
+			ID_DATA_RULE_UNDEF,
+			ID_DATA_RULE_UNDEF,
+			ID_DATA_RULE_UNDEF);
 	if(generic_id != id_api::raw::fetch_id(export_payload)){
 		print("id mismatch", P_ERR);
 	}

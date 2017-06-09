@@ -41,8 +41,8 @@ void net_stats_init(){
 	if(PTR_ID(net_stats_throughput_global_set_id, math_number_set_t) == nullptr){
 		math_number_set_t *throughput_global_set_ptr =
 			new math_number_set_t;
-		throughput_global_set_ptr->id.noexp_all_data();
-		throughput_global_set_ptr->id.nonet_all_data();
+		ID_MAKE_TMP(
+			throughput_global_set_ptr->id.get_id());
 		throughput_global_set_ptr->set_dim_count(
 			5,
 			{MATH_NUMBER_DIM_NUM, // Payload size
@@ -54,8 +54,8 @@ void net_stats_init(){
 	if(PTR_ID(net_stats_latency_global_set_id, math_number_set_t) == nullptr){
 		math_number_set_t *latency_global_set_ptr =
 			new math_number_set_t;
-		latency_global_set_ptr->id.noexp_all_data();
-		latency_global_set_ptr->id.nonet_all_data();
+		ID_MAKE_TMP(
+			latency_global_set_ptr->id.get_id());
 		latency_global_set_ptr->set_dim_count(
 			4,
 			{MATH_NUMBER_DIM_NUM, // response delay

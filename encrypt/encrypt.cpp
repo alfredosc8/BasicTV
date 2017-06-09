@@ -31,7 +31,10 @@ encrypt_pub_key_t::~encrypt_pub_key_t(){}
 
 encrypt_priv_key_t::encrypt_priv_key_t() : id(this, TYPE_ENCRYPT_PRIV_KEY_T){
 	list_virtual_data(&id);
-	id.nonet_all_data();
+	id.set_lowest_global_flag_level(
+		ID_DATA_NETWORK_RULE_NEVER,
+		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_PEER_RULE_NEVER);
 }
 
 encrypt_priv_key_t::~encrypt_priv_key_t(){}

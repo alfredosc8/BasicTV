@@ -57,7 +57,10 @@ static void net_proto_init_self_peer(){
 	print("We have no local peer data (at init), creating one normally", P_NOTE);
 	net_proto_peer_t *proto_peer_ptr =
 		new net_proto_peer_t;
-	proto_peer_ptr->id.noexp_all_data();
+	proto_peer_ptr->id.set_lowest_global_flag_level(
+		ID_DATA_RULE_UNDEF,
+		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_RULE_UNDEF);
 	proto_peer_ptr->set_net_ip(
 		ip_addr, tmp_port);
 	net_proto::peer::set_self_peer_id(
@@ -136,7 +139,10 @@ static void net_proto_verify_bootstrap_nodes(){
 		proto_peer_ptr->set_net_ip(
 			nodes_to_connect[i].first,
 			nodes_to_connect[i].second);
-		proto_peer_ptr->id.noexp_all_data();
+		proto_peer_ptr->id.set_lowest_global_flag_level(
+			ID_DATA_RULE_UNDEF,
+			ID_DATA_EXPORT_RULE_NEVER,
+			ID_DATA_RULE_UNDEF);
 		proto_peer_ptr->set_net_flags(
 			NET_PEER_WRONG_KEY | NET_PEER_PORT_OPEN);
 		// no harm in assuming port is open

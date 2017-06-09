@@ -12,7 +12,7 @@ static id_t_ self_peer_id = ID_BLANK_ID;
 
 static id_t_ net_proto_preferable_id_from_hash(
 	std::array<uint8_t, 32> hash){
-	id_t_ matching_hash_peer_id =
+		id_t_ matching_hash_peer_id =
 		ID_BLANK_ID;
 	std::vector<id_t_> peer_vector =
 		id_api::cache::get(

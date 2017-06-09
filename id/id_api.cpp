@@ -271,18 +271,6 @@ std::vector<id_t_> id_api::cache::get(std::string type){
 	return get(convert::type::to(type));
 }
 
-// TODO: make a forwards and backwards function too
-
-std::vector<id_t_> id_api::linked_list::get_forward_linked_list(id_t_ id){
-	std::vector<id_t_> retval;
-	while(id != ID_BLANK_ID){
-		data_id_t *id_ptr = PTR_ID(id, );
-		retval.push_back(id);
-		id = id_ptr->get_next_linked_list();
-	}
-	return retval;
-}
-
 /*
   TODO: when more than the immediate neighbor can be stored, let this
   function do that and set the number as a parameter
@@ -297,50 +285,38 @@ void id_api::linked_list::link_vector(std::vector<id_t_> vector){
 		print("vector has one entry, can't link to anything" , P_NOTE);
 		return;
 	case 2:
-		PTR_ID(vector[0], )->set_next_linked_list(vector[1]);
-		PTR_ID(vector[1], )->set_next_linked_list(vector[0]);
+		PTR_ID(vector[0], )->set_linked_list(
+			std::make_pair(
+				std::vector<id_t_>(),
+				std::vector<id_t_>({vector[1]})));
+		PTR_ID(vector[1], )->set_linked_list(
+			std::make_pair(
+				std::vector<id_t_>({vector[0]}),
+				std::vector<id_t_>()));
 		return;
 	default:
 		break;
 	}
 	data_id_t *first = PTR_ID(vector[0], );
 	if(first != nullptr){
-		first->set_next_linked_list(vector[1]);
+		first->set_linked_list(
+			std::make_pair(
+				std::vector<id_t_>({vector[1]}),
+				std::vector<id_t_>({})));
 	}else{
 		print("first entry is a nullptr, this can be fixed, but I didn't bother and this shouldn't happen anyways", P_ERR);
 	}
 	for(uint64_t i = 1;i < vector.size()-1;i++){
 		data_id_t *id = PTR_ID(vector[i], );
-		id->set_next_linked_list(vector[i+1]);
-		id->set_prev_linked_list(vector[i-1]);
+		id->set_linked_list(
+			std::make_pair(
+				std::vector<id_t_>({vector[i-1]}),
+				std::vector<id_t_>({vector[i+1]})));
 	}
-	PTR_ID(vector[vector.size()-1], )->set_prev_linked_list(
-		vector[vector.size()-2]);
-}
-
-uint64_t id_api::linked_list::distance_fast(id_t_ linked_list_id, id_t_ target_id){
-	if(unlikely(linked_list_id == target_id)){
-		return 0;
-	}
-	data_id_t *tmp_ptr =
-		PTR_ID_FAST(linked_list_id, );
-	if(tmp_ptr == nullptr){
-		print("linked list is invalid", P_ERR);
-	}
-	// Make this bi-direcitonal
-	std::vector<id_t_> scanned_ids;
-	while(std::find(scanned_ids.begin(),
-			scanned_ids.end()-1,
-			scanned_ids[scanned_ids.size()-1]) == scanned_ids.end()){
-		tmp_ptr =
-			PTR_ID_FAST(tmp_ptr->get_next_linked_list(), );
-		if(tmp_ptr == nullptr){
-			return 0;
-		}
-		
-	}
-	print("finish implementing this", P_CRIT);
-	return 0;
+	PTR_ID(vector[vector.size()-1], )->set_linked_list(
+		std::make_pair(
+			std::vector<id_t_>({vector[vector.size()-2]}),
+			std::vector<id_t_>({})));
 }
 
 std::vector<id_t_> id_api::get_all(){

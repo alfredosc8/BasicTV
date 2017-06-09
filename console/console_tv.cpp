@@ -292,8 +292,10 @@ DEC_CMD(tv_test_audio){
 	}
 	tv_channel_t *channel =
 		new tv_channel_t;
-	channel->id.noexp_all_data();
-	channel->id.nonet_all_data();
+	channel->id.set_lowest_global_flag_level(
+		ID_DATA_NETWORK_RULE_NEVER,
+		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_PEER_RULE_NEVER);
 	channel->set_description(
 		convert::string::to_bytes("BasicTV Audio Test"));
 	tv_item_t *item =
@@ -305,7 +307,7 @@ DEC_CMD(tv_test_audio){
 		all_frame_audios);
 	P_V(start_time_micro_s, P_VAR);
 	for(uint64_t i = 0;i < all_frame_audios.size();i++){
-		ID_NOEXP_NONET(all_frame_audios[i]);
+		ID_MAKE_TMP(all_frame_audios[i]);
 	}
 	// add the item
 	window->set_item_id(item->id.get_id());

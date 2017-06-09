@@ -102,10 +102,6 @@ namespace id_api{
 	namespace linked_list{
 		// next and previous are in the id itself, no interdependency
 		void link_vector(std::vector<id_t_> vector);
-		// perhaps redefine this for standard when that's needed
-		uint64_t distance_fast(id_t_ linked_list_id,
-				       id_t_ target_id); // only used in stats
-		std::vector<id_t_> get_forward_linked_list(id_t_ id);
 	};
 	namespace sort{
 		std::vector<id_t_> fingerprint(std::vector<id_t_> tmp);

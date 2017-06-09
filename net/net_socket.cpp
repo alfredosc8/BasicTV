@@ -7,8 +7,11 @@
 
 net_socket_t::net_socket_t() : id(this, TYPE_NET_SOCKET_T){
 	id.add_data_raw(&status, sizeof(status));
-	id.noexp_all_data();
-	id.nonet_all_data();
+	ID_MAKE_TMP(id.get_id());
+	id.set_lowest_global_flag_level(
+		ID_DATA_NETWORK_RULE_NEVER,
+		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_RULE_UNDEF);
 }
 
 net_socket_t::~net_socket_t(){}

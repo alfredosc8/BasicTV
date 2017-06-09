@@ -234,17 +234,12 @@ static SDL_Rect tv_render_gen_window_rect(tv_window_t *window,
 
 static id_t_ tv_render_id_of_last_valid_frame(id_t_ current,
 					      uint64_t timestamp_micro_s){
-	std::vector<id_t_> frame_linked_list =
-		id_api::linked_list::get_forward_linked_list(current);
-	for(uint64_t i = 0;i < frame_linked_list.size();i++){
-		tv_frame_video_t *frame =
-			PTR_DATA(frame_linked_list[i], tv_frame_video_t);
-		if(unlikely(frame->valid(timestamp_micro_s))){
-			current = frame_linked_list[i];
-			break;
-		}
-	}
-	return current;
+	tv_frame_video_t *video_ptr =
+		PTR_DATA(current,
+			 tv_frame_video_t);
+        return tv_frame_scroll_to_time(
+		video_ptr,
+		timestamp_micro_s);
 }
 
 static void tv_render_frame_to_screen_surface(tv_frame_video_t *frame,
@@ -359,16 +354,28 @@ static void tv_init_test_test_card(uint64_t x_res,
 				   uint64_t y_res){
 	tv_window_t *window =
 		new tv_window_t;
-	window->id.noexp_all_data();
+	window->id.set_lowest_global_flag_level(
+		ID_DATA_NETWORK_RULE_NEVER,
+		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_RULE_UNDEF);
 	tv_channel_t *channel =
 		new tv_channel_t;
-	channel->id.noexp_all_data();
+	channel->id.set_lowest_global_flag_level(
+		ID_DATA_NETWORK_RULE_NEVER,
+		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_RULE_UNDEF);
 	tv_item_t *item =
 		new tv_item_t;
-	item->id.noexp_all_data();
+	item->id.set_lowest_global_flag_level(
+		ID_DATA_NETWORK_RULE_NEVER,
+		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_RULE_UNDEF);
 	tv_frame_video_t *frame_video =
 		tv_frame_gen_xor_frame(x_res, y_res, 8);
-	frame_video->id.noexp_all_data();
+	frame_video->id.set_lowest_global_flag_level(
+		ID_DATA_NETWORK_RULE_NEVER,
+		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_RULE_UNDEF);
 	// done initializing
 	window->set_item_id(channel->id.get_id());
 	item->add_frame_id({frame_video->id.get_id()});

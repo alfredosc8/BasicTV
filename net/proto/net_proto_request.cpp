@@ -96,7 +96,10 @@ std::vector<uint64_t> net_proto_request_set_t::get_mod_inc(){
 net_proto_id_request_t::net_proto_id_request_t() : id(this, TYPE_NET_PROTO_ID_REQUEST_T){
 	list_set_virtual_data(&id);
 	list_bare_virtual_data(&id);
-	id.noexp_all_data();
+	id.set_lowest_global_flag_level(
+		ID_DATA_RULE_UNDEF,
+		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_RULE_UNDEF);
 }
 
 net_proto_id_request_t::~net_proto_id_request_t(){}
@@ -107,8 +110,11 @@ net_proto_type_request_t::net_proto_type_request_t() : id(this, TYPE_NET_PROTO_T
 	list_set_virtual_data(&id);
 	list_bare_virtual_data(&id);
 	id.add_data_raw(&type, sizeof(type));
-	id.noexp_all_data();
-}
+	id.set_lowest_global_flag_level(
+		ID_DATA_RULE_UNDEF,
+		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_RULE_UNDEF);
+}	
 
 net_proto_type_request_t::~net_proto_type_request_t(){}
 
@@ -116,7 +122,10 @@ net_proto_type_request_t::~net_proto_type_request_t(){}
 
 net_proto_linked_list_request_t::net_proto_linked_list_request_t() : id(this, TYPE_NET_PROTO_LINKED_LIST_REQUEST_T){
 	list_bare_virtual_data(&id);
-	id.noexp_all_data();
+	id.set_lowest_global_flag_level(
+		ID_DATA_RULE_UNDEF,
+		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_RULE_UNDEF);
 }
 
 net_proto_linked_list_request_t::~net_proto_linked_list_request_t(){
@@ -136,7 +145,13 @@ void net_proto_linked_list_request_t::increase_id(){
 	if(id_ == nullptr){
 		return;
 	}
-	curr_id = id_->get_next_linked_list();
+	std::pair<std::vector<id_t_>, std::vector<id_t_> > linked_list =
+		id_->get_linked_list();
+	if(linked_list.second.size() == 0){
+		curr_id = ID_BLANK_ID;
+	}else{
+		curr_id = linked_list.second[0];
+	}
 	curr_length--;
 }
 

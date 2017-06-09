@@ -152,8 +152,10 @@ void init(){
 
 	id_disk_index_t *disk_index =
 		new id_disk_index_t;
-	disk_index->id.noexp_all_data();
-	disk_index->id.nonet_all_data();
+	disk_index->id.set_lowest_global_flag_level(
+		ID_DATA_NETWORK_RULE_NEVER,
+		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_RULE_UNDEF);
 		
 	disk_index->set(
 		ID_DISK_MEDIUM_HDD,

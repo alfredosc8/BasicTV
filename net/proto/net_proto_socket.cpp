@@ -54,7 +54,10 @@ void net_proto_socket_t::init_create_id_sets(){
 	if(PTR_ID(inbound_id_set_id, ) == nullptr){
 		math_number_set_t *inbound_id_set_ptr =
 			new math_number_set_t;
-		inbound_id_set_ptr->id.noexp_all_data();
+		inbound_id_set_ptr->id.set_lowest_global_flag_level(
+			ID_DATA_RULE_UNDEF,
+			ID_DATA_EXPORT_RULE_NEVER,
+			ID_DATA_RULE_UNDEF);
 		inbound_id_set_ptr->set_dim_count(
 			2, {MATH_NUMBER_DIM_CAT,
 			    MATH_NUMBER_DIM_NUM});
@@ -63,7 +66,10 @@ void net_proto_socket_t::init_create_id_sets(){
 	if(PTR_ID(outbound_id_set_id, ) == nullptr){
 		math_number_set_t *outbound_id_set_ptr =
 			new math_number_set_t;
-		outbound_id_set_ptr->id.noexp_all_data();
+		outbound_id_set_ptr->id.set_lowest_global_flag_level(
+			ID_DATA_RULE_UNDEF,
+			ID_DATA_EXPORT_RULE_NEVER,
+			ID_DATA_RULE_UNDEF);
 		outbound_id_set_ptr->set_dim_count(
 			2, {MATH_NUMBER_DIM_CAT,
 			    MATH_NUMBER_DIM_NUM});
@@ -90,8 +96,11 @@ net_proto_socket_t::net_proto_socket_t() : id(this, TYPE_NET_PROTO_SOCKET_T){
 	std_data =
 		net_proto_write_packet_metadata(
 			std_data_);
-	id.noexp_all_data();
-	id.nonet_all_data();
+	ID_MAKE_TMP(id.get_id());
+	id.set_lowest_global_flag_level(
+		ID_DATA_NETWORK_RULE_NEVER,
+		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_RULE_UNDEF);
 }
 
 net_proto_socket_t::~net_proto_socket_t(){
@@ -156,8 +165,11 @@ void net_proto_socket_t::send_id(id_t_ id_){
 	}
 	std::vector<uint8_t> payload =
 		id_tmp->export_data(
-			ID_DATA_NOEXP,
-			ID_EXTRA_COMPRESS | ID_EXTRA_ENCRYPT);
+			0,
+			ID_EXTRA_COMPRESS | ID_EXTRA_ENCRYPT,
+			ID_DATA_NETWORK_RULE_PUBLIC,
+			ID_DATA_RULE_UNDEF,
+			ID_DATA_RULE_UNDEF);
 	if(payload.size() == 0){
 		print("exported size of ID is zero, not sending", P_NOTE);
 		return;

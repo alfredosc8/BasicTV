@@ -1,4 +1,5 @@
 #include "../main.h"
+#include "../util.h"
 #ifndef ID_H
 #define ID_H
 #include <cstdint>
@@ -27,15 +28,11 @@ const hash_t_ blank_hash = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 #define ID_BLANK_TYPE (0)
 #define ID_BLANK_HASH (blank_hash)
 
-#define ID_DATA_NOEXP (1 << 0)
-#define ID_DATA_NONET (1 << 1)
-#define ID_DATA_ID (1 << 2)
-#define ID_DATA_BYTE_VECTOR (1 << 3)
-#define ID_DATA_EIGHT_BYTE_VECTOR (1 << 4)
-#define ID_DATA_ID_VECTOR (1 << 5)
-#define ID_DATA_BYTE_VECTOR_VECTOR (1 << 6)
-
-#define ID_DATA_CACHE ID_DATA_NOEXPORT
+#define ID_DATA_ID (1 << 0)
+#define ID_DATA_BYTE_VECTOR (1 << 1)
+#define ID_DATA_EIGHT_BYTE_VECTOR (1 << 2)
+#define ID_DATA_ID_VECTOR (1 << 3)
+#define ID_DATA_BYTE_VECTOR_VECTOR (1 << 4)
  
 // might want to be larger (?)
 #define ID_MAX_LINKED_LIST_SIZE 64
@@ -45,22 +42,55 @@ const hash_t_ blank_hash = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 #define ID_PREAMBLE_SIZE (sizeof(extra_t_)+sizeof(id_t_)+sizeof(mod_inc_t_))
 
+#define ID_DATA_RULE_UNDEF 0
+	
+/*
+  The only variable that can reasonably change between different variables
+  of one type is EXPORT
+ */
+
+#define ID_DATA_NETWORK_RULE_NEVER 1
+#define ID_DATA_NETWORK_RULE_TOR_ONION 2
+#define ID_DATA_NETWORK_RULE_TOR_ONLY 3
+#define ID_DATA_NETWORK_RULE_ENCRYPTED_ONLY 4
+#define ID_DATA_NETWORK_RULE_PUBLIC 5
+
+#define ID_DATA_EXPORT_RULE_NEVER 1
+#define ID_DATA_EXPORT_RULE_ALWAYS 2
+
+#define ID_DATA_PEER_RULE_NEVER 1
+#define ID_DATA_PEER_RULE_SAME_HASH 2
+#define ID_DATA_PEER_RULE_ON_ESCROW 3
+#define ID_DATA_PEER_RULE_ALWAYS 4
+
 // pointer added through add_data
 struct data_id_ptr_t{
 private:
 	void *ptr = nullptr;
 	std::vector<uint32_t> length;
 	uint8_t flags = 0;
+
+	// two variables
+	// exporting rules
+	// peer-sending rules
+	uint8_t network_rules = 0;
+	uint8_t export_rules = 0;
+	uint8_t peer_rules = 0;
 public:
 	data_id_ptr_t(void *ptr_,
 		      std::vector<uint32_t> length_,
-		      uint8_t flags_);
+		      uint8_t flags_,
+		      uint8_t network_rules_,
+		      uint8_t export_rules_,
+		      uint8_t peer_rules_);
 	~data_id_ptr_t();
 	void *get_ptr();
 	uint32_t get_length();
 	std::vector<uint32_t> get_length_vector();
-	uint8_t get_flags();
-	void set_flags(uint8_t flags_){flags = flags_;}
+	GET_SET(flags, uint8_t);
+	GET_SET(network_rules, uint8_t);
+	GET_SET(export_rules, uint8_t);
+	GET_SET(peer_rules, uint8_t);
 };
 
 /*
@@ -69,6 +99,9 @@ public:
  */
 
 type_t_ get_id_type(id_t_ id); // tacky
+
+#define ADD_DATA_1D_DEF(datatype, str, fl_ag) void add_data_##str(datatype *ptr_, uint32_t max_size_elem_, uint8_t flags_ = 0, uint8_t network_rules_ = ID_DATA_NETWORK_RULE_PUBLIC, uint8_t export_rules_ = ID_DATA_EXPORT_RULE_ALWAYS, uint8_t peer_rules_ = ID_DATA_PEER_RULE_ALWAYS){add_data(ptr_, {max_size_elem_}, flags_ | fl_ag, network_rules_, export_rules_, peer_rules_);}
+#define ADD_DATA_2D_DEF(datatype, str, fl_ag) void add_data_##str(datatype *ptr_, uint32_t max_size_elem_, uint32_t max_size_elem__, uint8_t flags_ = 0, uint8_t network_rules_ = ID_DATA_NETWORK_RULE_PUBLIC, uint8_t export_rules_ = ID_DATA_EXPORT_RULE_ALWAYS, uint8_t peer_rules_ = ID_DATA_PEER_RULE_ALWAYS){add_data(ptr_, {max_size_elem_, max_size_elem__}, flags_ | fl_ag, network_rules_, export_rules_, peer_rules_);}
 
 struct data_id_t{
 private:
@@ -79,17 +112,14 @@ private:
 	std::vector<std::vector<uint8_t> > rsa_backlog;
 	std::vector<data_id_ptr_t> data_vector;
 	std::pair<std::vector<id_t_>, std::vector<id_t_> > linked_list;
-	std::vector<uint8_t> imported_data; // encrypted data if imported
+
+	uint64_t last_access_timestamp_micro_s = 0;
+	mod_inc_t_ modification_incrementor = 0;
+	
 	void init_list_all_data();
 	void init_gen_id(type_t_);
 	void init_type_cache();
-	// set at get_ptr(), used for selective exporting
-	uint64_t last_access_timestamp_micro_s = 0;
-	// incremented every time a getter or setter is called in either this
-	// function or the parent data type (manually call mod_inc();
-	mod_inc_t_ modification_incrementor = 0;
-	uint8_t global_flags = 0;
-	void add_data(void *ptr_, std::vector<uint32_t> size_, uint64_t flags_ = 0);
+	void add_data(void *ptr_, std::vector<uint32_t> size_, uint8_t flags_, uint8_t network_rules, uint8_t export_rules, uint8_t peer_rules);
 public:
 	data_id_t(void *ptr_, uint8_t type);
 	~data_id_t();
@@ -99,83 +129,33 @@ public:
 	/*
 	  SHOULD ONLY BE USED TO BOOTSTRAP
 	 */
+	std::pair<std::vector<id_t_>, std::vector<id_t_> > get_linked_list();
+	void set_linked_list(std::pair<std::vector<id_t_>, std::vector<id_t_> > );
 	void set_id(id_t_ id_);
 	std::string get_type();
 	uint8_t get_type_byte(){return get_id_type(id);}
 	void *get_ptr();
 	void mod_inc(){modification_incrementor++;}
 	mod_inc_t_ get_mod_inc(){return modification_incrementor;}
-	id_t_ get_encrypt_pub_key_id();
-	uint64_t get_data_index_size();
-	id_t_ get_next_linked_list();
-	id_t_ get_prev_linked_list();
-	void set_next_linked_list(id_t_ data);
-	void set_prev_linked_list(id_t_ data);
-	// pointer list modififers
-	/*
-	  size of data is referring to the type size and the array size, whereas
-	  the size of the ID is referring to just the array size, since the size
-	  is assumed with the pointer type (8 bytes, but maybe more later?)
-	 */
-	// void add_data(
-	// 	void *ptr_,
-	// 	uint32_t size_,
-	// 	uint64_t flags = 0);
-	// void add_data(
-	// 	id_t_ *ptr_,
-	// 	uint32_t size_,
-	// 	uint64_t flags = 0);
-	// void add_data(
-	// 	std::vector<uint8_t> *ptr_,
-	// 	uint32_t size_,
-	// 	uint64_t flags_ = 0);
-	// void add_data(
-	// 	std::vector<uint64_t> *ptr_,
-	// 	uint32_t size_,
-	// 	uint64_t flags = 0);
-	// void add_data(
-	// 	std::vector<id_t_> *ptr_,
-	// 	uint32_t size_,
-	// 	uint64_t flags = 0);
 	// TODO: should enforce casting
-	void add_data_one_byte_vector(
-		std::vector<uint8_t> *ptr_,
-		uint32_t max_size_elem_,
-		uint64_t flags = 0){add_data(ptr_, {max_size_elem_}, flags | ID_DATA_BYTE_VECTOR);}
-	void add_data_one_byte_vector_vector(
-		std::vector<std::vector<uint8_t> > *ptr_,
-		uint32_t max_size_elem_,
-		uint32_t max_size_elem__,
-		uint64_t flags = 0){add_data(ptr_, {max_size_elem_, max_size_elem__}, flags | ID_DATA_BYTE_VECTOR_VECTOR);}
-	void add_data_eight_byte_vector(
-		std::vector<uint64_t> *ptr_,
-		uint32_t max_size_elem_,
-		uint64_t flags = 0){add_data(ptr_, {max_size_elem_}, flags | ID_DATA_EIGHT_BYTE_VECTOR);}
-	void add_data_id_vector(
-		std::vector<id_t_> *ptr_,
-		uint32_t max_size_elem_,
-		uint64_t flags = 0){add_data(ptr_, {max_size_elem_}, flags | ID_DATA_ID_VECTOR);}
-	void add_data_id(
-		id_t_ *id_,
-		uint32_t const_size_elem_,
-		uint64_t flags = 0){add_data(id_, {const_size_elem_}, flags | ID_DATA_ID);}
-	void add_data_raw(
-		void *ptr_,
-		uint32_t const_size_bytes_,
-		uint64_t flags = 0){add_data(ptr_, {const_size_bytes_}, flags);}
+	ADD_DATA_1D_DEF(std::vector<uint8_t>, one_byte_vector, ID_DATA_BYTE_VECTOR);
+	ADD_DATA_2D_DEF(std::vector<std::vector<uint8_t> >, one_byte_vector_vector, ID_DATA_BYTE_VECTOR_VECTOR);
+	ADD_DATA_1D_DEF(std::vector<uint64_t>, eight_byte_vector, ID_DATA_EIGHT_BYTE_VECTOR);
+	ADD_DATA_1D_DEF(std::vector<id_t_>, id_vector, ID_DATA_ID_VECTOR);
+	ADD_DATA_1D_DEF(id_t_, id, ID_DATA_ID);
+	ADD_DATA_1D_DEF(void, raw, 0);
 	// export and import data
 	// default on export is unencrypted and uncompressed, but is compressed
 	// and encrypted when it is loaded into the cache (so always, currently,
 	// but just not handled in this function)
-	std::vector<uint8_t> export_data(uint8_t flags_, uint8_t extra);
+	std::vector<uint8_t> export_data(uint8_t flags_, uint8_t extra, uint8_t network_flags, uint8_t export_flags, uint8_t peer_flags);
 	void import_data(std::vector<uint8_t> data);
 	void rsa_decrypt_backlog();
-	bool is_owner();
-	std::vector<uint8_t> get_ptr_flags();
-	void noexport_all_data();
-	void noexp_all_data(){noexport_all_data();}
-	void nonet_all_data();
 	uint64_t get_last_access_timestamp_micro_s(){return last_access_timestamp_micro_s;}
+
+	void set_lowest_global_flag_level(uint8_t network_rules,
+					  uint8_t export_rules,
+					  uint8_t peer_rules);
 };
 
 typedef uint16_t transport_i_t;
@@ -232,34 +212,17 @@ extern void set_id_type(id_t_ *id, type_t_ type);
 #define TYPE_MATH_NUMBER_SET_T				25
 #define TYPE_TV_ITEM_T					26
 #define TYPE_NET_PROTO_INTERFACE_PEER_IP_T		27
+#define TYPE_NET_PROTO_INTERFACE_STATE_T		28
 
-#define ID_NONET(x)				\
-	if(true){				\
-		data_id_t *tmp = PTR_ID(x, );	\
-		if(tmp != nullptr){		\
-			tmp->nonet_all_data();	\
-		}				\
-	}					
-
-#define ID_NOEXP(x)				\
-	if(true){				\
-		data_id_t *tmp = PTR_ID(x, );	\
-		if(tmp != nullptr){		\
-			tmp->nonet_all_data();	\
-		}				\
-	}					
-
-#define ID_NOEXP_NONET(x)				\
-	if(true){					\
-		data_id_t *tmp = PTR_ID(x, );		\
-		if(tmp != nullptr){			\
-			tmp->noexp_all_data();		\
-			tmp->nonet_all_data();		\
-		}					\
-	}					
-
-// this should be the only thing on the line, so we can
-// add a ton of garbage to the end if we want
-#define NEW(type, var, global_exp_rules) var = new type;if(global_exp_rules & ID_DATA_NONET){var->id.nonet_all_data();}if(gloabl_exp_rules & ID_DATA_NOEXP){var->id.noexp_all_data();}
+#define ID_MAKE_TMP(x)						\
+	if(true){						\
+		data_id_t *tmp = PTR_ID(x, );			\
+		if(tmp != nullptr){				\
+			tmp->set_lowest_global_flag_level(	\
+				ID_DATA_NETWORK_RULE_NEVER,	\
+				ID_DATA_EXPORT_RULE_NEVER,	\
+				ID_DATA_PEER_RULE_NEVER);	\
+		}						\
+	}
 
 #endif

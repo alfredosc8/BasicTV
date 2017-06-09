@@ -11,8 +11,10 @@
 tv_window_t::tv_window_t() : id(this, TYPE_TV_WINDOW_T){
 	id.add_data_raw(&pos, sizeof(pos));
 	id.add_data_id(&item_id, 1);
-	id.nonet_all_data();
-	id.noexp_all_data();
+	id.set_lowest_global_flag_level(
+		ID_DATA_NETWORK_RULE_NEVER,
+		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_RULE_UNDEF);
 }
 
 tv_window_t::~tv_window_t(){

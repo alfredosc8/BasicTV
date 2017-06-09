@@ -2,8 +2,10 @@
 #include "console.h"
 
 console_t::console_t() : id(this, TYPE_CONSOLE_T){
-	id.nonet_all_data();
-	id.noexp_all_data();
+	id.set_lowest_global_flag_level(
+		ID_DATA_NETWORK_RULE_NEVER,
+		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_PEER_RULE_NEVER);
 }
 
 console_t::~console_t(){
@@ -259,15 +261,23 @@ std::vector<std::vector<std::string> > console_generate_generic_id_table(std::ve
 		tmp_vector.push_back(convert::array::id::to_hex(id_vector[i]));
 		data_id_t *id_ptr =
 			PTR_ID_FAST(id_vector[i], );
+		std::pair<std::vector<id_t_>, std::vector<id_t_> > linked_list_data =
+			id_ptr->get_linked_list();
+		if(linked_list_data.first.size() == 0){
+			linked_list_data.first.push_back(ID_BLANK_ID);
+		}
+		if(linked_list_data.second.size() == 0){
+			linked_list_data.second.push_back(ID_BLANK_ID);
+		}
 		if(id_ptr != nullptr){
 			tmp_vector.push_back(
 				id_ptr->get_type());
 			tmp_vector.push_back(
 				null_if_blank_id(
-					id_ptr->get_next_linked_list()));
+					linked_list_data.first[0]));
 			tmp_vector.push_back(
 				null_if_blank_id(
-					id_ptr->get_next_linked_list()));
+					linked_list_data.second[0]));
 			tmp_vector.push_back(
 				std::to_string(id_ptr->get_mod_inc()));
 		}else{

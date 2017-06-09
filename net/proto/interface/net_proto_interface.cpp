@@ -9,3 +9,10 @@ void peer_sanity_check(id_t_ id, type_t_ type){
 		print("id does not match the requested type", P_ERR);
 	}
 }
+
+net_proto_interface_state_t::net_proto_interface_state_t() : id(this, TYPE_NET_PROTO_INTERFACE_STATE_T){
+	
+}
+
+net_proto_interface_state_t::~net_proto_interface_state_t(){
+}
