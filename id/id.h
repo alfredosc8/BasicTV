@@ -103,6 +103,8 @@ type_t_ get_id_type(id_t_ id); // tacky
 #define ADD_DATA_1D_DEF(datatype, str, fl_ag) void add_data_##str(datatype *ptr_, uint32_t max_size_elem_, uint8_t flags_ = 0, uint8_t network_rules_ = ID_DATA_NETWORK_RULE_PUBLIC, uint8_t export_rules_ = ID_DATA_EXPORT_RULE_ALWAYS, uint8_t peer_rules_ = ID_DATA_PEER_RULE_ALWAYS){add_data(ptr_, {max_size_elem_}, flags_ | fl_ag, network_rules_, export_rules_, peer_rules_);}
 #define ADD_DATA_2D_DEF(datatype, str, fl_ag) void add_data_##str(datatype *ptr_, uint32_t max_size_elem_, uint32_t max_size_elem__, uint8_t flags_ = 0, uint8_t network_rules_ = ID_DATA_NETWORK_RULE_PUBLIC, uint8_t export_rules_ = ID_DATA_EXPORT_RULE_ALWAYS, uint8_t peer_rules_ = ID_DATA_PEER_RULE_ALWAYS){add_data(ptr_, {max_size_elem_, max_size_elem__}, flags_ | fl_ag, network_rules_, export_rules_, peer_rules_);}
 
+typedef std::pair<std::vector<id_t_>, std::vector<id_t_> > linked_list_data_t;
+
 struct data_id_t{
 private:
 	// first 8 bytes UUID, last 32-byte SHA-256 hash
@@ -129,8 +131,7 @@ public:
 	/*
 	  SHOULD ONLY BE USED TO BOOTSTRAP
 	 */
-	std::pair<std::vector<id_t_>, std::vector<id_t_> > get_linked_list();
-	void set_linked_list(std::pair<std::vector<id_t_>, std::vector<id_t_> > );
+	GET_SET(linked_list, linked_list_data_t);
 	void set_id(id_t_ id_);
 	std::string get_type();
 	uint8_t get_type_byte(){return get_id_type(id);}

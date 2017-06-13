@@ -301,13 +301,16 @@ void id_api::linked_list::link_vector(std::vector<id_t_> vector){
 	if(first != nullptr){
 		first->set_linked_list(
 			std::make_pair(
-				std::vector<id_t_>({vector[1]}),
-				std::vector<id_t_>({})));
+				std::vector<id_t_>({}),
+				std::vector<id_t_>({vector[1]})));
 	}else{
 		print("first entry is a nullptr, this can be fixed, but I didn't bother and this shouldn't happen anyways", P_ERR);
 	}
 	for(uint64_t i = 1;i < vector.size()-1;i++){
 		data_id_t *id = PTR_ID(vector[i], );
+		if(id == nullptr){
+			print("can't link against an ID that doesn't exist", P_ERR);
+		}
 		id->set_linked_list(
 			std::make_pair(
 				std::vector<id_t_>({vector[i-1]}),

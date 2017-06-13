@@ -243,11 +243,3 @@ void data_id_t::set_lowest_global_flag_level(uint8_t network_rules,
 		}
 	}
 }
-
-std::pair<std::vector<id_t_>, std::vector<id_t_> > data_id_t::get_linked_list(){
-	return linked_list;
-}
-
-void data_id_t::set_linked_list(std::pair<std::vector<id_t_>, std::vector<id_t_> > tmp){
-	linked_list = tmp;
-}

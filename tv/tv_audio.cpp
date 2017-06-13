@@ -155,6 +155,7 @@ static void tv_audio_add_frame_audios(std::vector<id_t_> frame_audios){
 			print("audio is a nullptr", P_WARN);
 			continue;
 		}
+		P_V((int64_t)audio->get_start_time_micro_s()-(int64_t)get_time_microseconds(), P_NOTE);
 		const uint64_t ttl_micro_s =
 			audio->get_ttl_micro_s();
 		tv_audio_prop_t wav_audio_prop;
@@ -291,9 +292,6 @@ void tv_audio_loop(){
 		tv_audio_clean_audio_data();
 		std::vector<id_t_> current_id_set =
 			tv_audio_get_current_frame_audios();
-		if(current_id_set.size() != 0){
-			print("adding a new audio stream chunk  (pre-clean)", P_NOTE);
-		}
 		current_id_set =
 			tv_audio_remove_redundant_ids(
 				current_id_set);
