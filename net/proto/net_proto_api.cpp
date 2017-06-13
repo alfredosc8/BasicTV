@@ -127,7 +127,7 @@ id_t_ net_proto::peer::random_peer_id(){
 	}else{
 		P_V(proto_peer_vector.size(), P_VAR);
 	}
-	print("no other peers detected, cannot return a valid peer id", P_WARN);
+	//print("no other peers detected, cannot return a valid peer id", P_WARN);
 	return ID_BLANK_ID;
 }
 

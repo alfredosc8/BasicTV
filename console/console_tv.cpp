@@ -246,7 +246,6 @@ static std::vector<id_t_> console_tv_test_load_opus(std::string file){
 			channel_count,
 			&opus_audio_prop);
 	if(packetized_codec_data.size() == 0){
-		HANG();
 		print("packetized_codec_data is empty", P_ERR);
 	}
 	std::vector<id_t_> retval =
@@ -255,10 +254,16 @@ static std::vector<id_t_> console_tv_test_load_opus(std::string file){
 			&opus_audio_prop,
 			&frame_audio_prop,
 			1000*1000);
+	id_api::linked_list::link_vector(retval); //just in case other code didn't?
 	PRINT_AUDIO_PROP(opus_audio_prop);
 	PRINT_AUDIO_PROP(frame_audio_prop);
-	const uint64_t packet_duration =
-		(raw_samples.size()*(uint64_t)sampling_freq*((uint64_t)bit_depth/(uint64_t)8)/(uint64_t)channel_count)/(uint64_t)packetized_codec_data.size();
+	const uint64_t snippet_duration =
+		frame_audio_prop.get_snippet_duration_micro_s();
+	ASSERT(snippet_duration != 0, P_ERR);
+	const uint64_t true_start_time =
+		get_time_microseconds();
+	uint64_t start_time =
+		true_start_time;
 	for(uint64_t i = 0;i < retval.size();i++){
 		tv_frame_audio_t *frame_audio =
 			PTR_DATA(retval[i],
@@ -266,72 +271,49 @@ static std::vector<id_t_> console_tv_test_load_opus(std::string file){
 		if(frame_audio == nullptr){
 			print("frame_audio is a nullptr", P_ERR);
 		}
+		ASSERT(frame_audio->get_packet_set().size() != 0, P_ERR);
 		frame_audio->set_standard(
-			get_time_microseconds()+(i*packet_duration),
-			packet_duration,
+			start_time,
+			snippet_duration*frame_audio->get_packet_set().size(),
 			i);
+		start_time += snippet_duration*frame_audio->get_packet_set().size();
+		P_V(start_time, P_NOTE);
 	}
+	P_V((start_time-true_start_time)/(1000000), P_NOTE);
 	if(retval.size() == 0){
-		HANG();
 		print("frame vector is empty", P_ERR);
 	}
 	return retval;
 }
 
 DEC_CMD(tv_test_audio){
-	const uint64_t start_time_micro_s =
-		get_time_microseconds()+std::stoull(registers.at(0));
 	const std::string file =
 		registers.at(1);
-	tv_window_t *window = nullptr;
-	std::vector<id_t_> all_windows =
-		id_api::cache::get(
-			"tv_window_t");
-	if(all_windows.size() > 0){
-		window =
-			PTR_DATA(all_windows.at(0),
-				 tv_window_t);
-		if(window == nullptr){
-			print_socket("false flag raised by cache get, creating new window\n");
-			window = new tv_window_t;
-		}
-		print_socket("using pre-existing window with the ID " + convert::array::id::to_hex(all_windows.at(0)) + "\n");
-	}else{
-		window = new tv_window_t;
-	}
+	tv_window_t *window =
+		new tv_window_t;
 	tv_channel_t *channel =
 		new tv_channel_t;
-	channel->id.set_lowest_global_flag_level(
-		ID_DATA_NETWORK_RULE_NEVER,
-		ID_DATA_EXPORT_RULE_NEVER,
-		ID_DATA_PEER_RULE_NEVER);
-	channel->set_description(
-		convert::string::to_bytes("BasicTV Audio Test"));
 	tv_item_t *item =
 		new tv_item_t;
+	ID_DATA_MAKE_TMP(channel->id);
+	ID_DATA_MAKE_TMP(window->id);
+	ID_DATA_MAKE_TMP(item->id);
+	channel->set_description(
+		convert::string::to_bytes("BasicTV Audio Test"));
 	std::vector<id_t_> all_frame_audios =
 		console_tv_test_load_opus(
 			file);
+	item->set_tv_channel_id(
+		channel->id.get_id());
 	item->add_frame_id(
 		all_frame_audios);
-	P_V(start_time_micro_s, P_VAR);
-	for(uint64_t i = 0;i < all_frame_audios.size();i++){
-		ID_MAKE_TMP(all_frame_audios[i]);
-	}
-	// add the item
-	window->set_item_id(item->id.get_id());
-	const std::vector<std::vector<id_t_> > frame_set =
-	 	item->get_frame_id_vector();
-	if(frame_set.size() == 0){
-	 	print_socket("couldn't load WAV information");
-		HANG();
-	}else if(frame_set.size() > 1){
-	 	print_socket("more streams than anticipated\n");
-		HANG();
-	}else{
-	 	window->add_active_stream_id(
-	 		all_frame_audios.at(0));
-	}
+	window->set_item_id(
+		item->id.get_id());
+	window->add_active_stream_id(
+		all_frame_audios.at(0));
+	output_table =
+		console_generate_generic_id_table(
+			all_frame_audios);
 }
 
 DEC_CMD(tv_test_menu){

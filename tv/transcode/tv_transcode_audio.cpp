@@ -210,6 +210,8 @@ std::vector<id_t_> transcode::audio::codec::to_frames(std::vector<std::vector<ui
 				*input_audio_prop); // just repacking it
 			frame_audio_ptr->set_ttl_micro_s(
 				input_audio_prop->get_snippet_duration_micro_s()*snippets_to_frame);
+			frame_audio_ptr->set_frame_entry(
+				retval.size());
 			retval.push_back(
 				frame_audio_ptr->id.get_id());
 		}

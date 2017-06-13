@@ -162,16 +162,51 @@ static void tv_audio_add_frame_audios(std::vector<id_t_> frame_audios){
 			TV_AUDIO_PROP_FORMAT_ONLY);
 		wav_audio_prop.set_format(
 			TV_AUDIO_FORMAT_WAV);
-		std::vector<uint8_t> wav_data =
+		uint32_t sampling_freq = 0;
+		uint8_t bit_depth = 0;
+		uint8_t channel_count = 0;
+		tv_audio_prop_t wave_transcode_prop;
+		wave_transcode_prop.set_format(
+			TV_AUDIO_FORMAT_WAV);
+		wave_transcode_prop.set_flags(
+			TV_AUDIO_PROP_FORMAT_ONLY);
+		wave_transcode_prop.set_snippet_duration_micro_s(
+			1000*10);
+		auto wave_encode_state =
+			wave_encode_init_state(
+				&wave_transcode_prop);
+		auto wave_decode_state =
+			wave_decode_init_state(
+				&wave_transcode_prop);
+		std::vector<uint8_t> raw_sample_set =
 			convert::vector::collapse_2d_vector(
-				transcode::audio::frames::to_codec(
+				wave_decode_snippet_vector_to_sample_vector(
+					wave_decode_state,
+					transcode::audio::frames::to_codec(
 					{frame_audios[i]},
-					&wav_audio_prop));
+					&wav_audio_prop),
+					&sampling_freq,
+					&bit_depth,
+					&channel_count));
+		P_V(sampling_freq, P_NOTE);
+		P_V(bit_depth, P_NOTE);
+		P_V(channel_count, P_NOTE);
+		std::vector<uint8_t> wav_data =
+			wave_encode_sample_vector_to_snippet_vector(
+				wave_encode_state,
+				std::vector<std::vector<uint8_t> >({raw_sample_set}),
+				sampling_freq,
+				bit_depth,
+				channel_count)[0];
+				
 		P_V(wav_data.size(), P_VAR);
 		P_V(wav_audio_prop.get_sampling_freq(), P_VAR);
 		P_V(wav_audio_prop.get_bit_rate(), P_VAR);
 		P_V(wav_audio_prop.get_bit_depth(), P_VAR);
 		P_V(wav_audio_prop.get_channel_count(), P_VAR);
+		P_V(sampling_freq, P_VAR);
+		P_V(bit_depth, P_VAR);
+		P_V(channel_count, P_VAR);
 		SDL_RWops *rw =
 			SDL_RWFromMem(
 				wav_data.data(),
@@ -215,6 +250,9 @@ static std::vector<id_t_> tv_audio_get_current_frame_audios(){
 		}
 		const std::vector<id_t_> active_streams =
 			window->get_active_streams();
+		if(active_streams.size() == 0){
+			print("no designated active streams", P_WARN);
+		}
 		const uint64_t play_time =
 			cur_timestamp_micro_s+window->get_timestamp_offset();
 		for(uint64_t c = 0;c < active_streams.size();c++){
@@ -233,6 +271,8 @@ static std::vector<id_t_> tv_audio_get_current_frame_audios(){
 			if(curr_id != ID_BLANK_ID){
 				frame_audios.push_back(
 					curr_id);
+			}else{
+				print("curr_id is a nullptr, probably an invalid timestamp", P_WARN);
 			}
 		}
 	}
@@ -251,11 +291,14 @@ void tv_audio_loop(){
 		tv_audio_clean_audio_data();
 		std::vector<id_t_> current_id_set =
 			tv_audio_get_current_frame_audios();
+		if(current_id_set.size() != 0){
+			print("adding a new audio stream chunk  (pre-clean)", P_NOTE);
+		}
 		current_id_set =
 			tv_audio_remove_redundant_ids(
 				current_id_set);
 		if(current_id_set.size() != 0){
-			print("adding a new audio stream chunk", P_NOTE);
+			print("adding a new audio stream chunk (post-clean)", P_NOTE);
 		}
 		tv_audio_add_frame_audios(
 			current_id_set);

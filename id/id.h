@@ -225,4 +225,10 @@ extern void set_id_type(id_t_ *id, type_t_ type);
 		}						\
 	}
 
+#define ID_DATA_MAKE_TMP(tmp)			\
+	tmp.set_lowest_global_flag_level(	\
+		ID_DATA_NETWORK_RULE_NEVER,	\
+		ID_DATA_EXPORT_RULE_NEVER,	\
+		ID_DATA_PEER_RULE_NEVER);	\
+			
 #endif

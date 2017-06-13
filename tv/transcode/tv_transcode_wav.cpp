@@ -8,9 +8,6 @@ static void wave_push_back(std::vector<uint8_t> *retval, const char *data){
 }
 
 static void wave_push_back(std::vector<uint8_t> *retval, uint32_t data){
-#ifdef IS_BIG_ENDIAN
-	data = NBO_32(data);
-#endif
 	retval->push_back(((uint8_t*)&data)[0]);
 	retval->push_back(((uint8_t*)&data)[1]);
 	retval->push_back(((uint8_t*)&data)[2]);
@@ -18,9 +15,6 @@ static void wave_push_back(std::vector<uint8_t> *retval, uint32_t data){
 }
 
 static void wave_push_back(std::vector<uint8_t> *retval, uint16_t data){
-#ifdef IS_BIG_ENDIAN
-	data = NBO_16(data);
-#endif
 	retval->push_back(((uint8_t*)&data)[0]);
 	retval->push_back(((uint8_t*)&data)[1]);
 }
@@ -36,6 +30,8 @@ tv_transcode_encode_state_t *wave_encode_init_state(tv_audio_prop_t *audio_prop)
 	tv_transcode_encode_state_t *retval =
 		new tv_transcode_encode_state_t;
 	// WAV allows for pretty much any format, so no need to sanity check
+	audio_prop->set_snippet_duration_micro_s(
+		1000*10);
 	retval->set_audio_prop(*audio_prop);
 	return retval;
 }
@@ -64,12 +60,15 @@ void wave_decode_close_state(tv_transcode_decode_state_t *decode_state){
   segmenting is only important to encapsulating it in tv_frame_audio_t)
  */
 
+
 std::vector<std::vector<uint8_t> > wave_encode_sample_vector_to_snippet_vector(tv_transcode_encode_state_t *state,
 									       std::vector<std::vector<uint8_t> > raw_data_,
 									       uint32_t sampling_freq,
 									       uint8_t bit_depth,
 									       uint8_t channel_count){
 	PRINT_IF_NULL(state, P_ERR);
+	PRINT_IF_EMPTY(raw_data_, P_ERR);
+	PRINT_IF_EMPTY(raw_data_[0], P_ERR);
 	if(channel_count != 1){
 		print("multichannel WAV isn't supported right now", P_ERR);
 	}
@@ -80,13 +79,16 @@ std::vector<std::vector<uint8_t> > wave_encode_sample_vector_to_snippet_vector(t
 	P_V(sampling_freq, P_VAR);
 	P_V(bit_depth, P_VAR);
 	uint64_t snippet_size =
-		sampling_freq*(bit_depth/8)*60; // not in microseconds
+		state->get_audio_prop().get_snippet_duration_micro_s()*sampling_freq*channel_count;
+	if(snippet_size == 0){
+		snippet_size = (state->get_audio_prop().get_snippet_duration_micro_s()/1000)*sampling_freq*channel_count;
+	}	
 	if(snippet_size > raw_data.size()){
 		snippet_size = raw_data.size();
 	}
 	P_V(snippet_size, P_VAR);
-	// TODO: might be better to define this as a snprintf
-	for(uint64_t i = 0;i <= raw_data.size()-snippet_size;i+=snippet_size){
+	P_V(raw_data.size(), P_VAR);
+	for(uint64_t i = 0;i <= raw_data.size()-snippet_size;i += snippet_size){
 		std::vector<uint8_t> tmp;
 		wave_push_back(&tmp, "RIFF");
 		wave_push_back(&tmp, (uint32_t)(snippet_size+36));
@@ -94,14 +96,15 @@ std::vector<std::vector<uint8_t> > wave_encode_sample_vector_to_snippet_vector(t
 		wave_push_back(&tmp, "fmt ");
 		wave_push_back(&tmp, (uint32_t)16); // length of data section
 		wave_push_back(&tmp, (uint16_t)1); // uncompressed PCM
-		wave_push_back(&tmp, (uint16_t)1); // channel count
+		wave_push_back(&tmp, (uint16_t)channel_count); // channel count
 		wave_push_back(&tmp, (uint32_t)sampling_freq);
-		wave_push_back(&tmp, (uint32_t)(sampling_freq*1*bit_depth/8));
-		wave_push_back(&tmp, (uint16_t)(1*bit_depth/8)); // block align
+		wave_push_back(&tmp, (uint32_t)(sampling_freq*channel_count*bit_depth/8));
+		wave_push_back(&tmp, (uint16_t)(channel_count*bit_depth/8)); // block align
 		wave_push_back(&tmp, (uint16_t)bit_depth);
 		wave_push_back(&tmp, "data");
 		wave_push_back(&tmp, (uint32_t)snippet_size);
 		// WAV forces this data to be in signed 16-bit form, which this isn't
+		P_V(tmp.size(), P_NOTE);
 		retval.push_back(
 			tmp);
 		retval[retval.size()-1].insert(
@@ -116,7 +119,6 @@ static std::vector<uint8_t> wave_pull_back(std::vector<uint8_t> *data, uint32_t 
 	std::vector<uint8_t> retval(
 		data->begin(),
 		data->begin()+len);
-	retval = convert::nbo::to(retval);
 	data->erase(
 		data->begin(),
 		data->begin()+len);
@@ -129,14 +131,17 @@ static std::vector<uint8_t> wave_pull_back(std::vector<uint8_t> *data, std::stri
 }
 
 static uint64_t wave_pull_back_eight_byte(std::vector<uint8_t> *data, uint32_t len){
-	std::vector<uint8_t> tmp_data(8, 0);
-	if(data->size() > len){
+	uint64_t tmp_data = 0;
+	if(data->size() < len){
 		print("wave file doesn't have enough room for len", P_ERR);
 	}
-	memcpy(tmp_data.data(),
+	memcpy(&tmp_data,
 	       data->data(),
 	       len);
-	return *((uint64_t*)tmp_data.data());
+	data->erase(
+		data->begin(),
+		data->begin()+len);
+	return tmp_data;
 }
 
 #pragma message("haven't tested wav_decode_raw, seems pretty sketch")
@@ -146,7 +151,11 @@ std::vector<std::vector<uint8_t> > wave_decode_snippet_vector_to_sample_vector(t
 									       uint32_t *sampling_freq,
 									       uint8_t *bit_depth,
 									       uint8_t *channel_count){
-	PRINT_IF_NULL(state, P_ERR);
+	// used internally in tv_audio without a state, pretty hacky, but
+	// it works I guess (should go with RAW samples)
+	try{PRINT_IF_NULL(state, P_ERR)}catch(...){}
+	PRINT_IF_EMPTY(wav_data, P_ERR);
+	PRINT_IF_EMPTY(wav_data[0], P_ERR);
 	std::vector<std::vector<uint8_t> > retval;
 	for(uint64_t i = 0;i < wav_data.size();i++){
 		wave_pull_back(&wav_data[i], "RIFF");
@@ -165,6 +174,9 @@ std::vector<std::vector<uint8_t> > wave_decode_snippet_vector_to_sample_vector(t
 			wave_pull_back_eight_byte(&wav_data[i], 2);
 		wave_pull_back(&wav_data[i], "data");
 		wave_pull_back(&wav_data[i], 4);
+		P_V(*sampling_freq, P_VAR);
+		P_V(*bit_depth, P_VAR);
+		P_V(*channel_count, P_VAR);
 		if(*channel_count != 1){
 			print("there is no formal multi-channel format for raw, should copy WAV", P_ERR);
 		}
