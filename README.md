@@ -54,6 +54,16 @@ One major highlight of BasicTV is the capability of using Tor efficiently. Tor c
 
 BasicTV allows for creating multiple Tor circuits and effectively using them for all peer connections. Tor can allow for more connections than just a clearnet connection, as routers tend to drop TCP connections beyond a certain limit (routers don't see connections made inside of a Tor circuit).
 
+## Dependencies
+* SDL2
+* SDL2_net
+* SDL2_mixer
+* libcurl
+* libvpx
+* libopus and libopusfile
+* libzstd
+* libcrypto
+
 ## FAQ
 Nobody asked any questions yet, but feel free to contact me through GitHub or Tox
 
