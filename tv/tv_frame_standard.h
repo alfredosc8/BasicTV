@@ -36,16 +36,19 @@ public:
 	~tv_frame_standard_t();
 	GET_SET(codec_state_ref, uint64_t);
 	GET_SET(flags, uint64_t);
+	GET_SET(start_time_micro_s, uint64_t);
+	GET_SET(ttl_micro_s, uint32_t);
+	GET_SET(frame_entry, uint64_t);
 	void list_virtual_data(data_id_t *id);
 	void set_standard(uint64_t start_time_micro_s_,
 			  uint32_t ttl_micro_s_,
 			  uint64_t frame_entry_);
 	void get_standard(uint64_t *start_time_micro_s_,
-			  uint32_t *ttl_micros_,
+			  uint32_t *ttl_micro_s,
 			  uint64_t *frame_entry_);
 	bool valid(uint64_t timestamp_micro_s);
-	uint64_t get_start_time_micro_s(){return start_time_micro_s;}
-	uint64_t get_ttl_micro_s(){return ttl_micro_s;}
+	/* uint64_t get_start_time_micro_s(){return start_time_micro_s;} */
+	/* uint64_t get_ttl_micro_s(){return ttl_micro_s;} */
 	uint64_t get_end_time_micro_s(){return get_start_time_micro_s()+get_ttl_micro_s();}
 };
 

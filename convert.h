@@ -124,6 +124,13 @@ namespace convert{
 		std::vector<uint8_t> to_bytes(std::string str);
 		std::string from_bytes(std::vector<uint8_t> bytes);
 	}
+	namespace audio{
+		uint64_t metadata_to_duration_micro_s(
+			uint64_t size,
+			uint32_t sampling_freq,
+			uint8_t bit_depth,
+			uint8_t channel_count);
+	};
 };
 
 #endif

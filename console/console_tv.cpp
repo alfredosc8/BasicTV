@@ -198,21 +198,27 @@ static std::vector<id_t_> console_tv_test_load_opus(std::string file){
 
 	op_free(opus_file);
 	opus_file = nullptr;
-
+	
 	// Intermediate (raw to codec)
 	tv_audio_prop_t opus_audio_prop;
-	opus_audio_prop.set_flags(
-		TV_AUDIO_PROP_FORMAT_ONLY);
 	opus_audio_prop.set_format(
 		TV_AUDIO_FORMAT_OPUS);
-
+	opus_audio_prop.set_sampling_freq(
+		48000);
+	opus_audio_prop.set_bit_rate(
+		65536);
+	opus_audio_prop.set_channel_count(
+		1);
+	opus_audio_prop.set_bit_depth(
+		16);
+	
 	// Final frame output
 	tv_audio_prop_t frame_audio_prop;
-	frame_audio_prop.set_flags(
-		TV_AUDIO_PROP_FORMAT_ONLY);
 	frame_audio_prop.set_format(
 		TV_AUDIO_FORMAT_OPUS);
-
+	frame_audio_prop.set_flags(
+		TV_AUDIO_PROP_FORMAT_ONLY);
+	
 	// standard output properties for Opus to raw samples
 	const uint32_t sampling_freq =
 		48000;
@@ -234,7 +240,7 @@ static std::vector<id_t_> console_tv_test_load_opus(std::string file){
 
 	std::vector<std::vector<uint8_t> > packetized_codec_data =
 		transcode::audio::raw::to_codec(
-			raw_samples,
+			std::vector<std::vector<uint8_t> >({raw_samples}),
 			sampling_freq,
 			bit_depth,
 			channel_count,
@@ -247,7 +253,10 @@ static std::vector<id_t_> console_tv_test_load_opus(std::string file){
 		transcode::audio::codec::to_frames(
 			packetized_codec_data,
 			&opus_audio_prop,
-			&frame_audio_prop);
+			&frame_audio_prop,
+			1000*1000);
+	PRINT_AUDIO_PROP(opus_audio_prop);
+	PRINT_AUDIO_PROP(frame_audio_prop);
 	const uint64_t packet_duration =
 		(raw_samples.size()*(uint64_t)sampling_freq*((uint64_t)bit_depth/(uint64_t)8)/(uint64_t)channel_count)/(uint64_t)packetized_codec_data.size();
 	for(uint64_t i = 0;i < retval.size();i++){

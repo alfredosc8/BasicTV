@@ -31,8 +31,6 @@
   about quality, convert to Opus from FLAC, if that is an option).
 */
 
-#define TV_FRAME_AUDIO_FORMAT_MASK 0b00000011
-
 /*
   tv_frame_audio_t should always be unsigned with system byte order. Bit depth
   is the only variable that can change (16 is where SDL2 taps out)
@@ -49,4 +47,5 @@ public:
 	GET_SET(audio_prop, tv_audio_prop_t);
 	GET_SET(packet_set, std::vector<std::vector<uint8_t> >);
 };
+
 #endif

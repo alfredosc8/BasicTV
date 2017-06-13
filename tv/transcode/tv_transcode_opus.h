@@ -2,17 +2,21 @@
 #define TV_TRANSCODE_OPUS_H
 
 #include "tv_transcode.h"
+#include "tv_transcode_state.h"
 
 #include "opus/opus.h"
 #include "opus/opusfile.h"
 
-extern CODEC_ENCODE_INIT_STATE(opus);
-extern CODEC_ENCODE_SAMPLES(opus);
-extern CODEC_ENCODE_CLOSE_STATE(opus);
+extern tv_transcode_encode_state_t *opus_encode_init_state(tv_audio_prop_t*);
+extern std::vector<std::vector<uint8_t> > opus_encode_sample_vector_to_snippet_vector(tv_transcode_encode_state_t *, std::vector<std::vector<uint8_t> >, uint32_t, uint8_t, uint8_t);
+extern void opus_encode_close_state(tv_transcode_encode_state_t*);
 
-extern CODEC_DECODE_INIT_STATE(opus);
-extern CODEC_DECODE_PACKET(opus);
-extern CODEC_DECODE_CLOSE_STATE(opus);
+extern tv_transcode_decode_state_t *opus_decode_init_state(tv_audio_prop_t*);
+extern std::vector<std::vector<uint8_t> > opus_decode_snippet_vector_to_sample_vector(tv_transcode_decode_state_t *, std::vector<std::vector<uint8_t> >, uint32_t*, uint8_t*, uint8_t*);
+extern void opus_decode_close_state(tv_transcode_decode_state_t*);
 
+// TODO: standardize mins and maxes between all codecs as well?
+
+#define OPUS_MAX_PACKET_SIZE (120*48*255)
 
 #endif

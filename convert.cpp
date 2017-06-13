@@ -399,3 +399,11 @@ std::vector<uint8_t> convert::vector::collapse_2d_vector(
 	}
 	return retval;
 }
+
+uint64_t convert::audio::metadata_to_duration_micro_s(
+	uint64_t size,
+	uint32_t sampling_freq,
+	uint8_t bit_depth,
+	uint8_t channel_count){
+	return (size/(sampling_freq*(bit_depth/8)))*channel_count;
+}

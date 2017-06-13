@@ -229,11 +229,11 @@ static std::vector<id_t_> tv_audio_get_current_frame_audios(){
 				tv_frame_scroll_to_time(
 					audio_frame_tmp,
 					play_time);
-			if(curr_id == ID_BLANK_ID){
-				print("active stream is a blank ID", P_ERR);
+			// stream is no longer active
+			if(curr_id != ID_BLANK_ID){
+				frame_audios.push_back(
+					curr_id);
 			}
-			frame_audios.push_back(
-				curr_id);
 		}
 	}
 	return frame_audios;
@@ -251,18 +251,14 @@ void tv_audio_loop(){
 		tv_audio_clean_audio_data();
 		std::vector<id_t_> current_id_set =
 			tv_audio_get_current_frame_audios();
-		print("CURRENT FRAME AUDIOS", P_WARN);
-		print_id_vector(current_id_set);
 		current_id_set =
 			tv_audio_remove_redundant_ids(
 				current_id_set);
-		print("NON-REDUNDANT ID SET", P_WARN);
-		print_id_vector(current_id_set);
+		if(current_id_set.size() != 0){
+			print("adding a new audio stream chunk", P_NOTE);
+		}
 		tv_audio_add_frame_audios(
 			current_id_set);
-		if(audio_data.size() != 0){
-			P_V(audio_data.size(), P_VAR);
-		}
 	}
 }
 

@@ -108,6 +108,8 @@ std::vector<uint8_t> true_rand_byte_vector(uint32_t size_bytes);
 #define PRINT_IF_EMPTY(x, p_l) if(x.size() == 0){print((std::string)#x + " is empty", p_l);}
 #define CONTINUE_IF_TRUE(x) if(x){continue;}
 
+#define ASSERT(x, p_l) if(!(x)){print("assertion " + (std::string)#x + " failed", p_l);}
+
 std::string fix_to_length(std::string string, uint64_t size);
 
 // debugging and output is exempt from the 80-col rule

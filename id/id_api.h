@@ -102,6 +102,8 @@ namespace id_api{
 	namespace linked_list{
 		// next and previous are in the id itself, no interdependency
 		void link_vector(std::vector<id_t_> vector);
+
+		int64_t pos_in_linked_list(id_t_ ref_id, id_t_ goal_id, uint64_t max_search_radius);
 	};
 	namespace sort{
 		std::vector<id_t_> fingerprint(std::vector<id_t_> tmp);

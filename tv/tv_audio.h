@@ -41,16 +41,24 @@
   Audio properties:
   This is non-exportbale, non-networkable  type that is used for reading,
   writing, and converting in audio streams.
+
+  tv_audio_prop_t must contain all information for properly creating a
+  decoder, since it's the only data type passed to the initializer function
 */
 
 struct tv_audio_prop_t{
 private:
 	uint8_t format = 0;
 	uint8_t flags = 0;
+	// Only guaranteed to be filled on raw sample sets
 	uint8_t bit_depth = 0;
 	uint32_t bit_rate = 0;
 	uint32_t sampling_freq = 0;
 	uint8_t channel_count = 0;
+
+	// since all data is encoded in some way, we can NEVER actually directly
+	// calculate the frame duration from the aforementioned variables
+	uint32_t snippet_duration_micro_s = 0;
 	
 	// 32 bits for an CTL and 32 bits for a value
 	// Opus seems pretty set on 32-bits too
@@ -70,9 +78,13 @@ public:
 	GET_SET(bit_depth, uint8_t);
 	GET_SET(bit_rate, uint32_t);
 	GET_SET(channel_count, uint8_t);
-	
+	GET_SET(snippet_duration_micro_s, uint32_t);
 };
 
+#define PRINT_AUDIO_PROP(audio_prop) P_V((audio_prop).get_sampling_freq(), P_VAR); \
+	P_V((audio_prop).get_bit_depth(), P_VAR);			\
+	P_V((audio_prop).get_channel_count(), P_VAR);			\
+	
 extern tv_audio_prop_t gen_format_only_audio_prop(uint8_t fmt);
 
 extern std::vector<id_t_> tv_audio_load_wav(id_t_ channel_id, uint64_t start_time_micro_s, std::string file);

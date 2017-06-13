@@ -862,3 +862,52 @@ std::vector<std::string> id_gdb_lookup(const char* hex_id){
 	}
 	return {"ID not found"};
 }
+
+int64_t id_api::linked_list::pos_in_linked_list(id_t_ ref_id, id_t_ goal_id, uint64_t max_search_radius){
+	std::pair<id_t_, int64_t> lower_bound =
+		std::make_pair(
+			ref_id, 0);
+	std::pair<id_t_, int64_t> upper_bound =
+		std::make_pair(
+			ref_id, 0);
+	while((uint64_t)abs(lower_bound.second) < max_search_radius && lower_bound.first != ID_BLANK_ID){
+		data_id_t *tmp_id_ptr =
+			PTR_ID(lower_bound.first, );
+		if(tmp_id_ptr == nullptr){
+			break;
+		}
+		std::pair<std::vector<id_t_>, std::vector<id_t_> > linked_list =
+			tmp_id_ptr->get_linked_list();
+		if(linked_list.first.size() == 0){
+			lower_bound.first = ID_BLANK_ID;
+		}else{
+			lower_bound.first =
+				linked_list.first[0];
+			lower_bound.second--;
+		}
+	}
+	if(lower_bound.first == goal_id){
+		return lower_bound.second;
+	}
+	while((uint64_t)abs(upper_bound.second) < max_search_radius && upper_bound.first != ID_BLANK_ID){
+		data_id_t *tmp_id_ptr =
+			PTR_ID(upper_bound.first, );
+		if(tmp_id_ptr == nullptr){
+			break;
+		}
+		std::pair<std::vector<id_t_>, std::vector<id_t_> > linked_list =
+			tmp_id_ptr->get_linked_list();
+		if(linked_list.first.size() == 0){
+			upper_bound.first = ID_BLANK_ID;
+		}else{
+			upper_bound.first =
+				linked_list.first[0];
+			upper_bound.second++;
+		}
+	}
+	if(upper_bound.first == goal_id){
+		return upper_bound.second;
+	}
+	print("unable to find ID in linked list", P_ERR);
+	return 0;
+}

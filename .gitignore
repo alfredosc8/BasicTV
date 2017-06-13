@@ -10,3 +10,4 @@ scripts/TEST*
 basictv
 \#*\#
 push.sh
+vgcore*

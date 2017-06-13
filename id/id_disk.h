@@ -33,6 +33,8 @@
 #define ID_DISK_MEDIUM_SSD 2
 #define ID_DISK_MEDIUM_DISK_LIBRARY 3
 #define ID_DISK_MEDIUM_TAPE_LIBRARY 4
+// not implemented, but would be pretty cool
+#define ID_DISK_MEDIUM_IPFS 5
 
 /*
   Certain enhancements (pushed back to a byte vector), used in conjunction with

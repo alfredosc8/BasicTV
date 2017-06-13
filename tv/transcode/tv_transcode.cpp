@@ -1,13 +1,5 @@
 #include "tv_transcode.h"
 
-/*
-  state_format is a sanity check to prevent audio/video crossover (pointer
-  danger).
-*/
-
-std::vector<tv_transcode_encode_state_t> transcode_encode_state_vector;
-std::vector<tv_transcode_decode_state_t> transcode_decode_state_vector;
-
 id_t_ tv_transcode_encode_state_t::get_start_frame_id(){
 	if(start_frame_id == ID_BLANK_ID){
 		print("invalid start_frame_id", P_ERR);
