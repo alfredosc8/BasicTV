@@ -272,10 +272,8 @@ static std::vector<id_t_> console_tv_test_load_opus(std::string file){
 			print("frame_audio is a nullptr", P_ERR);
 		}
 		ASSERT(frame_audio->get_packet_set().size() != 0, P_ERR);
-		frame_audio->set_standard(
-			start_time,
-			snippet_duration*frame_audio->get_packet_set().size(),
-			i);
+		frame_audio->set_start_time_micro_s(
+			start_time);
 		start_time += snippet_duration*frame_audio->get_packet_set().size();
 		P_V(start_time, P_NOTE);
 	}

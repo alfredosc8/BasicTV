@@ -32,7 +32,7 @@ tv_transcode_state_decode_codec_t decode_vector[CODEC_DECODE_COUNT] =
 					  opus_decode_init_state,
 					  opus_decode_snippet_vector_to_sample_vector,
 					  opus_decode_close_state),
-	tv_transcode_state_decode_codec_t(TV_AUDIO_FORMAT_OPUS,
+	tv_transcode_state_decode_codec_t(TV_AUDIO_FORMAT_WAV,
 					  wave_decode_init_state,
 					  wave_decode_snippet_vector_to_sample_vector,
 					  wave_decode_close_state),

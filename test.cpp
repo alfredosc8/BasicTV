@@ -39,6 +39,8 @@
 
 #include "test.h"
 
+#include "tv/transcode/tv_transcode.h"
+
 /*
   Since these tests are being ran all of the time, there are a few formatting
   requriements I have to follow for my own sake:
@@ -278,7 +280,7 @@ static void test_id_transport(){
 			0,
 			ID_EXTRA_COMPRESS | ID_EXTRA_ENCRYPT,
 			ID_DATA_RULE_UNDEF,
-			ID_DATA_EXPORT_RULE_ALWAYS,
+			ID_DATA_EXPORT_RULE_NEVER,
 			ID_DATA_RULE_UNDEF);
 	id_api::destroy(wallet_set_ptr->id.get_id());
 	wallet_set_ptr = nullptr;
@@ -806,13 +808,65 @@ void test_id_api_raw_fetch(){
 	}
 }
 
+void test_audio_format(uint8_t format){
+	tv_audio_prop_t audio_prop;
+	uint32_t sampling_freq =
+		48000;
+	uint8_t bit_depth =
+		16;
+	uint8_t channel_count =
+		1;
+	audio_prop.set_sampling_freq(
+		sampling_freq);
+	audio_prop.set_bit_depth(
+		bit_depth);
+	audio_prop.set_channel_count(
+		channel_count);
+	tv_transcode_state_encode_codec_t encoder =
+		encode_codec_lookup(
+			format);
+	tv_transcode_state_decode_codec_t decoder =
+		decode_codec_lookup(
+			format);
+	tv_transcode_encode_state_t *encoder_state =
+		encoder.encode_init_state(
+			&audio_prop);
+	tv_transcode_decode_state_t *decoder_state =
+		decoder.decode_init_state(
+			&audio_prop);
+	std::vector<uint8_t> raw_samples =
+		true_rand_byte_vector(
+			65536);
+	std::vector<uint8_t> out_samples =
+		convert::vector::collapse_2d_vector(
+			decoder.decode_snippet_vector_to_sample_vector(
+				decoder_state,
+				encoder.encode_sample_vector_to_snippet_vector(
+					encoder_state,
+					std::vector<std::vector<uint8_t> > ({raw_samples}),
+					sampling_freq,
+					bit_depth,
+					channel_count),
+				&sampling_freq,
+				&bit_depth,
+				&channel_count));
+	if(raw_samples != out_samples){
+		P_V(raw_samples.size(), P_WARN);
+		P_V(out_samples.size(), P_WARN);
+		print("not an exact match", P_ERR);
+	}
+	encoder.encode_close_state(encoder_state);
+	decoder.decode_close_state(decoder_state);
+	encoder_state = nullptr;
+	decoder_state = nullptr;
+}
 
 void test(){
 	std::vector<id_t_> full_id_set =
 		id_api::get_all();
 	RUN_TEST(test_math_number_set);
-	RUN_TEST(test_escape_string);
 	RUN_TEST(test_id_transport);
+	RUN_TEST(test_escape_string);
 	RUN_TEST(test_nbo_transport);
 	RUN_TEST(test_rsa_key_gen);
 	RUN_TEST(test_rsa_encryption);
@@ -822,6 +876,7 @@ void test(){
 	RUN_TEST(test_lock);
 	RUN_TEST(test_number_cmp);
 	RUN_TEST(test_id_api_raw_fetch);
+	test_audio_format(TV_AUDIO_FORMAT_WAV);
 	std::vector<id_t_> extra_id_set =
 		id_api::get_all();
 	for(uint64_t i = 0;i < full_id_set.size();i++){

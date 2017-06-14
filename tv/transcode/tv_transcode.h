@@ -124,5 +124,5 @@ namespace transcode{
 
 #include "tv_transcode_wav.h"
 #include "tv_transcode_opus.h"
-
+#include "tv_transcode_audio.h"
 #endif

@@ -79,10 +79,7 @@ std::vector<std::vector<uint8_t> > wave_encode_sample_vector_to_snippet_vector(t
 	P_V(sampling_freq, P_VAR);
 	P_V(bit_depth, P_VAR);
 	uint64_t snippet_size =
-		state->get_audio_prop().get_snippet_duration_micro_s()*sampling_freq*channel_count;
-	if(snippet_size == 0){
-		snippet_size = (state->get_audio_prop().get_snippet_duration_micro_s()/1000)*sampling_freq*channel_count;
-	}	
+		(state->get_audio_prop().get_snippet_duration_micro_s()/1000)*(sampling_freq)*channel_count;
 	if(snippet_size > raw_data.size()){
 		snippet_size = raw_data.size();
 	}

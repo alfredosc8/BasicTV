@@ -19,12 +19,16 @@ void encrypt_key_t::set_encrypt_key(std::vector<uint8_t> key_,
 	encryption_scheme = encryption_scheme_;
 }
 
-std::pair<uint8_t, std::vector<uint8_t> >  encrypt_key_t::get_encrypt_key(){
+std::pair<uint8_t, std::vector<uint8_t> > encrypt_key_t::get_encrypt_key(){
 	return std::make_pair(encryption_scheme, key);
 }
 
 encrypt_pub_key_t::encrypt_pub_key_t() : id(this, TYPE_ENCRYPT_PUB_KEY_T){
 	list_virtual_data(&id);
+	id.set_lowest_global_flag_level(
+		ID_DATA_NETWORK_RULE_PUBLIC,
+		ID_DATA_EXPORT_RULE_ALWAYS,
+		ID_DATA_PEER_RULE_ALWAYS);
 }
 
 encrypt_pub_key_t::~encrypt_pub_key_t(){}
@@ -33,7 +37,7 @@ encrypt_priv_key_t::encrypt_priv_key_t() : id(this, TYPE_ENCRYPT_PRIV_KEY_T){
 	list_virtual_data(&id);
 	id.set_lowest_global_flag_level(
 		ID_DATA_NETWORK_RULE_NEVER,
-		ID_DATA_EXPORT_RULE_NEVER,
+		ID_DATA_EXPORT_RULE_ALWAYS,
 		ID_DATA_PEER_RULE_NEVER);
 }
 
