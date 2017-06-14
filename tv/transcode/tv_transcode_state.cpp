@@ -2,6 +2,9 @@
 #include "tv_transcode_state.h"
 #include "tv_transcode_audio.h"
 
+std::vector<tv_transcode_encode_state_t> encode_state_vector;
+std::vector<tv_transcode_decode_state_t> decode_state_vector;
+
 // the start id in a tv_transcode_decode/encode_state_t doesn't
 // need to have the start flag, remember, those might not exist
 

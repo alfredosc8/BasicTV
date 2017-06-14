@@ -851,20 +851,23 @@ void test_audio_format(uint8_t format){
 			&audio_prop);
 	std::vector<uint8_t> raw_samples =
 		get_standard_sine_wave_form();
+	std::vector<std::vector<uint8_t> > snippet_vector =
+		encoder.encode_samples_to_snippets(
+			encoder_state,
+			&raw_samples,
+			sampling_freq,
+			bit_depth,
+			channel_count);
 	std::vector<uint8_t> out_samples =
-		convert::vector::collapse_2d_vector(
-			decoder.decode_snippet_vector_to_sample_vector(
-				decoder_state,
-				encoder.encode_sample_vector_to_snippet_vector(
-					encoder_state,
-					std::vector<std::vector<uint8_t> > ({raw_samples}),
-					sampling_freq,
-					bit_depth,
-					channel_count),
-				&sampling_freq,
-				&bit_depth,
-				&channel_count));
-	if(out_samples != raw_samples){
+		decoder.decode_snippets_to_samples(
+			decoder_state,
+			&snippet_vector,
+			&sampling_freq,
+			&bit_depth,
+			&channel_count);
+	
+	if(raw_samples.size() != 0){
+		P_V(raw_samples.size(), P_NOTE);
 		print("lossy conversion took place", P_WARN);
 	}
 	if(out_samples.size() != raw_samples.size()){
@@ -885,24 +888,31 @@ void test_audio_format(uint8_t format){
 	tv_transcode_encode_state_t *encode_state =
 		encode_codec.encode_init_state(
 			&audio_prop);
-	// the following code can ONLY export to WAV, since the state is
-	// recycled (WAV is a stateless codec, at least how it is implemented
-	// right now)
+	/*
+	  There is no general file-writing API for exporting encoded data,
+	  and in most cases, it's more complicated than just routing the
+	  encoded data to a file (Opus uses OGG metadata). However, with
+	  WAV being a non-state codec, and the frames being individual files,
+	  we can set the frame size to be exactly the sample size and we
+	  should be OK to write it to a file.
+
+	  However, i'm not doing that yet
+	 */
 	file::write_file_vector(
 		"raw.wav",
 		convert::vector::collapse_2d_vector(
-			encode_codec.encode_sample_vector_to_snippet_vector(
+			encode_codec.encode_samples_to_snippets(
 				encode_state,
-				std::vector<std::vector<uint8_t> >({raw_samples}),
+				&raw_samples,
 				sampling_freq,
 				bit_depth,
 				channel_count)));
 	file::write_file_vector(
 		"out.wav",
 		convert::vector::collapse_2d_vector(
-			encode_codec.encode_sample_vector_to_snippet_vector(
+			encode_codec.encode_samples_to_snippets(
 				encode_state,
-				std::vector<std::vector<uint8_t> >({out_samples}),
+				&out_samples,
 				sampling_freq,
 				bit_depth,
 				channel_count)));

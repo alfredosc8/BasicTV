@@ -3,10 +3,6 @@
 #include "tv_transcode_state.h"
 #include "opus/opus.h"
 
-/*
-  For simplicity, raw samples don't have a tv_audio_prop_t
- */
-
 #pragma message("assert_opus_input doesn't check beyond format flag, worth fixing?")
 
 /*
@@ -81,7 +77,8 @@ static void assert_opus_prop(tv_audio_prop_t audio_prop){
 	}
 }
 
-// currently doesn't write anything to audio_prop
+#pragma message("opus_encode_init_state doesn't set CTLs for bitrate or specific encoder flags")
+
 tv_transcode_encode_state_t *opus_encode_init_state(tv_audio_prop_t *audio_prop){
 	tv_transcode_encode_state_t state;
 	if(assert_fix_opus_prop(audio_prop)){
@@ -127,41 +124,49 @@ tv_transcode_decode_state_t *opus_decode_init_state(tv_audio_prop_t *audio_prop)
 	return &decode_state_vector[decode_state_vector.size()-1];
 }
 
-std::vector<std::vector<uint8_t> > opus_decode_snippet_vector_to_sample_vector(
+std::vector<uint8_t> opus_decode_snippets_to_samples(
 	tv_transcode_decode_state_t *state,
-	std::vector<std::vector<uint8_t> > snippet_vector,
+	std::vector<std::vector<uint8_t> > *snippet_vector,
 	uint32_t *sampling_freq,
 	uint8_t *bit_depth,
 	uint8_t *channel_count){
 
 	PRINT_IF_NULL(state, P_ERR);
 	PRINT_IF_NULL(state->get_state_ptr(), P_ERR);
-	PRINT_IF_EMPTY(snippet_vector, P_ERR);
-	PRINT_IF_EMPTY(snippet_vector[0], P_ERR);
+	PRINT_IF_EMPTY(*snippet_vector, P_ERR);
+	PRINT_IF_EMPTY((*snippet_vector)[0], P_ERR);
 	ASSERT(sampling_freq != nullptr && bit_depth != nullptr && channel_count != nullptr, P_ERR);
 
+	// Passing incomplete data to this function can work with the
+	// arguments given. We can just allow more than one packet per
+	// vector and end on the first deletion (but there shouldn't be cases
+	// where multiple dimensions are used and it can't decode it all,
+	// since those ought to be encapsulated in a type that needs to
+	// be sent entirely before it is readable (i.e. standard ID'd type)
 
-	std::vector<std::vector<uint8_t> > retval;
-	for(uint64_t i = 0;i < snippet_vector.size();i++){
-		std::vector<uint8_t> tmp(OPUS_MAX_PACKET_SIZE, 0);
+	std::vector<uint8_t> retval;
+	for(uint64_t i = 0;i < snippet_vector->size();i++){
+		std::vector<uint16_t> tmp(OPUS_MAX_PACKET_SIZE, 0);
 		const int32_t opus_retval =
 			opus_decode(
 				(OpusDecoder*)state->get_state_ptr(),
-				snippet_vector[i].data(),
-				snippet_vector[i].size(),
+				&((*snippet_vector)[i])[0],
+				((*snippet_vector)[i]).size(),
 				(opus_int16*)tmp.data(),
 				OPUS_MAX_PACKET_SIZE/state->get_audio_prop().get_channel_count(),
 				0); // FEC
 		if(opus_retval > 0){
 			print("successfuly decode opus data", P_SPAM);
-			tmp.erase(
-				tmp.begin()+opus_retval,
-				tmp.end());
-			retval.push_back(tmp);
+			retval.insert(
+				retval.end(),
+				&(tmp[0]),
+				&(tmp[0])+opus_retval);
 		}else if(opus_retval == 0){
 			print("no opus data to decode", P_WARN);
+			break;
 		}else{
 			print("opus decode failed with error code " + std::to_string(opus_retval), P_WARN);
+			break;
 		}
 	}
 	*sampling_freq = state->get_audio_prop().get_sampling_freq();
@@ -185,16 +190,16 @@ void opus_decode_close_state(tv_transcode_decode_state_t *state){
 		nullptr);
 }
 
-std::vector<std::vector<uint8_t> >  opus_encode_sample_vector_to_snippet_vector(
+std::vector<std::vector<uint8_t> > opus_encode_samples_to_snippets(
 	tv_transcode_encode_state_t* state,
-	std::vector<std::vector<uint8_t> > sample_vector,
+	std::vector<uint8_t> *sample_vector,
 	uint32_t sampling_freq,
 	uint8_t bit_depth,
-	uint8_t channel_count){ // SPSPC is a state property
-
+	uint8_t channel_count){
+	
 	PRINT_IF_NULL(state, P_ERR);
 	PRINT_IF_NULL(state->get_state_ptr(), P_ERR);
-	PRINT_IF_EMPTY(sample_vector, P_ERR);
+	PRINT_IF_EMPTY(*sample_vector, P_ERR);
 	std::vector<std::vector<uint8_t> > retval;
 	if(bit_depth != state->get_audio_prop().get_bit_depth() ||
 	   sampling_freq != state->get_audio_prop().get_sampling_freq() ||
@@ -203,16 +208,16 @@ std::vector<std::vector<uint8_t> >  opus_encode_sample_vector_to_snippet_vector(
 	}
 	const uint32_t iterator_value =
 		get_frame_size(state->get_audio_prop());
-	std::vector<uint8_t> sample_vector_flat =
-		convert::vector::collapse_2d_vector(
-			sample_vector);
 	P_V(iterator_value, P_VAR);
-	for(uint64_t i = 0;sample_vector_flat.size() > iterator_value+i;i += iterator_value){
+	uint64_t old_vector_size = 0;
+	while(sample_vector->size() != old_vector_size && // getting smaller
+	      sample_vector->size() >= iterator_value){ // enough room for packet
+		old_vector_size = sample_vector->size();
 		uint8_t encoded_data_tmp[OPUS_MAX_PACKET_SIZE];
 		const opus_int32 encode_retval =
 			opus_encode(
 				(OpusEncoder*)state->get_state_ptr(),
-				(const opus_int16*)&(sample_vector_flat[i]),
+				(const opus_int16*)&((*sample_vector)[0]),
 				iterator_value,
 				&(encoded_data_tmp[0]),
 				OPUS_MAX_PACKET_SIZE);
@@ -221,23 +226,15 @@ std::vector<std::vector<uint8_t> >  opus_encode_sample_vector_to_snippet_vector(
 				std::vector<uint8_t>(
 					&(encoded_data_tmp[0]),
 					&(encoded_data_tmp[0])+encode_retval));
+			sample_vector->erase(
+				sample_vector->begin(),
+				sample_vector->begin()+iterator_value);
 		}else if(encode_retval == 0){
 			print("no data encoded", P_WARN);
 		}else{
 			print("opus encode failed with error " + std::to_string(encode_retval), P_ERR);
-			/*
-			  Opus' state is a shallow copy, so we could back up
-			  the state information and re-create it later, but i'm 
-			  not sure how common that would be across codecs.
-			  It's useful enough for me to look into it at least.
-
-			  I'm fine with cloning tv_transcode_*_state_t with
-			  different depths for this sort of use case as
-			  a generic state codec function.
-			*/
 		}
 	}
-	P_V((long double)sample_vector_flat.size()/(long double)iterator_value, P_NOTE);
 	return retval;
 }
 

@@ -240,7 +240,7 @@ static std::vector<id_t_> console_tv_test_load_opus(std::string file){
 
 	std::vector<std::vector<uint8_t> > packetized_codec_data =
 		transcode::audio::raw::to_codec(
-			std::vector<std::vector<uint8_t> >({raw_samples}),
+			&raw_samples,
 			sampling_freq,
 			bit_depth,
 			channel_count,
@@ -250,7 +250,7 @@ static std::vector<id_t_> console_tv_test_load_opus(std::string file){
 	}
 	std::vector<id_t_> retval =
 		transcode::audio::codec::to_frames(
-			packetized_codec_data,
+			&packetized_codec_data,
 			&opus_audio_prop,
 			&frame_audio_prop,
 			1000*1000);

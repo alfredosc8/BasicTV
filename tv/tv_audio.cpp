@@ -6,8 +6,45 @@
 #include "tv.h"
 #include "../convert.h"
 #include "../settings.h"
-
 #include "transcode/tv_transcode.h"
+#include "../util.h"
+
+/*
+  We have more flexibility to make things right now that the codebase
+  has switched to SDL_Audio
+
+  tv_audio_raw_queue_t stores the raw samples that need to be played,
+  as well as the actual time to play them (incorporating the window's
+  timestamp offset)
+
+  The SDL audio callback function just goes through that list, 
+  finds all of the chunks of audio to play next, asserts there is
+  only one, and appends that to the data to play.
+
+  Multiple streams can be a problem, since with only one stream, we know
+  that the information we have that is next in line (via the timestamp) is
+  what should be queried up next, but creating another type via SDL's userdata
+  field for a seperate datatype to help with this would be needed and useful.
+ */
+
+struct tv_audio_raw_queue_t{
+public:
+	std::vector<uint8_t> raw_samples;
+	uint32_t sampling_freq = 0;
+	uint8_t bit_depth = 0;
+	uint8_t channel_count = 0;
+
+	uint64_t start_time_micro_s = 0;
+	uint64_t end_time_micro_s = 0;
+
+	uint32_t window_active_stream_entry = 0;
+	uint32_t item_active_stream_entry = 0;
+
+	id_t_ frame_id = ID_BLANK_ID;
+};
+
+static SDL_AudioDeviceID audio_device_id = 0;
+static SDL_AudioSpec desired, have;
 
 static uint32_t output_sampling_rate = 0;
 static uint8_t output_bit_depth = 0;
@@ -33,6 +70,83 @@ void tv_audio_prop_t::list_virtual_data(data_id_t *id){
 	id->add_data_raw(&sampling_freq, sizeof(sampling_freq));
 }
 
+static std::vector<tv_audio_raw_queue_t> audio_queue;
+
+#pragma message("no conversion done with tv_audio_load_samples_queue, sketchy")
+
+static void tv_audio_load_samples_queue(){
+	uint64_t audio_to_queue = 0;
+	for(uint64_t i = 0;i < audio_queue.size();i++){
+		if(audio_queue[i].start_time_micro_s > get_time_microseconds() &&
+		   audio_queue[i].start_time_micro_s < audio_queue[audio_to_queue].start_time_micro_s){
+			audio_to_queue = i;
+		}
+	}
+	if(audio_queue.size() != 0){
+		SDL_QueueAudio(
+			audio_device_id,
+			audio_queue[audio_to_queue].raw_samples.data(),
+			audio_queue[audio_to_queue].raw_samples.size());
+		audio_queue.erase(
+			audio_queue.begin()+audio_to_queue);
+	}
+}
+
+/*
+  We can assume that frame_audio_id is from the output of 
+  tv_frame_scroll_to_time
+ */
+
+static void tv_audio_add_id_to_audio_queue(id_t_ window_id,
+					   id_t_ frame_audio_id,
+					   uint64_t forward_buffer_micro_s){
+	std::vector<id_t_> id_vector({frame_audio_id});
+	tv_window_t *window_ptr =
+		PTR_DATA(window_id,
+			 tv_window_t);
+	tv_frame_audio_t *frame_audio_ptr =
+		PTR_DATA(frame_audio_id,
+			 tv_frame_audio_t);
+	while(frame_audio_ptr != nullptr &&
+	      frame_audio_ptr->get_end_time_micro_s() < forward_buffer_micro_s){
+		std::pair<std::vector<id_t_>, std::vector<id_t_> > linked_list =
+			frame_audio_ptr->id.get_linked_list();
+		frame_audio_ptr =
+			PTR_DATA(linked_list.second[0],
+				 tv_frame_audio_t);
+		id_vector.push_back(
+			linked_list.second[0]);
+	}
+	for(uint64_t i = 0;i < audio_queue.size();i++){
+		for(uint64_t c = 0;c < id_vector.size();c++){
+			if(audio_queue[i].frame_id == id_vector[c]){
+				id_vector.erase(
+					id_vector.begin()+c);
+			}
+		}
+	}
+	for(uint64_t i = 0;i < id_vector.size();i++){
+		tv_audio_raw_queue_t queue;
+		queue.raw_samples =
+			transcode::audio::frames::to_raw(
+				std::vector<id_t_>({id_vector[i]}),
+				&queue.sampling_freq,
+				&queue.bit_depth,
+				&queue.channel_count);
+		tv_frame_audio_t *frame_audio_ptr_ =
+			PTR_DATA(id_vector[i],
+				 tv_frame_audio_t);
+		CONTINUE_ON_NULL(frame_audio_ptr, P_WARN);
+		queue.start_time_micro_s =
+			frame_audio_ptr_->get_start_time_micro_s()+window_ptr->get_timestamp_offset();
+		queue.end_time_micro_s =
+			frame_audio_ptr_->get_end_time_micro_s()+window_ptr->get_timestamp_offset();
+		queue.frame_id =
+			id_vector[i];
+		audio_queue.push_back(
+			queue);
+	}
+}
 static uint32_t tv_audio_sdl_format_from_depth(uint8_t bit_depth){
 	switch(bit_depth){
 	case 24:
@@ -42,7 +156,7 @@ static uint32_t tv_audio_sdl_format_from_depth(uint8_t bit_depth){
 		return AUDIO_U16LSB;
 	case 8:
 		print("using unsigned 8-bit system byte order (are you sure you want to do this?)", P_WARN);
-		return AUDIO_U8; // no SYS in 8-bit, is it assumed?
+		return AUDIO_U8;
 	default:
 		print("unknown bit depth for SDL conversion, using 16-bit", P_WARN);
 		return AUDIO_U16LSB;
@@ -72,175 +186,51 @@ void tv_audio_init(){
 			output_bit_depth = TV_AUDIO_DEFAULT_BIT_DEPTH;
 			output_chunk_size = TV_AUDIO_DEFAULT_CHUNK_SIZE;
 		}
-		if(Mix_OpenAudio(output_sampling_rate,
-				 tv_audio_sdl_format_from_depth(
-					 output_bit_depth),
-				 1,
-				 output_chunk_size) < 0){
-			P_V(output_sampling_rate, P_WARN);
-			P_V(output_bit_depth, P_WARN);
-			P_V(output_chunk_size, P_WARN);
-			print("cannot open audio:" + (std::string)(Mix_GetError()), P_ERR);
+		CLEAR(desired);
+		CLEAR(have);
+		desired.freq =
+			output_sampling_rate;
+		desired.format =
+			tv_audio_sdl_format_from_depth(
+				output_bit_depth);
+		desired.channels =
+			1; // temporary
+		desired.samples =
+			65535; // Decoding latencies can push this pretty far
+		desired.callback =
+			nullptr;
+		audio_device_id =
+			SDL_OpenAudioDevice(
+				SDL_GetAudioDeviceName(
+					0, // index of the data from [0, SDL_GetNumAudioDevices()-1]
+					0), // cah it record as well?
+				0, // can it open for recording
+				&desired,
+				&have,
+				0);
+		if(audio_device_id == 0){
+			P_V(desired.freq, P_WARN);
+			P_V(desired.format, P_WARN);
+			P_V(desired.channels, P_WARN);
+			P_V(desired.samples, P_WARN);
+			P_V(have.freq, P_WARN);
+			P_V(have.format, P_WARN);
+			P_V(have.channels, P_WARN);
+			P_V(have.samples, P_WARN);
+			print("cannot open audio:" + (std::string)(SDL_GetError()), P_ERR);
 		}
 	}else{
 		print("audio has been disabled in the settings", P_NOTE);
 	}
 }
 
-/*
-  First is the ID for the tv_frame_audio_t type
-  Second is the timestamp (in microseconds) that the playback ends (this is
-  computed from the end_time_micro_s() function in the tv_frame_audio_t type
-  with the timestamp_offset of tv_window_t
-  Third is the Mix_Chunk that SDL_mixer uses
-
-  To prevent blips on older machines, I should either move towards SDL_Audio and
-  feeding PCM information directly, or just add a start time with the end time,
-  so there isn't a need for OTF conversions between sampling frequencies. I'm
-  not worried about the little blips for now, and I haven't seen any problems
-  as long as I don't use Valgrind
- */
-
-std::vector<std::tuple<id_t_, uint64_t, Mix_Chunk*> > audio_data;
-
-static void tv_audio_clean_audio_data(){
-	const uint64_t cur_time_micro_s =
-		get_time_microseconds();
-	for(uint64_t i = 0;i < audio_data.size();i++){
-		const uint64_t end_time_micro_s =
-			std::get<1>(audio_data[i]);
-		// Make sure that SDL is done with it (should use locks)
-		if(end_time_micro_s < cur_time_micro_s){
-			print("destroying old audio data", P_SPAM);
-			Mix_Chunk **ptr =
-				&std::get<2>(audio_data[i]);
-			// should always not be null
-			if(*ptr != nullptr){
-				Mix_FreeChunk(*ptr);
-				*ptr = nullptr;
-				ptr = nullptr;
-			}
-			audio_data.erase(audio_data.begin()+i);
-		}
-	}
-}
-
-/*
-  All frame_audios entries need to be started NOW, so don't offset anything
- */
-
-static std::vector<id_t_> tv_audio_remove_redundant_ids(std::vector<id_t_> frame_audios){
-	for(uint64_t i = 0;i < frame_audios.size();i++){
-		for(uint64_t c = 0;c < audio_data.size();c++){
-			if(frame_audios[i] == std::get<0>(audio_data[c])){
-				frame_audios.erase(
-					frame_audios.begin()+i);
-				i--;
-				c = 0;
-			}
-		}
-	}
-	return frame_audios;
-}
-
-static void tv_audio_add_frame_audios(std::vector<id_t_> frame_audios){
-	const uint64_t cur_timestamp_microseconds =
-		get_time_microseconds();
-	for(uint64_t i = 0;i < frame_audios.size();i++){
-		tv_frame_audio_t *audio =
-			PTR_DATA(frame_audios[i],
-				 tv_frame_audio_t);
-		P_V_S(convert::type::from(get_id_type(frame_audios[i])), P_WARN);
-		if(audio == nullptr){
-			print("audio is a nullptr", P_WARN);
-			continue;
-		}
-		P_V((int64_t)audio->get_start_time_micro_s()-(int64_t)get_time_microseconds(), P_NOTE);
-		const uint64_t ttl_micro_s =
-			audio->get_ttl_micro_s();
-		tv_audio_prop_t wav_audio_prop;
-		wav_audio_prop.set_flags(
-			TV_AUDIO_PROP_FORMAT_ONLY);
-		wav_audio_prop.set_format(
-			TV_AUDIO_FORMAT_WAV);
-		uint32_t sampling_freq = 0;
-		uint8_t bit_depth = 0;
-		uint8_t channel_count = 0;
-		tv_audio_prop_t wave_transcode_prop;
-		wave_transcode_prop.set_format(
-			TV_AUDIO_FORMAT_WAV);
-		wave_transcode_prop.set_flags(
-			TV_AUDIO_PROP_FORMAT_ONLY);
-		wave_transcode_prop.set_snippet_duration_micro_s(
-			1000*10);
-		auto wave_encode_state =
-			wave_encode_init_state(
-				&wave_transcode_prop);
-		auto wave_decode_state =
-			wave_decode_init_state(
-				&wave_transcode_prop);
-		std::vector<uint8_t> raw_sample_set =
-			convert::vector::collapse_2d_vector(
-				wave_decode_snippet_vector_to_sample_vector(
-					wave_decode_state,
-					transcode::audio::frames::to_codec(
-					{frame_audios[i]},
-					&wav_audio_prop),
-					&sampling_freq,
-					&bit_depth,
-					&channel_count));
-		P_V(sampling_freq, P_NOTE);
-		P_V(bit_depth, P_NOTE);
-		P_V(channel_count, P_NOTE);
-		std::vector<uint8_t> wav_data =
-			wave_encode_sample_vector_to_snippet_vector(
-				wave_encode_state,
-				std::vector<std::vector<uint8_t> >({raw_sample_set}),
-				sampling_freq,
-				bit_depth,
-				channel_count)[0];
-				
-		P_V(wav_data.size(), P_VAR);
-		P_V(wav_audio_prop.get_sampling_freq(), P_VAR);
-		P_V(wav_audio_prop.get_bit_rate(), P_VAR);
-		P_V(wav_audio_prop.get_bit_depth(), P_VAR);
-		P_V(wav_audio_prop.get_channel_count(), P_VAR);
-		P_V(sampling_freq, P_VAR);
-		P_V(bit_depth, P_VAR);
-		P_V(channel_count, P_VAR);
-		SDL_RWops *rw =
-			SDL_RWFromMem(
-				wav_data.data(),
-				wav_data.size());
-		if(rw == nullptr){
-			print("can't allocate SDL_RWops:"+(std::string)SDL_GetError(), P_ERR);
-		}
-		Mix_Chunk *chunk =
-			Mix_LoadWAV_RW(rw, 1);
-		if(chunk == nullptr){
-			print("can't load Mix_Chunk:"+(std::string)Mix_GetError(), P_ERR);
-		}
-		std::tuple<id_t_,
-			   uint64_t,
-			   Mix_Chunk*> new_data =
-			std::make_tuple(
-				frame_audios[i],
-				cur_timestamp_microseconds+ttl_micro_s,
-				chunk);
-		print("appending tv_frame_audio_t tuple to audio_data", P_SPAM);
-		audio_data.push_back(new_data);
-		print("playing audio", P_SPAM);
-		Mix_PlayChannel(-1, chunk, 0);
-	}
-}
-
-static std::vector<id_t_> tv_audio_get_current_frame_audios(){
+static std::vector<std::pair<id_t_, id_t_> > tv_audio_get_current_frame_audios(){
 	std::vector<id_t_> windows =
 		id_api::cache::get(
 			"tv_window_t");
 	const uint64_t cur_timestamp_micro_s =
 		get_time_microseconds();
-	std::vector<id_t_> frame_audios;
+	std::vector<std::pair<id_t_, id_t_> > frame_audios;
 	for(uint64_t i = 0;i < windows.size();i++){
 		tv_window_t *window =
 			PTR_DATA(windows[i],
@@ -271,7 +261,9 @@ static std::vector<id_t_> tv_audio_get_current_frame_audios(){
 			// stream is no longer active
 			if(curr_id != ID_BLANK_ID){
 				frame_audios.push_back(
-					curr_id);
+					std::make_pair(
+						windows[i],
+						curr_id));
 			}else{
 				print("curr_id is a nullptr, probably an invalid timestamp", P_WARN);
 			}
@@ -280,26 +272,17 @@ static std::vector<id_t_> tv_audio_get_current_frame_audios(){
 	return frame_audios;
 }
 
-static void print_id_vector(std::vector<id_t_> id_vector){
-	for(uint64_t i = 0;i < id_vector.size();i++){
-		P_V_S(convert::array::id::to_hex(id_vector[i]), P_NOTE);
-	}
-}
-
 void tv_audio_loop(){
 	if(settings::get_setting("audio") == "true"){
-		Mix_Volume(-1, MIX_MAX_VOLUME); // -1 sets all channels
-		tv_audio_clean_audio_data();
-		std::vector<id_t_> current_id_set =
+		std::vector<std::pair<id_t_, id_t_> > current_frame_audios =
 			tv_audio_get_current_frame_audios();
-		current_id_set =
-			tv_audio_remove_redundant_ids(
-				current_id_set);
-		if(current_id_set.size() != 0){
-			print("adding a new audio stream chunk (post-clean)", P_NOTE);
+		for(uint64_t i = 0;i < current_frame_audios.size();i++){
+			tv_audio_add_id_to_audio_queue(
+				current_frame_audios[i].first,
+				current_frame_audios[i].second,
+				10000000);
 		}
-		tv_audio_add_frame_audios(
-			current_id_set);
+		tv_audio_load_samples_queue();
 	}
 }
 

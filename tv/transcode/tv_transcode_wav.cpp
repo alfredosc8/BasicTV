@@ -61,31 +61,28 @@ void wave_decode_close_state(tv_transcode_decode_state_t *decode_state){
  */
 
 
-std::vector<std::vector<uint8_t> > wave_encode_sample_vector_to_snippet_vector(tv_transcode_encode_state_t *state,
-									       std::vector<std::vector<uint8_t> > raw_data_,
-									       uint32_t sampling_freq,
-									       uint8_t bit_depth,
-									       uint8_t channel_count){
+std::vector<std::vector<uint8_t> > wave_encode_samples_to_snippets(tv_transcode_encode_state_t *state,
+								   std::vector<uint8_t> *raw_data,
+								   uint32_t sampling_freq,
+								   uint8_t bit_depth,
+								   uint8_t channel_count){
 	PRINT_IF_NULL(state, P_ERR);
-	PRINT_IF_EMPTY(raw_data_, P_ERR);
-	PRINT_IF_EMPTY(raw_data_[0], P_ERR);
+	PRINT_IF_EMPTY(*raw_data, P_ERR);
 	if(channel_count != 1){
 		print("multichannel WAV isn't supported right now", P_ERR);
 	}
 	std::vector<std::vector<uint8_t> > retval;
-	std::vector<uint8_t> raw_data =
-		convert::vector::collapse_2d_vector(
-			raw_data_);
-	P_V(sampling_freq, P_VAR);
-	P_V(bit_depth, P_VAR);
 	uint64_t snippet_size =
 		(state->get_audio_prop().get_snippet_duration_micro_s()/1000)*(sampling_freq)*channel_count;
-	if(snippet_size > raw_data.size()){
-		snippet_size = raw_data.size();
+	if(snippet_size > raw_data->size()){
+		/*
+		  WAVE is complying as hard as it can right now to the state
+		  system that's in place for Opus
+		 */
 	}
-	P_V(snippet_size, P_VAR);
-	P_V(raw_data.size(), P_VAR);
-	for(uint64_t i = 0;i <= raw_data.size()-snippet_size;i += snippet_size){
+	uint64_t old_vector_size = 0;
+	while(raw_data->size() != old_vector_size &&
+	      raw_data->size() >= snippet_size){
 		std::vector<uint8_t> tmp;
 		wave_push_back(&tmp, "RIFF");
 		wave_push_back(&tmp, (uint32_t)(snippet_size+36));
@@ -106,8 +103,11 @@ std::vector<std::vector<uint8_t> > wave_encode_sample_vector_to_snippet_vector(t
 			tmp);
 		retval[retval.size()-1].insert(
 			retval[retval.size()-1].end(),
-			raw_data.begin()+i,
-			raw_data.begin()+i+snippet_size);
+			raw_data->begin(),
+			raw_data->begin()+snippet_size);
+		raw_data->erase(
+			raw_data->begin(),
+			raw_data->begin()+snippet_size);
 	}
 	return retval;
 }
@@ -143,41 +143,70 @@ static uint64_t wave_pull_back_eight_byte(std::vector<uint8_t> *data, uint32_t l
 
 #pragma message("haven't tested wav_decode_raw, seems pretty sketch")
 
-std::vector<std::vector<uint8_t> > wave_decode_snippet_vector_to_sample_vector(tv_transcode_decode_state_t *state,
-									       std::vector<std::vector<uint8_t> > wav_data,
-									       uint32_t *sampling_freq,
-									       uint8_t *bit_depth,
-									       uint8_t *channel_count){
+#define DISCREP_DETECT(x) if(*x != state->get_audio_prop().get_##x()){print((std::string)#x + " discrepency detected in wave", P_ERR);}
+
+#pragma message("wave_decode_snippets_to_samples doesn't search for start of next packet in subvectors, should be safe to do with precautions")
+
+std::vector<uint8_t> wave_decode_snippets_to_samples(tv_transcode_decode_state_t *state,
+						     std::vector<std::vector<uint8_t> > *wav_data,
+						     uint32_t *sampling_freq,
+						     uint8_t *bit_depth,
+						     uint8_t *channel_count){
 	// used internally in tv_audio without a state, pretty hacky, but
 	// it works I guess (should go with RAW samples)
-	try{PRINT_IF_NULL(state, P_ERR)}catch(...){}
-	PRINT_IF_EMPTY(wav_data, P_ERR);
-	PRINT_IF_EMPTY(wav_data[0], P_ERR);
-	std::vector<std::vector<uint8_t> > retval;
-	for(uint64_t i = 0;i < wav_data.size();i++){
-		wave_pull_back(&wav_data[i], "RIFF");
-		wave_pull_back(&wav_data[i], 4);
-		wave_pull_back(&wav_data[i], "WAVE");
-		wave_pull_back(&wav_data[i], "fmt ");
-		wave_pull_back(&wav_data[i], 4); // length of data section
-		wave_pull_back(&wav_data[i], 2); // uncompressed PCM
-		*channel_count =
-			wave_pull_back_eight_byte(&wav_data[i], 2); // channel count
-		*sampling_freq =
-			wave_pull_back_eight_byte(&wav_data[i], 4);
-		wave_pull_back(&wav_data[i], 4);
-		wave_pull_back(&wav_data[i], 2); // block align
-		*bit_depth = 
-			wave_pull_back_eight_byte(&wav_data[i], 2);
-		wave_pull_back(&wav_data[i], "data");
-		wave_pull_back(&wav_data[i], 4);
-		P_V(*sampling_freq, P_VAR);
-		P_V(*bit_depth, P_VAR);
-		P_V(*channel_count, P_VAR);
-		if(*channel_count != 1){
-			print("there is no formal multi-channel format for raw, should copy WAV", P_ERR);
+	PRINT_IF_NULL(state, P_ERR);
+	// state->get_state_ptr() is useless right now
+	PRINT_IF_EMPTY(*wav_data, P_ERR);
+	PRINT_IF_EMPTY((*wav_data)[0], P_ERR);
+	std::vector<uint8_t> retval;
+	const uint64_t snippet_size =
+		(state->get_audio_prop().get_snippet_duration_micro_s()/1000)*(state->get_audio_prop().get_sampling_freq())*state->get_audio_prop().get_channel_count();
+	for(uint64_t c = 0;c < wav_data->size();c++){
+		uint64_t old_vector_size = 0;
+		while((*wav_data)[c].size() != old_vector_size){
+			old_vector_size = (*wav_data)[c].size();
+			wave_pull_back(&(*wav_data)[c], "RIFF");
+			wave_pull_back(&(*wav_data)[c], 4);
+			wave_pull_back(&(*wav_data)[c], "WAVE");
+			wave_pull_back(&(*wav_data)[c], "fmt ");
+			wave_pull_back(&(*wav_data)[c], 4); // length of data section
+			wave_pull_back(&(*wav_data)[c], 2); // uncompressed PCM
+			*channel_count =
+				wave_pull_back_eight_byte(&(*wav_data)[c], 2); // channel count
+			*sampling_freq =
+				wave_pull_back_eight_byte(&(*wav_data)[c], 4);
+			wave_pull_back(&(*wav_data)[c], 4);
+			wave_pull_back(&(*wav_data)[c], 2); // block align
+			*bit_depth = 
+				wave_pull_back_eight_byte(&(*wav_data)[c], 2);
+			wave_pull_back(&(*wav_data)[c], "data");
+			DISCREP_DETECT(channel_count);
+			DISCREP_DETECT(sampling_freq);
+			DISCREP_DETECT(bit_depth);
+			const uint32_t chunk_size =
+				(uint32_t)wave_pull_back_eight_byte(&(*wav_data)[c], 4);
+			if((uint32_t)chunk_size != (uint32_t)snippet_size){
+				// We can pretty much definitively end this safely by
+				// just searching for the next header format, but
+				// WAVE is foolproof enough that only malicious clients
+				// would trip it right now (and I have other things
+				// to work on right now)
+				print("discrepency between wave chunk size and state chunk size, can't definitively end", P_ERR);
+			}
+			P_V(*sampling_freq, P_VAR);
+			P_V(*bit_depth, P_VAR);
+			P_V(*channel_count, P_VAR);
+			if(*channel_count != 1){
+				print("there is no formal multi-channel format for raw, should copy WAV", P_ERR);
+			}
+			retval.insert(
+				retval.end(),
+				(*wav_data)[c].begin(),
+				(*wav_data)[c].begin()+chunk_size);
+			(*wav_data)[c].erase(
+				(*wav_data)[c].begin(),
+				(*wav_data)[c].begin()+chunk_size);
 		}
-		retval.push_back(wav_data[i]);
 	}
 	return retval;
 }
