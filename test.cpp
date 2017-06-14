@@ -808,6 +808,19 @@ void test_id_api_raw_fetch(){
 	}
 }
 
+static std::vector<uint8_t> get_standard_sine_wave_form(){
+	std::vector<uint8_t> retval;
+	for(uint64_t i = 0;i < 48000*10;i++){
+		uint16_t tmp =
+			NBO_16((uint16_t)((long double)(sin(1000 * (2 * 3.1415) * i / 48000))*65535));
+		retval.insert(
+			retval.end(),
+			&tmp,
+			&tmp+1);
+	}
+	return retval;
+}
+
 void test_audio_format(uint8_t format){
 	tv_audio_prop_t audio_prop;
 	uint32_t sampling_freq =
@@ -822,6 +835,8 @@ void test_audio_format(uint8_t format){
 		bit_depth);
 	audio_prop.set_channel_count(
 		channel_count);
+	audio_prop.set_format(
+		format);
 	tv_transcode_state_encode_codec_t encoder =
 		encode_codec_lookup(
 			format);
@@ -835,8 +850,7 @@ void test_audio_format(uint8_t format){
 		decoder.decode_init_state(
 			&audio_prop);
 	std::vector<uint8_t> raw_samples =
-		true_rand_byte_vector(
-			65536);
+		get_standard_sine_wave_form();
 	std::vector<uint8_t> out_samples =
 		convert::vector::collapse_2d_vector(
 			decoder.decode_snippet_vector_to_sample_vector(
@@ -850,11 +864,49 @@ void test_audio_format(uint8_t format){
 				&sampling_freq,
 				&bit_depth,
 				&channel_count));
-	if(raw_samples != out_samples){
+	if(out_samples != raw_samples){
+		print("lossy conversion took place", P_WARN);
+	}
+	if(out_samples.size() != raw_samples.size()){
 		P_V(raw_samples.size(), P_WARN);
 		P_V(out_samples.size(), P_WARN);
-		print("not an exact match", P_ERR);
+		print("different number of samples", P_WARN);
 	}
+	/*
+	  the test actually finishes by playing the two sounds back to back,
+	  since creating, looping, and destroying the entire audio sound
+	  system not only falls outside of what we are testing, but introduces
+	  a ton of other problems that are best dealt with individually
+	 */
+	tv_transcode_state_encode_codec_t encode_codec =
+		encode_codec_lookup(
+			TV_AUDIO_FORMAT_WAV);
+	audio_prop.set_format(TV_AUDIO_FORMAT_WAV);
+	tv_transcode_encode_state_t *encode_state =
+		encode_codec.encode_init_state(
+			&audio_prop);
+	// the following code can ONLY export to WAV, since the state is
+	// recycled (WAV is a stateless codec, at least how it is implemented
+	// right now)
+	file::write_file_vector(
+		"raw.wav",
+		convert::vector::collapse_2d_vector(
+			encode_codec.encode_sample_vector_to_snippet_vector(
+				encode_state,
+				std::vector<std::vector<uint8_t> >({raw_samples}),
+				sampling_freq,
+				bit_depth,
+				channel_count)));
+	file::write_file_vector(
+		"out.wav",
+		convert::vector::collapse_2d_vector(
+			encode_codec.encode_sample_vector_to_snippet_vector(
+				encode_state,
+				std::vector<std::vector<uint8_t> >({out_samples}),
+				sampling_freq,
+				bit_depth,
+				channel_count)));
+			
 	encoder.encode_close_state(encoder_state);
 	decoder.decode_close_state(decoder_state);
 	encoder_state = nullptr;
@@ -876,7 +928,7 @@ void test(){
 	RUN_TEST(test_lock);
 	RUN_TEST(test_number_cmp);
 	RUN_TEST(test_id_api_raw_fetch);
-	test_audio_format(TV_AUDIO_FORMAT_WAV);
+	test_audio_format(TV_AUDIO_FORMAT_OPUS);
 	std::vector<id_t_> extra_id_set =
 		id_api::get_all();
 	for(uint64_t i = 0;i < full_id_set.size();i++){

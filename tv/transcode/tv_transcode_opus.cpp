@@ -13,6 +13,12 @@
   TODO: should make these settings, but that's for another time
  */
 
+static uint64_t get_frame_size(tv_audio_prop_t audio_prop){
+	const uint64_t retval = (audio_prop.get_snippet_duration_micro_s()/1000)*(audio_prop.get_sampling_freq()/1000)*audio_prop.get_channel_count();
+	P_V(retval, P_NOTE);
+	return retval;
+}
+
 static tv_audio_prop_t gen_standard_opus_format(){
 	tv_audio_prop_t retval;
 	retval.set_sampling_freq(
@@ -24,7 +30,7 @@ static tv_audio_prop_t gen_standard_opus_format(){
 	retval.set_channel_count(
 		1);
 	retval.set_snippet_duration_micro_s(
-		60000);
+		10000);
 	retval.set_format(
 		TV_AUDIO_FORMAT_OPUS);
 	return retval;
@@ -56,10 +62,10 @@ static bool assert_fix_opus_prop(tv_audio_prop_t *audio_prop){
 				1);
 			tainted = true;
 		}
-		if(audio_prop->get_snippet_duration_micro_s() != 60000){
+		if(audio_prop->get_snippet_duration_micro_s() != 2500){
 			print("only going with 60ms frame sizes right now, can expand when proven to work", P_WARN);
 			audio_prop->set_snippet_duration_micro_s(
-				60000);
+				2500);
 		}
 	}else{
 		print("only format is valid, inserting sane defaults", P_NOTE);
@@ -146,7 +152,7 @@ std::vector<std::vector<uint8_t> > opus_decode_snippet_vector_to_sample_vector(
 				snippet_vector[i].data(),
 				snippet_vector[i].size(),
 				&(pcm_out[0]),
-			        (state->get_audio_prop().get_sampling_freq()/1000)*state->get_audio_prop().get_channel_count()*(state->get_audio_prop().get_snippet_duration_micro_s()/1000),
+				OPUS_MAX_PACKET_SIZE/state->get_audio_prop().get_channel_count(),
 				0); // FEC
 		if(opus_retval < 0){
 			break;
@@ -195,22 +201,18 @@ std::vector<std::vector<uint8_t> >  opus_encode_sample_vector_to_snippet_vector(
 	PRINT_IF_NULL(state->get_state_ptr(), P_ERR);
 	PRINT_IF_EMPTY(sample_vector, P_ERR);
 	std::vector<std::vector<uint8_t> > retval;
-	if(bit_depth != 16){
-		// not good, should probably fix
-		print("not bothering with non-16 bit bit depth", P_ERR);
-	}
-	if(channel_count != 1){
-		print("not bothering with non-mono audio", P_ERR);
+	if(bit_depth != state->get_audio_prop().get_bit_depth() ||
+	   sampling_freq != state->get_audio_prop().get_sampling_freq() ||
+	   channel_count != state->get_audio_prop().get_channel_count()){
+		print("there is no raw transcoding yet, so I can't do anything", P_ERR);
 	}
 	const uint32_t iterator_value =
-		(sampling_freq/1000)*
-		channel_count*
-		(state->get_audio_prop().get_snippet_duration_micro_s()/1000);
+		get_frame_size(state->get_audio_prop());
 	std::vector<uint8_t> sample_vector_flat =
 		convert::vector::collapse_2d_vector(
 			sample_vector);
 	P_V(iterator_value, P_VAR);
-	for(uint64_t i = 0;i < sample_vector_flat.size()-iterator_value;i += iterator_value){
+	for(uint64_t i = 0;sample_vector_flat.size() > iterator_value+i;i += iterator_value){
 		uint8_t encoded_data_tmp[OPUS_MAX_PACKET_SIZE];
 		const opus_int32 encode_retval =
 			opus_encode(
@@ -240,6 +242,7 @@ std::vector<std::vector<uint8_t> >  opus_encode_sample_vector_to_snippet_vector(
 			*/
 		}
 	}
+	P_V((long double)sample_vector_flat.size()/(long double)iterator_value, P_NOTE);
 	return retval;
 }
 

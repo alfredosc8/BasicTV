@@ -161,3 +161,14 @@ std::vector<uint8_t> file::read_file_vector(std::string file){
 		std::back_inserter(retval));
 	return retval;
 }
+
+void file::write_file_vector(std::string file, std::vector<uint8_t> raw_data){
+	std::ofstream out(file, std::ios::binary);
+	if(out.is_open() == false){
+		print("can't open file for writing", P_ERR);
+	}
+	out.write(
+		(char*)&(raw_data[0]),
+		raw_data.size());
+	out.close();
+}

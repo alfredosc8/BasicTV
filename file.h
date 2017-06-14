@@ -24,5 +24,6 @@ namespace file{
 	std::string ensure_slash_at_end(std::string str);
 
 	std::vector<uint8_t> read_file_vector(std::string file);
+	void write_file_vector(std::string file, std::vector<uint8_t> raw_data);
 }
 #endif
