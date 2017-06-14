@@ -928,7 +928,7 @@ void test(){
 	RUN_TEST(test_lock);
 	RUN_TEST(test_number_cmp);
 	RUN_TEST(test_id_api_raw_fetch);
-	test_audio_format(TV_AUDIO_FORMAT_OPUS);
+	//test_audio_format(TV_AUDIO_FORMAT_OPUS);
 	std::vector<id_t_> extra_id_set =
 		id_api::get_all();
 	for(uint64_t i = 0;i < full_id_set.size();i++){

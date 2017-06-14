@@ -62,10 +62,10 @@ static bool assert_fix_opus_prop(tv_audio_prop_t *audio_prop){
 				1);
 			tainted = true;
 		}
-		if(audio_prop->get_snippet_duration_micro_s() != 2500){
-			print("only going with 60ms frame sizes right now, can expand when proven to work", P_WARN);
+		if(audio_prop->get_snippet_duration_micro_s() != 10000){
+			print("only going with ms frame sizes right now, can expand when proven to work", P_WARN);
 			audio_prop->set_snippet_duration_micro_s(
-				2500);
+				10000);
 		}
 	}else{
 		print("only format is valid, inserting sane defaults", P_NOTE);
@@ -142,36 +142,31 @@ std::vector<std::vector<uint8_t> > opus_decode_snippet_vector_to_sample_vector(
 
 
 	std::vector<std::vector<uint8_t> > retval;
-	opus_int16 pcm_out[OPUS_MAX_PACKET_SIZE];
-	memset(&(pcm_out[0]), 0, OPUS_MAX_PACKET_SIZE);
-	int32_t opus_retval = 0;
 	for(uint64_t i = 0;i < snippet_vector.size();i++){
-		opus_retval =
+		std::vector<uint8_t> tmp(OPUS_MAX_PACKET_SIZE, 0);
+		const int32_t opus_retval =
 			opus_decode(
 				(OpusDecoder*)state->get_state_ptr(),
 				snippet_vector[i].data(),
 				snippet_vector[i].size(),
-				&(pcm_out[0]),
+				(opus_int16*)tmp.data(),
 				OPUS_MAX_PACKET_SIZE/state->get_audio_prop().get_channel_count(),
 				0); // FEC
-		if(opus_retval < 0){
-			break;
+		if(opus_retval > 0){
+			print("successfuly decode opus data", P_SPAM);
+			tmp.erase(
+				tmp.begin()+opus_retval,
+				tmp.end());
+			retval.push_back(tmp);
+		}else if(opus_retval == 0){
+			print("no opus data to decode", P_WARN);
+		}else{
+			print("opus decode failed with error code " + std::to_string(opus_retval), P_WARN);
 		}
-		retval.push_back(
-			std::vector<uint8_t>(
-				&(pcm_out[0]),
-				&(pcm_out[0])+opus_retval));
 	}
 	*sampling_freq = state->get_audio_prop().get_sampling_freq();
 	*bit_depth = state->get_audio_prop().get_bit_depth();
 	*channel_count = state->get_audio_prop().get_channel_count();
-	if(opus_retval > 0){
-		print("successfuly decode opus data", P_SPAM);
-	}else if(opus_retval == 0){
-		print("no opus data to decode", P_WARN);
-	}else{
-		print("opus decode failed with error code " + std::to_string(opus_retval), P_WARN);
-	}
 	return retval;
 }
 
