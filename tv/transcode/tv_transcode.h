@@ -36,6 +36,12 @@
   force us to either drop samples or fill in with nonsense)
  */
 
+/*
+  STANDARDS:
+  All raw audio samples coming from any decoding function are in unsigned
+  system byte order
+ */
+
 struct tv_transcode_state_encode_codec_t{
 private:
 	uint8_t format = 0;
@@ -133,6 +139,12 @@ namespace transcode{
 			  should be minimal overheads in just calling that from
 			  an external function
 			 */
+			std::vector<uint8_t> signed_to_unsigned(
+				std::vector<uint8_t> signed_payload,
+				uint8_t bit_depth);
+			std::vector<uint8_t> unsigned_to_signed(
+				std::vector<uint8_t> unsigned_payload,
+				uint8_t bit_depth);
 		};
 		
 	};

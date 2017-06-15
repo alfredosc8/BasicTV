@@ -8,6 +8,7 @@
 // 48000 is the default for Opus
 #define TV_AUDIO_DEFAULT_SAMPLING_RATE 48000
 #define TV_AUDIO_DEFAULT_BIT_DEPTH 16
+#define TV_AUDIO_DEFAULT_CHANNEL_COUNT 1
 /*
   Size of chunk set to speakers at the same time.
   If it is set too high, latencies will be a problem

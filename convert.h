@@ -130,6 +130,12 @@ namespace convert{
 			uint32_t sampling_freq,
 			uint8_t bit_depth,
 			uint8_t channel_count);
+		std::vector<uint64_t> signed_to_unsigned_samples(
+			std::vector<int64_t> samples,
+			uint8_t bit_depth);
+		std::vector<int64_t> unsigned_to_signed_samples(
+			std::vector<uint64_t> samples,
+			uint8_t bit_depth);
 	};
 };
 

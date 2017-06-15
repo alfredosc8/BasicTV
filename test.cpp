@@ -821,6 +821,12 @@ static std::vector<uint8_t> get_standard_sine_wave_form(){
 	return retval;
 }
 
+/*
+  Generates a sine wave, writes it to a file, encodes and decodes it with
+  the specified format, and writes those raw samples to a file. I can't
+  export to Opus yet since I haven't written the proper bindings to libopusfile
+ */
+
 void test_audio_format(uint8_t format){
 	tv_audio_prop_t audio_prop;
 	uint32_t sampling_freq =
@@ -849,12 +855,16 @@ void test_audio_format(uint8_t format){
 	tv_transcode_decode_state_t *decoder_state =
 		decoder.decode_init_state(
 			&audio_prop);
-	std::vector<uint8_t> raw_samples =
+	std::vector<uint8_t> raw_samples_reference =
 		get_standard_sine_wave_form();
+	std::vector<uint8_t> raw_samples_codec =
+		raw_samples_reference;
+	std::vector<uint8_t> raw_samples_out_file =
+		raw_samples_reference;
 	std::vector<std::vector<uint8_t> > snippet_vector =
 		encoder.encode_samples_to_snippets(
 			encoder_state,
-			&raw_samples,
+			&raw_samples_codec,
 			sampling_freq,
 			bit_depth,
 			channel_count);
@@ -866,25 +876,25 @@ void test_audio_format(uint8_t format){
 			&bit_depth,
 			&channel_count);
 	
-	if(raw_samples.size() != 0){
-		P_V(raw_samples.size(), P_NOTE);
+	if(out_samples != raw_samples_reference){
+		P_V(snippet_vector.size(), P_WARN);
+		P_V(out_samples.size(), P_WARN);
+		P_V(raw_samples_reference.size(), P_WARN);
 		print("lossy conversion took place", P_WARN);
 	}
-	if(out_samples.size() != raw_samples.size()){
-		P_V(raw_samples.size(), P_WARN);
+	if(out_samples.size() != raw_samples_reference.size()){
+		P_V(snippet_vector.size(), P_WARN);
 		P_V(out_samples.size(), P_WARN);
+		P_V(raw_samples_reference.size(), P_WARN);
 		print("different number of samples", P_WARN);
 	}
-	/*
-	  the test actually finishes by playing the two sounds back to back,
-	  since creating, looping, and destroying the entire audio sound
-	  system not only falls outside of what we are testing, but introduces
-	  a ton of other problems that are best dealt with individually
-	 */
 	tv_transcode_state_encode_codec_t encode_codec =
 		encode_codec_lookup(
 			TV_AUDIO_FORMAT_WAV);
-	audio_prop.set_format(TV_AUDIO_FORMAT_WAV);
+	audio_prop.set_format(
+		TV_AUDIO_FORMAT_WAV);
+	audio_prop.set_snippet_duration_micro_s(
+		5*1000*1000); // force this for writing to files
 	tv_transcode_encode_state_t *encode_state =
 		encode_codec.encode_init_state(
 			&audio_prop);
@@ -900,23 +910,20 @@ void test_audio_format(uint8_t format){
 	 */
 	file::write_file_vector(
 		"raw.wav",
-		convert::vector::collapse_2d_vector(
-			encode_codec.encode_samples_to_snippets(
-				encode_state,
-				&raw_samples,
-				sampling_freq,
-				bit_depth,
-				channel_count)));
+		encode_codec.encode_samples_to_snippets(
+			encode_state,
+			&raw_samples_out_file,
+			sampling_freq,
+			bit_depth,
+			channel_count).at(0));
 	file::write_file_vector(
 		"out.wav",
-		convert::vector::collapse_2d_vector(
-			encode_codec.encode_samples_to_snippets(
-				encode_state,
-				&out_samples,
-				sampling_freq,
-				bit_depth,
-				channel_count)));
-			
+		encode_codec.encode_samples_to_snippets(
+			encode_state,
+			&out_samples,
+			sampling_freq,
+			bit_depth,
+			channel_count).at(0));
 	encoder.encode_close_state(encoder_state);
 	decoder.decode_close_state(decoder_state);
 	encoder_state = nullptr;
@@ -938,7 +945,7 @@ void test(){
 	RUN_TEST(test_lock);
 	RUN_TEST(test_number_cmp);
 	RUN_TEST(test_id_api_raw_fetch);
-	//test_audio_format(TV_AUDIO_FORMAT_OPUS);
+	test_audio_format(TV_AUDIO_FORMAT_OPUS);
 	std::vector<id_t_> extra_id_set =
 		id_api::get_all();
 	for(uint64_t i = 0;i < full_id_set.size();i++){

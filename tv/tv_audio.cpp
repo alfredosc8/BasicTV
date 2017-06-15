@@ -48,6 +48,7 @@ static SDL_AudioSpec desired, have;
 
 static uint32_t output_sampling_rate = 0;
 static uint8_t output_bit_depth = 0;
+static uint8_t output_channel_count = 0;
 static uint32_t output_chunk_size = 0;
 
 /*
@@ -83,10 +84,22 @@ static void tv_audio_load_samples_queue(){
 		}
 	}
 	if(audio_queue.size() != 0){
+		if(audio_queue[audio_to_queue].sampling_freq != output_sampling_rate){
+			print("sampling frequency discrepency between output device and audio_queue", P_ERR);
+		}
+		if(audio_queue[audio_to_queue].bit_depth != output_bit_depth){
+			print("bit_depth discrepency between output device and audio_queue", P_ERR);
+		}
+		if(audio_queue[audio_to_queue].channel_count != output_channel_count){
+			print("channel count discrepency between output device and audio_queue", P_ERR);
+		}
+		PRINT_IF_EMPTY(audio_queue[audio_to_queue].raw_samples, P_ERR);
 		SDL_QueueAudio(
 			audio_device_id,
 			audio_queue[audio_to_queue].raw_samples.data(),
 			audio_queue[audio_to_queue].raw_samples.size());
+		print("queued up some audio", P_NOTE);
+		P_V(audio_queue[audio_to_queue].raw_samples.size(), P_VAR);
 		audio_queue.erase(
 			audio_queue.begin()+audio_to_queue);
 	}
@@ -100,22 +113,28 @@ static void tv_audio_load_samples_queue(){
 static void tv_audio_add_id_to_audio_queue(id_t_ window_id,
 					   id_t_ frame_audio_id,
 					   uint64_t forward_buffer_micro_s){
-	std::vector<id_t_> id_vector({frame_audio_id});
+	std::vector<id_t_> id_vector;
 	tv_window_t *window_ptr =
 		PTR_DATA(window_id,
 			 tv_window_t);
 	tv_frame_audio_t *frame_audio_ptr =
 		PTR_DATA(frame_audio_id,
 			 tv_frame_audio_t);
+	const uint64_t time_micro_s =
+		get_time_microseconds();
 	while(frame_audio_ptr != nullptr &&
-	      frame_audio_ptr->get_end_time_micro_s() < forward_buffer_micro_s){
+	      frame_audio_ptr->get_end_time_micro_s()-time_micro_s <= forward_buffer_micro_s){
 		std::pair<std::vector<id_t_>, std::vector<id_t_> > linked_list =
 			frame_audio_ptr->id.get_linked_list();
-		frame_audio_ptr =
-			PTR_DATA(linked_list.second[0],
-				 tv_frame_audio_t);
 		id_vector.push_back(
-			linked_list.second[0]);
+			frame_audio_ptr->id.get_id());
+		if(linked_list.second.size() > 0){
+			frame_audio_ptr =
+				PTR_DATA(linked_list.second[0],
+					 tv_frame_audio_t);
+		}else{
+			frame_audio_ptr = nullptr;
+		}
 	}
 	for(uint64_t i = 0;i < audio_queue.size();i++){
 		for(uint64_t c = 0;c < id_vector.size();c++){
@@ -147,21 +166,6 @@ static void tv_audio_add_id_to_audio_queue(id_t_ window_id,
 			queue);
 	}
 }
-static uint32_t tv_audio_sdl_format_from_depth(uint8_t bit_depth){
-	switch(bit_depth){
-	case 24:
-		print("24-bit sound output isn't supported yet, falling back to 16-bit", P_WARN);
-	case 16:
-		print("using unsigned 16-bit system byte order", P_NOTE);
-		return AUDIO_U16LSB;
-	case 8:
-		print("using unsigned 8-bit system byte order (are you sure you want to do this?)", P_WARN);
-		return AUDIO_U8;
-	default:
-		print("unknown bit depth for SDL conversion, using 16-bit", P_WARN);
-		return AUDIO_U16LSB;
-	}
-}
 
 void tv_audio_init(){
 	if(settings::get_setting("audio") == "true"){
@@ -175,6 +179,10 @@ void tv_audio_init(){
 				std::stoi(
 					settings::get_setting(
 						"snd_output_bit_depth"));
+			output_channel_count =
+				std::stoi(
+					settings::get_setting(
+						"snd_output_channel_count"));
 			output_chunk_size =
 				std::stoi(
 					settings::get_setting(
@@ -184,20 +192,22 @@ void tv_audio_init(){
 			print("cannot read sound settings from file, setting default", P_WARN);
 			output_sampling_rate = TV_AUDIO_DEFAULT_SAMPLING_RATE;
 			output_bit_depth = TV_AUDIO_DEFAULT_BIT_DEPTH;
+			output_channel_count = TV_AUDIO_DEFAULT_CHANNEL_COUNT;
 			output_chunk_size = TV_AUDIO_DEFAULT_CHUNK_SIZE;
 		}
 		CLEAR(desired);
 		CLEAR(have);
 		desired.freq =
-			output_sampling_rate;
+			48000;
 		desired.format =
-			tv_audio_sdl_format_from_depth(
-				output_bit_depth);
+			AUDIO_U16;
 		desired.channels =
 			1; // temporary
 		desired.samples =
-			65535; // Decoding latencies can push this pretty far
+			4096; // Decoding latencies can push this pretty far
 		desired.callback =
+			nullptr;
+		desired.userdata =
 			nullptr;
 		audio_device_id =
 			SDL_OpenAudioDevice(
@@ -208,17 +218,18 @@ void tv_audio_init(){
 				&desired,
 				&have,
 				0);
+		P_V(desired.freq, P_WARN);
+		P_V(desired.format, P_WARN);
+		P_V(desired.channels, P_WARN);
+		P_V(desired.samples, P_WARN);
+		P_V(have.freq, P_WARN);
+		P_V(have.format, P_WARN);
+		P_V(have.channels, P_WARN);
+		P_V(have.samples, P_WARN);
 		if(audio_device_id == 0){
-			P_V(desired.freq, P_WARN);
-			P_V(desired.format, P_WARN);
-			P_V(desired.channels, P_WARN);
-			P_V(desired.samples, P_WARN);
-			P_V(have.freq, P_WARN);
-			P_V(have.format, P_WARN);
-			P_V(have.channels, P_WARN);
-			P_V(have.samples, P_WARN);
 			print("cannot open audio:" + (std::string)(SDL_GetError()), P_ERR);
 		}
+		SDL_PauseAudioDevice(audio_device_id, 0);
 	}else{
 		print("audio has been disabled in the settings", P_NOTE);
 	}
@@ -280,7 +291,7 @@ void tv_audio_loop(){
 			tv_audio_add_id_to_audio_queue(
 				current_frame_audios[i].first,
 				current_frame_audios[i].second,
-				10000000);
+				1000*1000*5);
 		}
 		tv_audio_load_samples_queue();
 	}
