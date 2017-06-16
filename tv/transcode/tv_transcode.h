@@ -96,6 +96,12 @@ public:
 
 namespace transcode{
 	namespace audio{
+		/*
+		  We can safely assume that all frames are independent of each
+		  other, and they can all be decoded (since they should all
+		  be loaded with transcode::audio/video::codec::to_frames or
+		  equivalent)
+		 */
 		namespace frames{
 			std::vector<id_t_> to_frames(
 				std::vector<id_t_> frame_set,

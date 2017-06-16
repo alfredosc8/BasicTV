@@ -1,13 +1,11 @@
 #include "tv_transcode.h"
+#include "tv_transcode_opus.h"
+#include "tv_transcode_wav.h"
+#include "tv_transcode_state.h"
+#include "tv_transcode_audio.h"
 
 #include "../tv_frame_audio.h"
 #include "../tv_frame_video.h"
-
-#include "tv_transcode_opus.h"
-#include "tv_transcode_wav.h"
-
-#include "tv_transcode_state.h"
-#include "tv_transcode_audio.h"
 
 // caller needs to recognize what can be written to and check/act accordingly
 
@@ -48,6 +46,7 @@ tv_transcode_state_decode_codec_t decodes[CODEC_DECODE_COUNT] =
 
 std::vector<tv_transcode_encode_state_t> encode_states;
 std::vector<tv_transcode_decode_state_t> decode_states;
+	
 
 tv_transcode_state_encode_codec_t encode_codec_lookup(uint8_t format){
 	for(uint64_t i = 0;i < CODEC_ENCODE_COUNT;i++){
@@ -208,18 +207,14 @@ std::vector<id_t_> transcode::audio::codec::to_frames(std::vector<std::vector<ui
 		while(codec_set->size() > 0){
 			tv_frame_audio_t *frame_audio_ptr =
 				new tv_frame_audio_t;
-			uint64_t snippet_set_end =
+			const uint64_t snippet_set_end =
 				(codec_set->size() > snippets_to_frame) ?
 				snippets_to_frame :
 				codec_set->size();
-			std::vector<std::vector<uint8_t> > codec_snippet_subset(
-				codec_set->begin(),
-				codec_set->begin()+snippet_set_end);
-			codec_set->erase(
-				codec_set->begin(),
-				codec_set->begin()+snippet_set_end);
 			frame_audio_ptr->set_packet_set(
-				codec_snippet_subset);
+				std::vector<std::vector<uint8_t> >(
+					codec_set->begin(),
+					codec_set->begin()+snippet_set_end));
 			frame_audio_ptr->set_audio_prop(
 				*input_audio_prop); // just repacking it
 			frame_audio_ptr->set_ttl_micro_s(
@@ -228,6 +223,10 @@ std::vector<id_t_> transcode::audio::codec::to_frames(std::vector<std::vector<ui
 				retval.size());
 			retval.push_back(
 				frame_audio_ptr->id.get_id());
+			codec_set->erase(
+				codec_set->begin(),
+				codec_set->begin()+snippet_set_end);
+			P_V(snippet_set_end, P_VAR);
 		}
 		*output_audio_prop = *input_audio_prop;
 	}else{

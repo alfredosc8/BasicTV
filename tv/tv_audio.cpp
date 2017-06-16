@@ -46,10 +46,10 @@ public:
 static SDL_AudioDeviceID audio_device_id = 0;
 static SDL_AudioSpec desired, have;
 
-static uint32_t output_sampling_rate = 0;
-static uint8_t output_bit_depth = 0;
-static uint8_t output_channel_count = 0;
-static uint32_t output_chunk_size = 0;
+// static uint32_t output_sampling_rate = 0;
+// static uint8_t output_bit_depth = 0;
+// static uint8_t output_channel_count = 0;
+// static uint32_t output_chunk_size = 0;
 
 /*
   TODO: implement a universal time state that all streams can sync up with
@@ -73,7 +73,16 @@ void tv_audio_prop_t::list_virtual_data(data_id_t *id){
 
 static std::vector<tv_audio_raw_queue_t> audio_queue;
 
-#pragma message("no conversion done with tv_audio_load_samples_queue, sketchy")
+static std::vector<uint8_t> get_standard_sine_wave_form(){
+	std::vector<uint8_t> retval;
+	for(uint64_t i = 0;i < 48000*10;i++){
+		uint16_t tmp =
+			(uint16_t)((long double)(sin(1000 * (2 * 3.1415) * i / 48000))*65535);
+		retval.push_back((uint8_t)(tmp&0xFF));
+		retval.push_back((uint8_t)((tmp>>8)&0xFF));
+	}
+	return retval;
+}
 
 static void tv_audio_load_samples_queue(){
 	uint64_t audio_to_queue = 0;
@@ -84,22 +93,10 @@ static void tv_audio_load_samples_queue(){
 		}
 	}
 	if(audio_queue.size() != 0){
-		if(audio_queue[audio_to_queue].sampling_freq != output_sampling_rate){
-			print("sampling frequency discrepency between output device and audio_queue", P_ERR);
-		}
-		if(audio_queue[audio_to_queue].bit_depth != output_bit_depth){
-			print("bit_depth discrepency between output device and audio_queue", P_ERR);
-		}
-		if(audio_queue[audio_to_queue].channel_count != output_channel_count){
-			print("channel count discrepency between output device and audio_queue", P_ERR);
-		}
-		PRINT_IF_EMPTY(audio_queue[audio_to_queue].raw_samples, P_ERR);
 		SDL_QueueAudio(
 			audio_device_id,
 			audio_queue[audio_to_queue].raw_samples.data(),
 			audio_queue[audio_to_queue].raw_samples.size());
-		print("queued up some audio", P_NOTE);
-		P_V(audio_queue[audio_to_queue].raw_samples.size(), P_VAR);
 		audio_queue.erase(
 			audio_queue.begin()+audio_to_queue);
 	}
@@ -152,6 +149,20 @@ static void tv_audio_add_id_to_audio_queue(id_t_ window_id,
 				&queue.sampling_freq,
 				&queue.bit_depth,
 				&queue.channel_count);
+		switch(have.format){
+		case AUDIO_U16:
+			print("audio is fine as it is, no conversion needed", P_NOTE);
+			break;
+		case AUDIO_S16:
+			print("performing unsigned to signed conversion", P_NOTE);
+			queue.raw_samples =
+				transcode::audio::raw::signed_to_unsigned(
+					queue.raw_samples,
+					queue.bit_depth);
+			break;
+		default:
+			print("unrecognized audio format, this is bad", P_CRIT);
+		}
 		tv_frame_audio_t *frame_audio_ptr_ =
 			PTR_DATA(id_vector[i],
 				 tv_frame_audio_t);
@@ -170,54 +181,52 @@ static void tv_audio_add_id_to_audio_queue(id_t_ window_id,
 void tv_audio_init(){
 	if(settings::get_setting("audio") == "true"){
 		SDL_Init(SDL_INIT_AUDIO);
-		try{
-			output_sampling_rate =
-				std::stoi(
-					settings::get_setting(
-						"snd_output_sampling_rate"));
-			output_bit_depth =
-				std::stoi(
-					settings::get_setting(
-						"snd_output_bit_depth"));
-			output_channel_count =
-				std::stoi(
-					settings::get_setting(
-						"snd_output_channel_count"));
-			output_chunk_size =
-				std::stoi(
-					settings::get_setting(
-						"snd_output_chunk_size"));
-		}catch(...){
-			// no big problem, these values are sane (maybe not chunk size)
-			print("cannot read sound settings from file, setting default", P_WARN);
-			output_sampling_rate = TV_AUDIO_DEFAULT_SAMPLING_RATE;
-			output_bit_depth = TV_AUDIO_DEFAULT_BIT_DEPTH;
-			output_channel_count = TV_AUDIO_DEFAULT_CHANNEL_COUNT;
-			output_chunk_size = TV_AUDIO_DEFAULT_CHUNK_SIZE;
-		}
+		// try{
+		// 	output_sampling_rate =
+		// 		std::stoi(
+		// 			settings::get_setting(
+		// 				"snd_output_sampling_rate"));
+		// 	output_bit_depth =
+		// 		std::stoi(
+		// 			settings::get_setting(
+		// 				"snd_output_bit_depth"));
+		// 	output_channel_count =
+		// 		std::stoi(
+		// 			settings::get_setting(
+		// 				"snd_output_channel_count"));
+		// 	output_chunk_size =
+		// 		std::stoi(
+		// 			settings::get_setting(
+		// 				"snd_output_chunk_size"));
+		// }catch(...){
+		// 	// no big problem, these values are sane (maybe not chunk size)
+		// 	print("cannot read sound settings from file, setting default", P_WARN);
+		// 	output_sampling_rate = TV_AUDIO_DEFAULT_SAMPLING_RATE;
+		// 	output_bit_depth = TV_AUDIO_DEFAULT_BIT_DEPTH;
+		// 	output_channel_count = TV_AUDIO_DEFAULT_CHANNEL_COUNT;
+		// 	output_chunk_size = TV_AUDIO_DEFAULT_CHUNK_SIZE;
+		// }
 		CLEAR(desired);
 		CLEAR(have);
 		desired.freq =
 			48000;
 		desired.format =
 			AUDIO_U16;
-		desired.channels =
-			1; // temporary
 		desired.samples =
 			4096; // Decoding latencies can push this pretty far
+		desired.channels =
+			1; // temporary
 		desired.callback =
 			nullptr;
 		desired.userdata =
 			nullptr;
 		audio_device_id =
 			SDL_OpenAudioDevice(
-				SDL_GetAudioDeviceName(
-					0, // index of the data from [0, SDL_GetNumAudioDevices()-1]
-					0), // cah it record as well?
-				0, // can it open for recording
+				nullptr,
+				0,
 				&desired,
 				&have,
-				0);
+				SDL_AUDIO_ALLOW_ANY_CHANGE);
 		P_V(desired.freq, P_WARN);
 		P_V(desired.format, P_WARN);
 		P_V(desired.channels, P_WARN);
@@ -229,7 +238,6 @@ void tv_audio_init(){
 		if(audio_device_id == 0){
 			print("cannot open audio:" + (std::string)(SDL_GetError()), P_ERR);
 		}
-		SDL_PauseAudioDevice(audio_device_id, 0);
 	}else{
 		print("audio has been disabled in the settings", P_NOTE);
 	}
@@ -285,6 +293,7 @@ static std::vector<std::pair<id_t_, id_t_> > tv_audio_get_current_frame_audios()
 
 void tv_audio_loop(){
 	if(settings::get_setting("audio") == "true"){
+		SDL_PauseAudioDevice(audio_device_id, 0);
 		std::vector<std::pair<id_t_, id_t_> > current_frame_audios =
 			tv_audio_get_current_frame_audios();
 		for(uint64_t i = 0;i < current_frame_audios.size();i++){
