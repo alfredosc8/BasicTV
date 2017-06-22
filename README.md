@@ -52,6 +52,7 @@ This means, as long as the ID is known to exist, it can be downloaded. You can a
 ## Tor integration
 One major highlight of BasicTV is the capability of using Tor efficiently. Tor conventionally creates one "circuit", or connection to the internet, since multiplexing simple webpages isn't efficient.
 
+
 BasicTV allows for creating multiple Tor circuits and effectively using them for all peer connections. Tor can allow for more connections than just a clearnet connection, as routers tend to drop TCP connections beyond a certain limit (routers don't see connections made inside of a Tor circuit).
 
 ## Dependencies

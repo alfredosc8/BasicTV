@@ -61,6 +61,9 @@ static std::string print_level_text (int level){
 	case P_DEBUG:
 		retval = "[DEBUG]";
 		break;
+	case P_UNABLE:
+		retval = "[UNABLE]";
+		break;
 	case P_NOTICE:
 	        retval = "[NOTICE]";
 		break;
@@ -93,6 +96,7 @@ std::string print_color_text(std::string data, int level){
 	case P_WARN:
 		prefix = "\033[1;36m";
 		break;
+	case P_UNABLE:
 	case P_NOTE:
 		prefix = "";
 		break;
@@ -184,8 +188,11 @@ void print(std::string data, int level, const char *func){
 				backtrace_symbol_retval = nullptr;
 				std::cout << "Finished backtrace" << std::endl;
 			}
+		}
+		if(level >= P_ERR || level == P_UNABLE){
 			throw std::runtime_error(data);
 		}
+
 		// if(level >= P_WARN){
 		// 	sleep_ms(1000, true);
 		// }else{

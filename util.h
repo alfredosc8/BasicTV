@@ -3,13 +3,15 @@
 #define PRINT_VAR 0
 #define PRINT_SPAM 1
 #define PRINT_DEBUG 2
-#define PRINT_NOTICE 3
-#define PRINT_WARNING 4
-#define PRINT_ERROR 5
-#define PRINT_CRITICAL 6
+#define PRINT_UNABLE 3
+#define PRINT_NOTICE 4
+#define PRINT_WARNING 5
+#define PRINT_ERROR 6
+#define PRINT_CRITICAL 7
 #define P_VAR PRINT_VAR
 #define P_SPAM PRINT_SPAM
 #define P_DEBUG PRINT_DEBUG
+#define P_UNABLE PRINT_UNABLE
 #define P_NOTICE PRINT_NOTICE
 #define P_NOTE PRINT_NOTICE
 #define P_WARN PRINT_WARNING
@@ -30,13 +32,34 @@
 #define likely(x)      __builtin_expect(!!(x), 1)
 #define unlikely(x)    __builtin_expect(!!(x), 0)
 
-#define GET_SET_ID(id_to_set)					\
-	void set_##id_to_set(id_t_ id_){id_to_set = id_;}	\
-	id_t_ get_##id_to_set(){return id_to_set;}		\
-	
-#define GET_SET(data_to_set, type)					\
-	void set_##data_to_set(type datum){data_to_set = datum;}	\
-	type get_##data_to_set(){return data_to_set;}			\
+#define GET(data_to_get, type)				\
+	type get_##data_to_get(){return data_to_get;}	
+
+#define SET(data_to_set, type)						\
+	void set_##data_to_set(type datum){data_to_set = datum;}	
+
+// can only warn, since most of the code isn't exception-safe enough,
+// and there are valid use cases for setting a blank ID
+
+#define GET_ID(data_to_get) id_t_ get_##data_to_get(){if(data_to_get == ID_BLANK_ID){print(#data_to_get" is a nullptr (getting)", P_WARN);}return data_to_get;}
+
+#define SET_ID(data_to_set) void set_##data_to_set(id_t_ datum){if(datum == ID_BLANK_ID){print(#data_to_set" is a nullptr (setting)", P_WARN);}data_to_set = datum;}
+		
+
+#define GET_SET_ID(data)			\
+	GET(data, id_t_)			\
+	SET(data, id_t_)			\
+
+#define GET_SET(data, type)			\
+	GET(data, type)				\
+	SET(data, type)				\
+
+#define ADD_DEL_VECTOR(data_to_set, type)				\
+	void add_##data_to_set(type datum){for(uint64_t i = 0;i < data_to_set.size();i++){if(data_to_set[i]==datum){return;}}data_to_set.push_back(datum);} \
+	void del_##data_to_set(type datum){for(uint64_t i = 0;i < data_to_set.size();i++){if(data_to_set[i]==datum){data_to_set.erase(data_to_set.begin()+i);break;}}} \
+
+#define GET_SIZE_VECTOR(data_to_size)\
+	uint64_t get_size_##data_to_size(){return data_to_size.size();}
 
 #ifdef __GNUC__
 // This can be used somewhere
@@ -52,7 +75,7 @@
 /*
   never and always are reserved for insane and impossible
   situations, mostly in tight loops.
- */
+*/
 
 #ifdef DEBUG
 #define never(x) unlikely(x)
@@ -86,13 +109,13 @@ namespace pre_pro{
   Since networking std::vectors takes some extra code and complexity, 
   std::arrays are used with some helper functions to emulate std::vector
   (push_back being the big one)
- */
+*/
 
 namespace array_func{
 	uint64_t add(void *array,
-			   uint64_t array_size,
-			   void *data,
-			   uint64_t data_size);
+		     uint64_t array_size,
+		     void *data,
+		     uint64_t data_size);
 	uint64_t size(void *array,
 		      uint64_t array_size,
 		      uint64_t data_size);

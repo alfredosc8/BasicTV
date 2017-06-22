@@ -16,7 +16,6 @@ void tv_transcode_encode_state_t::set_start_frame_id(id_t_ id){
 		print("audio_frame_ptr is a nullptr, can't add derived data", P_ERR);
 	}
 	state_format = audio_frame_ptr->get_audio_prop().get_format();
-	codec_state_ref = audio_frame_ptr->get_codec_state_ref();
 }
 
 id_t_ tv_transcode_decode_state_t::get_start_frame_id(){
@@ -35,5 +34,4 @@ void tv_transcode_decode_state_t::set_start_frame_id(id_t_ id){
 		print("audio_frame_ptr is a nullptr, can't add derived data", P_ERR);
 	}
 	state_format = audio_frame_ptr->get_audio_prop().get_format();
-	codec_state_ref = audio_frame_ptr->get_codec_state_ref();
 }

@@ -52,6 +52,8 @@
 #define ID_API_IMPORT_FROM_DISK (1 << 0)
 #define ID_API_IMPORT_FROM_NET (1 << 1)
 
+#define SIMPLE_ADD(x) id.add_data_raw(&x, sizeof(x));
+
 /*
   TODO: drastically simplify and clarify this section
 
@@ -103,6 +105,10 @@ namespace id_api{
 		// next and previous are in the id itself, no interdependency
 		void link_vector(std::vector<id_t_> vector);
 
+		namespace list{
+			std::vector<id_t_> by_distance(id_t_ start_id, int64_t pos);
+			std::vector<id_t_> by_distance_until_match(id_t_ start_id, int64_t pos, id_t_ target_id);
+		};
 		int64_t pos_in_linked_list(id_t_ ref_id, id_t_ goal_id, uint64_t max_search_radius);
 	};
 	namespace sort{

@@ -14,23 +14,25 @@
   - (Possible) conversions to and from log scales
  */
 #endif
-#include "stats.h"
+#include "stats/math_stats.h"
 #include "numbers/math_numbers.h"
 
-
-
 /*
-  I REALLY don't want to bother with writing out math::number::calc::add
-  and what not, so i'm going to popularize using compile time definitions
-  to make everything simpler to read.
+  A few of these are only vectors for uniformity across calls,
+  and it might make more sense to redefine it as just two
+  numbers (number and base, probably uint64_t if we want to
+  get more sane)
  */
 
-#define MATH_ADD(x) math::number::calc::add(x)
-#define MATH_SUB(x) math::number::calc::sub(x)
-#define MATH_MUL(x) math::number::calc::mul(x)
-#define MATH_DIV(x) math::number::calc::div(x)
-#define MATH_POW(x) math::number::calc::pow(x)
-#define MATH_LOG_BASE(x) math::number::calc::log_base(x)
+#define MATH_ADD(x, y) math::number::calc::add({x, y})
+#define MATH_SUB(x, y) math::number::calc::sub({x, y})
+#define MATH_MUL(x, y) math::number::calc::mul({x, y})
+#define MATH_DIV(x, y) math::number::calc::div({x, y})
+#define MATH_POW(x, y) math::number::calc::pow({x, y})
+#define MATH_LOG_BASE(x, y) math::number::calc::log_base(x)
+
+#define MATH_NUMBER_SIGN_POSITIVE 0
+#define MATH_NUMBER_SIGN_NEGATIVE 1
 
 namespace math{
 	namespace number{
@@ -69,6 +71,17 @@ namespace math{
 		 */
 		std::vector<uint8_t> create(id_t_ number,
 					    uint64_t unit);
+		namespace simple{
+			std::vector<uint8_t> set_sign(
+				std::vector<uint8_t> data,
+				uint8_t sign);
+			uint8_t get_sign(
+				std::vector<uint8_t> data);
+			std::vector<uint8_t> flip_sign(
+				std::vector<uint8_t> data);
+			int8_t sign_to_int(
+				uint8_t sign);
+		};
 		namespace calc{
 			std::vector<uint8_t> add(
 				std::vector<std::vector<uint8_t> > data);
@@ -93,11 +106,46 @@ namespace math{
 				std::vector<uint8_t> x,
 				std::vector<uint8_t> y);
 		};
+		/*
+		  standardized types of ID sets used throughout the program
+		 */
+	};
+	namespace functions{
+		std::vector<uint8_t> sum_inclusive(
+			id_t_ math_number_set_id,
+			uint64_t interval_dim,
+			uint64_t sum_dim,
+			std::vector<uint8_t> start_sum,
+			std::vector<uint8_t> end_sum);
 	};
 	/*
 	  math_stat_pval_t (uint32_t) is a measure of P-value, on a scale of 0-1
 	 */
 	namespace stat{
+		namespace set{
+			/*
+			  Ideally all sample sets collected internally in
+			  BasicTV can be referenced in this sort of way
+			 */
+			namespace add{
+				void throughput_number_set(
+					id_t_ set_id,
+					uint64_t volume,
+					uint64_t timestamp_micro_s);
+			};
+			namespace reduce{
+				
+			};
+			// actually deleting information from number sets is
+			// based more on upper memory limits, and the
+			// definition of deleting itself is fairly hairy,
+			// since we can perform some simplification functions
+			// depending on the type of data in play
+			// 'reduction' is the name of these sorts of
+			// simplifications and transformations, where each type
+			// of set has it's own optimal transformation for
+			// optimal size
+		};
 		namespace vars{
 			std::vector<uint8_t> mean(
 				std::vector<std::vector<uint8_t> > data);

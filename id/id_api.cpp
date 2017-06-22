@@ -322,6 +322,83 @@ void id_api::linked_list::link_vector(std::vector<id_t_> vector){
 			std::vector<id_t_>({})));
 }
 
+/*
+  These functions only operate in one direction per call, but can be
+  made to run in both (call backwards in vector A, call forwards
+  in vector B, insert A, then start_id, then B).
+ */
+
+#pragma message("id_api::linked_list::list::by_distance can be optimized pretty easily, just haven't done that yet")
+
+std::vector<id_t_> id_api::linked_list::list::by_distance(id_t_ start_id,
+							  int64_t pos){
+	ASSERT(pos != 0, P_ERR);
+	ASSERT(start_id != ID_BLANK_ID, P_ERR);
+	std::vector<id_t_> retval;
+	bool forwards = pos > 0;
+	int64_t cur_pos = 0;
+	data_id_t *id_ptr =
+		PTR_ID(start_id, );
+	try{
+		while(id_ptr != nullptr &&
+		      abs(pos) >= abs(cur_pos)){
+			const id_t_ next_id =
+				(forwards) ?
+				id_ptr->get_linked_list().second.at(0) :
+				id_ptr->get_linked_list().first.at(0);
+			id_ptr =
+				PTR_ID(next_id, );
+			retval.push_back(
+				next_id);
+			if(forwards){
+				cur_pos++;
+			}else{
+				cur_pos--;
+			}
+		}
+	}catch(...){}
+	return retval;
+}
+
+std::vector<id_t_> id_api::linked_list::list::by_distance_until_match(id_t_ start_id,
+								      int64_t pos,
+								      id_t_ target_id){
+	ASSERT(pos != 0, P_ERR);
+	ASSERT(start_id != ID_BLANK_ID, P_ERR);
+	ASSERT(target_id != ID_BLANK_ID, P_ERR);
+	std::vector<id_t_> retval;
+	bool forwards = pos > 0;
+	int64_t cur_pos = 0;
+	data_id_t *id_ptr =
+		PTR_ID(start_id, );
+	try{
+		while(id_ptr != nullptr &&
+		      id_ptr->get_id() != target_id &&
+		      abs(pos) >= abs(cur_pos)){
+			const id_t_ next_id =
+				(forwards) ?
+				id_ptr->get_linked_list().second.at(0) :
+				id_ptr->get_linked_list().first.at(0);
+			id_ptr =
+				PTR_ID(next_id, );
+			retval.push_back(
+				next_id);
+			if(forwards){
+				cur_pos++;
+			}else{
+				cur_pos--;
+			}
+		}
+	}catch(...){}
+	if(!forwards){
+		std::reverse(
+			retval.begin(),
+			retval.end());
+	}
+	return retval;
+}
+								      
+
 std::vector<id_t_> id_api::get_all(){
 	std::vector<id_t_> retval;
 	for(uint64_t i = 0;i < id_list.size();i++){

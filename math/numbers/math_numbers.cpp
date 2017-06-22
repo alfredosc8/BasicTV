@@ -138,7 +138,7 @@ long double math::number::get::number(std::vector<uint8_t> data){
  */
 
 std::vector<uint8_t> math::number::create(long double number,
-					uint64_t unit){
+					  uint64_t unit){
 	std::vector<uint8_t> retval;
 	int64_t major_int =
 		((uint64_t)(long double)(number));

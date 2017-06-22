@@ -212,8 +212,11 @@ extern void set_id_type(id_t_ *id, type_t_ type);
 #define TYPE_ID_DISK_INDEX_T				24
 #define TYPE_MATH_NUMBER_SET_T				25
 #define TYPE_TV_ITEM_T					26
-#define TYPE_NET_PROTO_INTERFACE_PEER_IP_T		27
-#define TYPE_NET_PROTO_INTERFACE_STATE_T		28
+#define TYPE_NET_INTERFACE_RADIO_ADDRESS_T		27
+#define TYPE_NET_INTERFACE_IP_ADDRESS_T			28
+#define TYPE_NET_INTERFACE_INTERMEDIARY_T		29
+#define TYPE_NET_INTERFACE_HARDWARE_DEV_T		30
+#define TYPE_NET_INTERFACE_SOFTWARE_DEV_T		31
 
 #define ID_MAKE_TMP(x)						\
 	if(true){						\

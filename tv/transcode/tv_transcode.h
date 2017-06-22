@@ -102,6 +102,16 @@ namespace transcode{
 		  be loaded with transcode::audio/video::codec::to_frames or
 		  equivalent)
 		 */
+		/*
+		  Frame functions are the functions handling looking up the
+		  input_decode_state and output_encode_state, so they don't
+		  need to call anything per-se.
+
+		  A null input_decode_state or output_encode_state means we
+		  are starting off on a clean slate, and all of the encoded
+		  data should be self-standing (i.e. create and destroy a
+		  state inside the function).
+		 */
 		namespace frames{
 			std::vector<id_t_> to_frames(
 				std::vector<id_t_> frame_set,
@@ -121,17 +131,22 @@ namespace transcode{
 				std::vector<std::vector<uint8_t> > *codec_set,
 				tv_audio_prop_t *input_audio_prop,
 				tv_audio_prop_t *output_audio_prop,
-				uint64_t frame_duration_micro_s);
+				uint64_t frame_duration_micro_s,
+				tv_transcode_decode_state_t *input_decode_state = nullptr,
+				tv_transcode_encode_state_t *output_encode_state = nullptr);
 			std::vector<std::vector<uint8_t> > to_codec(
 				std::vector<std::vector<uint8_t> > *codec_set,
 				tv_audio_prop_t *input_audio_prop,
-				tv_audio_prop_t *output_audio_prop);
+				tv_audio_prop_t *output_audio_prop,
+				tv_transcode_decode_state_t *input_decode_state = nullptr,
+				tv_transcode_encode_state_t *output_encode_state = nullptr);
 			std::vector<uint8_t> to_raw(
 				std::vector<std::vector<uint8_t> > *codec_set,
 				tv_audio_prop_t *input_audio_prop,
 				uint32_t *sampling_freq,
 				uint8_t *bit_depth,
-				uint8_t *channel_count);
+				uint8_t *channel_count,
+				tv_transcode_decode_state_t *input_decode_state = nullptr);
 		};
 		namespace raw{
 			std::vector<std::vector<uint8_t> > to_codec(
@@ -139,7 +154,8 @@ namespace transcode{
 				uint32_t sampling_freq,
 				uint8_t bit_depth,
 				uint8_t channel_count,
-				tv_audio_prop_t *output_audio_prop);
+				tv_audio_prop_t *output_audio_prop,
+				tv_transcode_encode_state_t *output_encode_state = nullptr);
 			/*
 			  When repacketizing is popular among all codecs, there
 			  should be minimal overheads in just calling that from
@@ -156,9 +172,9 @@ namespace transcode{
 	};
 };
 
-/*
-  All encoding and decoding states are in one vector for easy garbage collecion
- */
+extern bool audio_prop_repackageable(
+	tv_audio_prop_t state_audio_prop,
+	tv_audio_prop_t snippet_audio_prop);
 
 #include "tv_transcode_wav.h"
 #include "tv_transcode_opus.h"

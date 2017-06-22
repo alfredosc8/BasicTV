@@ -4,7 +4,6 @@
 #include "math_numbers_calc.h"
 #include "../math.h"
 
-
 static void math_number_same_units(std::vector<std::vector<uint8_t> > data){
 	uint64_t unit = 0;
 	if(data.size() == 0){
@@ -76,3 +75,17 @@ std::vector<uint8_t> math::number::calc::add(
 	return retval;
 }
 
+
+std::vector<uint8_t> math::number::calc::sub(
+	std::vector<std::vector<uint8_t> > data){
+	std::vector<uint8_t> retval =
+		data[0];
+	for(uint64_t i = 1;i < data.size();i++){
+		retval =
+			math_simple_add(
+				retval,
+				math::number::simple::flip_sign(
+					data[i]));
+	}
+	return retval;
+}

@@ -1,5 +1,9 @@
 #ifndef MATH_NUMBERS_H
 #define MATH_NUMBERS_H
+
+#include "../../util.h"
+#include "../../id/id_api.h"
+
 /*
   Math API functions for getting and setting variable length numbers and the
   math_number_set_t datatype
