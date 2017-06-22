@@ -82,23 +82,23 @@
   correct or non-existant (non-existance is handled via LOSSY and LOSSLESS).
   This is used more in FSK and multiple modulation schemes, which would
   be defined as one layer up in net_interface_software_dev_t. 
- */
+*/
 
 /*
   
  */
 
-#define NET_HARDWARE_ADD_SOFTWARE_UNDEFINED 0
+#define NET_INTERFACE_HARDWARE_ADD_ADDRESS_UNDEFINED 0
 /*
   If we add a net_interface_software_dev_t to a hardware device, there
   is no cost associated with it, and we can add it freely
 */
-#define NET_HARDWARE_ADD_SOFTWARE_FREE 1
+#define NET_INTERFACE_HARDWARE_ADD_ADDRESS_FREE 1
 /*
   If we add a net_interface_software_dev_t to a hardware device, there
   are software devices that need to be dropped for it to work
- */
-#define NET_HARDWARE_ADD_SOFTWARE_DROP 2
+*/
+#define NET_INTERFACE_HARDWARE_ADD_ADDRESS_DROP 2
 
 #define NET_TRANSPORT_FLAG_LOSSLESS (1 << 0)
 #define NET_TRANSPORT_FLAG_LOSSY (1 << 1)
@@ -107,10 +107,10 @@
 /*
   The mediums shouldn't include information about the encoding scheme at all,
   since we are on a lower level here
- */
-#define NET_MEDIUM_UNDEFINED 0
-#define NET_MEDIUM_IP 1
-#define NET_MEDIUM_RADIO 2
+*/
+#define NET_INTERFACE_MEDIUM_UNDEFINED 0
+#define NET_INTERFACE_MEDIUM_IP 1
+/* #define NET_INTERFACE_MEDIUM_RADIO 2 */
 
 /*
   Any information that needs to be abstracted out should
@@ -118,7 +118,7 @@
   should only contain information pertaining to the medium
   (frequencies, bandwidth, modulation schemes for radio, ip
   address, port, and protocol
- */
+*/
 
 #pragma message("times for availability should be set with a conversion function from HH:MM:SS to offsets from midnight UTC")
 
@@ -127,13 +127,13 @@ private:
 	/*
 	  If the system in question has a recurring availability:
 	  - Some setting that only allows data to be freely forwarded and 
-	    accepting connections at certain times (forwarding at night only)
+	  accepting connections at certain times (forwarding at night only)
 	  - Time slots for radio transmissions and what not, helps increase
-            efficiency for one way broadcasting from high powered towers
+	  efficiency for one way broadcasting from high powered towers
 
 	  The times here are not absolute times, but are offsets from midnight UTC.
 	  If the broadcasting time runs through midnight
-	 */
+	*/
 	uint64_t first_time_micro_s = 0; // actual timestamp
 	uint64_t end_to_start_micro_s = 0; // time between each end and start
 	uint64_t start_available_micro_s = 0;
@@ -148,13 +148,13 @@ private:
 	  decoded (while somehow passing that information back to the caller).
 	  That could allow for much easier decoding from satellites and
 	  transmitters in motion.
-	 */
+	*/
 	std::vector<uint8_t> latitude;
 	std::vector<uint8_t> longitude;
 
 	/*
 	  Medium of transfer
-	 */
+	*/
 	uint8_t medium = 0;
 public:
 	void list_virtual_data(data_id_t *id);
@@ -209,7 +209,7 @@ public:
   "ip_address" just means this can be resolved in some fahsion, it doesn't
   strictly require an IPv4 or IPv6 address (domain names, onion URLs, and I2P
   URLs are allowed as well)
- */
+*/
 
 #define NET_INTERFACE_IP_ADDRESS_TYPE_UNDEFINED 0
 #define NET_INTERFACE_IP_ADDRESS_TYPE_IPV4 1
@@ -246,20 +246,20 @@ public:
   as an automatically created type. Having automatically created types is
   pretty sick for a couple reasons:
   1. Spinning up mulitple Tor circuits/I2P tunnels, allowing us to increase
-     the total throughput of the node by distributing the bandwidth (also gives
-     us plenty of redundancy in case connections ping out)
+  the total throughput of the node by distributing the bandwidth (also gives
+  us plenty of redundancy in case connections ping out)
   2. Creating and destroying Tor circuits/I2P tunnels until one is found that
-     fits a set of criteria (bandwidth, ping time, country code, etc.)
+  fits a set of criteria (bandwidth, ping time, country code, etc.)
   3. Better manage servicing the I2P network, as BasicTV nodes operating inside
-     the I2P network only have access to the outside world through BasicTV
-     nodes running both I2P and Tor circuits, so as demand for items increase
-     inside of the I2P network, spin up more I2P and non-I2P connections to 
-     facilitate transfering
+  the I2P network only have access to the outside world through BasicTV
+  nodes running both I2P and Tor circuits, so as demand for items increase
+  inside of the I2P network, spin up more I2P and non-I2P connections to 
+  facilitate transfering
   4. Unique and permanent domain names can be created inside of these networks,
-     associate these with the net_interface_ip_address_t type, allowing for
-     a more secure connection (as connections between peers on the Tor network
-     don't leave the Tor network) and a more persistent IP configuration (IP
-     address changes would result in non-preference).
+  associate these with the net_interface_ip_address_t type, allowing for
+  a more secure connection (as connections between peers on the Tor network
+  don't leave the Tor network) and a more persistent IP configuration (IP
+  address changes would result in non-preference).
 
   Since a standard abstraction system is the goal, technically it is possible
   to connect an intermediary to a software device using a radio, but there is
@@ -268,7 +268,7 @@ public:
   An intermediary is one connection, there will be larger drivers at play
   later on that will facilitate creating and destroying intermediaries that
   have a more advanced implementation (Tor and I2P)
- */
+*/
 
 struct net_interface_intermediary_t{
 private:
@@ -295,11 +295,20 @@ public:
   net_interface_medium_t
 */
 
+// some macros for standard naming
+#define INTERFACE_ADD_ADDRESS_COST(interface) uint8_t net_interface_##interface##_add_address_cost(id_t_ hardware_dev_id, id_t_ address_id)
+#define INTERFACE_CALCULATE_MOST_EFFICIENT_DROP(interface) std::vector<id_t_> net_interface_##interface##_calculate_most_efficient_drop(id_t_ hardware_dev_id, id_t_ address_id)
+#define INTERFACE_CALCULATE_MOST_EFFICIENT_TRANSFER(interface) std::vector<std::pair<id_t_, id_t_> > net_interface_##interface##_calculate_most_efficient_transfer(id_t_ hardware_dev_id, id_t_ address_id)
+
+#define INTERFACE_SEND(interface) void net_interface_##interface##_send(id_t_ hardware_dev_id, id_t_ software_dev_id, std::vector<uint8_t> payload)
+#define INTERFACE_RECV_ALL(interface) std::vector<uint8_t> net_interface_##interface##_recv_all(id_t_ hardware_dev_id, id_t_ software_dev_id)
+
+
 struct net_interface_medium_t{
 public:
-	uint8_t add_software_cost(
+	uint8_t (*add_address_cost)(
 		id_t_ hardware_dev_id,
-		id_t_ software_dev_id);
+		id_t_ address_id) = nullptr;
 
 	// calls to _drop and _transfer are based on some flags that
 	// tell if we can transfer the information
@@ -313,10 +322,7 @@ public:
 	*/
 	std::vector<id_t_> (*calculate_most_efficient_drop)(
 		id_t_ hardware_dev_id,
-		id_t_ software_dev_id);
-	void (*perform_drop)(
-		std::vector<id_t_> drop_vector,
-		id_t_ hardware_dev_id);
+		id_t_ address_id) = nullptr;
 	/*
 	  Instead of dropping the connections entirely, this gives the option of
 	  allowing transferring software devices over to another hardware
@@ -334,46 +340,39 @@ public:
 	  Returns a vector of pairs, first element being the hardware device
 	  recommended to transfer towards, and the second element being the
 	  software_dev in question.
-	 */
+	*/
 	std::vector<std::pair<id_t_, id_t_> > (*calculate_most_efficient_transfer)(
 		id_t_ hardware_dev_id,
-		id_t_ software_dev_id);
-	void (*perform_transfer)(
-		std::vector<std::pair<id_t_, id_t_> > transfer_vector,
-		id_t_ hardware_dev_id);
+		id_t_ address_id) = nullptr;
 
-	void (*send)(std::vector<uint8_t> payload);
-	std::vector<uint8_t> (*recv_all)();
-
+	void (*send)(id_t_ hardware_dev_id,
+		     id_t_ software_dev_id,
+		     std::vector<uint8_t> payload) = nullptr;
+	std::vector<uint8_t> (*recv_all)(
+		id_t_ hardware_dev_id,
+		id_t_ software_dev_id) = nullptr;
+	
 	void (*bind_software_dev)(id_t_ address_id, id_t_ software_dev_id);
 	void (*unbind_software_dev)(id_t_ address_id, id_t_ software_dev_id);
 	net_interface_medium_t(
-		std::vector<id_t_> (*calculate_most_efficient_drop_)(id_t_ hardware_dev_id, id_t_ software_dev_id),
-		void (*perform_drop_)(std::vector<id_t_> drop_vector, id_t_ hardward_dev_id),
+		uint8_t (*add_address_cost_)(id_t_ hardware_dev_id, id_t_ address_id),
 		
-		std::vector<std::pair<id_t_, id_t_> > (*calculate_most_efficient_transfer_)(id_t_ hardware_dev_id, id_t_ software_dev_id),
-		void (*perform_transfer_)(std::vector<std::pair<id_t_, id_t_> > transfer_vector, id_t_ hardware_dev_id),
+		std::vector<id_t_> (*calculate_most_efficient_drop_)(id_t_ hardware_dev_id, id_t_ address_id),
+		std::vector<std::pair<id_t_, id_t_> > (*calculate_most_efficient_transfer_)(id_t_ hardware_dev_id, id_t_ address_id),
 		
-		void (*send_)(std::vector<uint8_t> payload),
-		std::vector<uint8_t> (*recv_all_)(),
-
-		void (*bind_software_dev_)(id_t_ address_id, id_t_ software_dev_id),
-		void (*unbind_software_dev_)(id_t_ address_id, id_t_ software_dev_id)){
+		void (*send_)(id_t_, id_t_, std::vector<uint8_t> payload),
+		std::vector<uint8_t> (*recv_all_)(id_t_ hardware_dev_id, id_t_ software_dev_id)){
+			
+		add_address_cost = add_address_cost_;
 		
 		calculate_most_efficient_drop = calculate_most_efficient_drop_;
-		perform_drop = perform_drop_;
-
 		calculate_most_efficient_transfer = calculate_most_efficient_transfer_;
-		perform_transfer = perform_transfer_;
-
+				
 		send = send_;
 		recv_all = recv_all_;
-
-		bind_software_dev = bind_software_dev_;
-		unbind_software_dev = unbind_software_dev_;
 	}
 };
-
+	
 struct net_interface_hardware_dev_t{
 private:
 	/*
@@ -381,7 +380,7 @@ private:
 	  to this hardware device. This is NOT the same as a case by case
 	  adding, where the variables at play need to be considered before
 	  adding it (multiple frequencies inside of the same bandwidth).
-	 */
+	*/
 	uint64_t max_soft_dev = 0;
 	uint8_t outbound_transport_type = 0;
 	uint8_t outbound_transport_flags = 0;
@@ -437,6 +436,10 @@ public:
 	GET(intermediary, uint8_t);
 	//GET_SET_ID(reliability_number_set_id); // really no need for public access
 };
+
+#define NET_INTERFACE_MEDIUM_COUNT 1
+
+extern net_interface_medium_t interface_medium_lookup(uint8_t medium);
 
 #endif
 		

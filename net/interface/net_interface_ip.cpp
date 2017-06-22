@@ -1,13 +1,18 @@
 #include "net_interface.h"
+#include "net_interface_ip.h"
 
 static void hardware_software_address_sanity_check(
 	net_interface_hardware_dev_t *hardware_dev_ptr,
 	net_interface_software_dev_t *software_dev_ptr,
 	net_interface_ip_address_t *ip_address_ptr){
-	ASSERT(ip_address_ptr->get_required_intermediary() == 0 ||
-	       ip_address_ptr->get_required_intermediary() == software_dev_ptr->get_intermediary(), P_ERR);
-	ASSERT(hardware_dev_ptr->get_medium() == software_dev_ptr->get_state_format() &&
-	       hardware_dev_ptr->get_medium() == ip_address_ptr->get_medium(), P_ERR);
+	if(software_dev_ptr == nullptr){
+		ASSERT(ip_address_ptr->get_medium() == hardware_dev_ptr->get_medium(), P_ERR);
+	}else{
+		ASSERT(ip_address_ptr->get_required_intermediary() == 0 ||
+		       ip_address_ptr->get_required_intermediary() == software_dev_ptr->get_intermediary(), P_ERR);
+		ASSERT(hardware_dev_ptr->get_medium() == software_dev_ptr->get_state_format() &&
+		       hardware_dev_ptr->get_medium() == ip_address_ptr->get_medium(), P_ERR);
+	}
 }
 
 // getters and setters for the local-global variables
@@ -31,16 +36,18 @@ static void hardware_software_address_sanity_check(
 	PRINT_IF_NULL(ip_address_ptr, P_ERR);			\
 
 
-std::vector<id_t_> ip_calculate_most_efficient_drop(
-	id_t_ hardware_dev_id,
-	id_t_ software_dev_id){
-	
+/*
+  The likelihoop that we need to formally call the drop function in IP is
+  pretty low, so we just go through and drop the software devices with the
+  oldest latest activit
+ */
+
+INTERFACE_CALCULATE_MOST_EFFICIENT_DROP(ip){
 	IP_SET_HW_PTR(hardware_dev_id);
-	IP_SET_SW_PTR(software_dev_id);
-	IP_SET_ADDR_PTR(software_dev_ptr->get_address_id());
+	IP_SET_ADDR_PTR(address_id);
 	hardware_software_address_sanity_check(
 		hardware_dev_ptr,
-		software_dev_ptr,
+		nullptr,
 		ip_address_ptr);
 	uint64_t soft_dev_to_remove = 0;
 	if(hardware_dev_ptr->get_max_soft_dev() ==
@@ -78,14 +85,35 @@ std::vector<id_t_> ip_calculate_most_efficient_drop(
 	return retval;
 }
 
-void ip_perform_drop(
-	std::vector<id_t_> drop_vector,
-	id_t_ hardware_dev_id){
-	net_interface_hardware_dev_t *hardware_dev_ptr =
-		PTR_DATA(hardware_dev_id,
-			 net_interface_hardware_dev_t);
-	PRINT_IF_NULL(hardware_dev_ptr, P_ERR);
-	for(uint64_t i = 0;i < drop_vector.size();i++){
-		
+INTERFACE_CALCULATE_MOST_EFFICIENT_TRANSFER(ip){
+	IP_SET_HW_PTR(hardware_dev_id);
+	IP_SET_ADDR_PTR(address_id);
+	/*
+	  Until I implement modulation/packet schemes, we are keeping with TCP,
+	  and sockets can't be traded between interfaces easily without
+	  disconnecting (same for UDP)
+	 */
+	return {};
+}
+
+INTERFACE_SEND(ip){
+	IP_SET_HW_PTR(hardware_dev_id);
+	IP_SET_SW_PTR(software_dev_id);
+	ASSERT(payload.size() != 0, P_ERR);
+}
+
+INTERFACE_RECV_ALL(ip){
+	IP_SET_HW_PTR(hardware_dev_id);
+	IP_SET_SW_PTR(software_dev_id);
+	return {};
+}
+
+INTERFACE_ADD_ADDRESS_COST(ip){
+	IP_SET_HW_PTR(hardware_dev_id);
+	IP_SET_ADDR_PTR(address_id);
+	if(hardware_dev_ptr->get_max_soft_dev() < hardware_dev_ptr->get_size_soft_dev_list()){
+		return NET_INTERFACE_HARDWARE_ADD_ADDRESS_FREE;
+	}else{
+		return NET_INTERFACE_HARDWARE_ADD_ADDRESS_DROP;
 	}
 }
