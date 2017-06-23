@@ -1,5 +1,11 @@
 #include "net_interface.h"
 #include "net_interface_ip.h"
+#include "net_interface_tcp.h"
+#include "net_interface_hardware.h"
+#include "net_interface_software.h"
+#include "net_interface_intermediary.h"
+#include "net_interface_medium.h"
+#include "net_interface_ip_address.h"
 
 #include "net_interface_helper.h"
 
@@ -12,7 +18,7 @@ static void hardware_software_address_sanity_check(
 	}else{
 		ASSERT(ip_address_ptr->get_required_intermediary() == 0 ||
 		       ip_address_ptr->get_required_intermediary() == software_dev_ptr->get_intermediary(), P_ERR);
-		ASSERT(hardware_dev_ptr->get_medium() == software_dev_ptr->get_state_format() &&
+		ASSERT(hardware_dev_ptr->get_medium() == software_dev_ptr->get_medium() &&
 		       hardware_dev_ptr->get_medium() == ip_address_ptr->get_medium(), P_ERR);
 	}
 }
@@ -80,12 +86,43 @@ INTERFACE_CALCULATE_MOST_EFFICIENT_TRANSFER(ip){
 	return {};
 }
 
+#pragma message("no attempt at UDP support whatever right now")
+
 INTERFACE_SEND(ip){
 	INTERFACE_SET_HW_PTR(hardware_dev_id);
 	INTERFACE_SET_SW_PTR(software_dev_id);
-	ASSERT(payload.size() != 0, P_ERR);
+	ASSERT(payload->size() != 0, P_ERR);
 
-	
+	sanity_check_modulation_and_encapsulation(
+		software_dev_ptr->get_packet_modulation(),
+		software_dev_ptr->get_packet_encapsulation());
+
+	int64_t sent_bytes = 0;
+	switch(software_dev_ptr->get_packet_modulation()){
+	case NET_INTERFACE_MEDIUM_PACKET_MODULATION_TCP:
+		// We can safely assume that TCP's encapsulation is
+		// TCP's only option, which is just send it like
+		// it was presented
+		sent_bytes =
+			SDLNet_TCP_Send(
+				(TCPsocket)software_dev_ptr->get_state_ptr(),
+				payload->data(),
+				payload->size());
+		if(sent_bytes == -1){
+			print("TCP didn't work", P_WARN);
+			sent_bytes = 0;
+		}else if(sent_bytes < (int64_t)payload->size()){
+			print("not all TCP data was sent", P_WARN);
+		}
+	case NET_INTERFACE_MEDIUM_PACKET_MODULATION_UDP:
+		print("udp isn't implemented yet", P_CRIT);
+		break;
+	default:
+		print("unsupported encapsulation scheme for ip", P_ERR);
+	}
+	payload->erase(
+		payload->begin(),
+		payload->begin()+sent_bytes);
 }
 
 INTERFACE_RECV_ALL(ip){

@@ -1,6 +1,7 @@
 #ifndef NET_INTERFACE_IP_H
 #define NET_INTERFACE_IP_H
 
+#include "net_interface_medium.h"
 #include "net_interface.h"
 
 extern INTERFACE_ADD_ADDRESS_COST(ip);

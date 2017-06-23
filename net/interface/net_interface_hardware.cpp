@@ -1,4 +1,12 @@
 #include "net_interface.h"
+#include "net_interface_ip.h"
+#include "net_interface_tcp.h"
+#include "net_interface_hardware.h"
+#include "net_interface_software.h"
+#include "net_interface_intermediary.h"
+#include "net_interface_medium.h"
+#include "net_interface_ip_address.h"
+
 #include "../net.h"
 
 net_interface_hardware_dev_t::net_interface_hardware_dev_t() : id(this, TYPE_NET_INTERFACE_HARDWARE_DEV_T){
