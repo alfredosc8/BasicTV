@@ -1,9 +1,7 @@
 #ifndef NET_INTERFACE_ADDRESS_H
 #define NET_INTERFACE_ADDRESS_H
 
-#define NET_INTERFACE_MEDIUM_UNDEFINED 0
-#define NET_INTERFACE_MEDIUM_IP 1
-/* #define NET_INTERFACE_MEDIUM_RADIO 2 */
+#include "net_interface.h"
 
 
 #pragma message("times for availability should be set with a conversion function from HH:MM:SS to offsets from midnight UTC")
@@ -42,7 +40,7 @@ private:
 	  Medium of transfer
 	*/
 	uint8_t medium = 0;
-
+	
 	/*
 	  Packet format and packet encapsulation system to use
 
@@ -54,7 +52,7 @@ private:
 	  depacketizer are allowed to use an agreed-upon escape character to
 	  communicate lost packet info to one another, but that isn't needed
 	  and would add bloat to a system like TCP.
-	 */
+	*/
 	uint8_t packet_modulation = 0;
 	uint8_t packet_encapsulation = 0;
 public:
@@ -67,7 +65,14 @@ public:
 	GET_SET(latitude, std::vector<uint8_t>);
 	GET_SET(longitude, std::vector<uint8_t>);
 
-	GET_SET(medium, uint8_t);
+	void set_medium_modulation_encapsulation(
+		uint8_t medium_,
+		uint8_t packet_modulation_,
+		uint8_t packet_encapsulation_);
+	
+	GET(medium, uint8_t);
+	GET(packet_modulation, uint8_t);
+	GET(packet_encapsulation, uint8_t);
 };
 
 #endif

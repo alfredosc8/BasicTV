@@ -6,9 +6,9 @@
 
 struct net_interface_software_dev_t{
 private:
-	std::vector<uint8_t> inbound_data;
+	std::vector<std::vector<uint8_t> > inbound_data;
 	uint64_t last_good_inbound_micro_s = 0;
-	std::vector<uint8_t> outbound_data;
+	std::vector<std::vector<uint8_t> > outbound_data;
 	uint64_t last_good_outbound_micro_s = 0;
 
 	uint64_t max_packet_size_by_software = 0;
@@ -50,6 +50,11 @@ public:
 	GET(medium, uint8_t);
 	
 	GET_ID(reliability_number_set_id);
+
+	GET_SET(inbound_data, std::vector<std::vector<uint8_t> >);
+	ADD_DEL_VECTOR(inbound_data, std::vector<uint8_t>);
+	GET_SET(outbound_data, std::vector<std::vector<uint8_t> >);
+	ADD_DEL_VECTOR(outbound_data, std::vector<uint8_t>);
 };
 
 #endif

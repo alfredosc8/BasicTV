@@ -1,6 +1,8 @@
+#include "net_interface_helper.h"
 #include "net_interface_api.h"
 #include "net_interface.h"
 
+#include "../../util.h"
 #include "../../id/id_api.h"
 
 /*

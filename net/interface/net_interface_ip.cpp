@@ -87,48 +87,110 @@ INTERFACE_CALCULATE_MOST_EFFICIENT_TRANSFER(ip){
 }
 
 #pragma message("no attempt at UDP support whatever right now")
+#pragma message("packetizer isn't actually called for TCP (doesn't NEED to be)")
 
 INTERFACE_SEND(ip){
 	INTERFACE_SET_HW_PTR(hardware_dev_id);
 	INTERFACE_SET_SW_PTR(software_dev_id);
 	ASSERT(payload->size() != 0, P_ERR);
 
-	sanity_check_modulation_and_encapsulation(
-		software_dev_ptr->get_packet_modulation(),
-		software_dev_ptr->get_packet_encapsulation());
+	// sanity checks for medium, modulation, and encapsulation are done
+	// on assignment to address, so they should be fine herex
 
 	int64_t sent_bytes = 0;
-	switch(software_dev_ptr->get_packet_modulation()){
-	case NET_INTERFACE_MEDIUM_PACKET_MODULATION_TCP:
-		// We can safely assume that TCP's encapsulation is
-		// TCP's only option, which is just send it like
-		// it was presented
-		sent_bytes =
-			SDLNet_TCP_Send(
-				(TCPsocket)software_dev_ptr->get_state_ptr(),
-				payload->data(),
-				payload->size());
-		if(sent_bytes == -1){
-			print("TCP didn't work", P_WARN);
-			sent_bytes = 0;
-		}else if(sent_bytes < (int64_t)payload->size()){
-			print("not all TCP data was sent", P_WARN);
+
+	net_interface_medium_packet_t medium_packet =
+		medium_packet_lookup(
+			software_dev_ptr->get_medium(),
+			software_dev_ptr->get_packet_modulation(),
+			software_dev_ptr->get_packet_encapsulation());
+	
+	std::vector<std::vector<uint8_t> > packetized =
+		medium_packet.packetize(
+			hardware_dev_id,
+			software_dev_id,
+			payload);
+	for(uint64_t i = 0;i < packetized.size();i++){
+		switch(software_dev_ptr->get_packet_modulation()){
+		case NET_INTERFACE_MEDIUM_PACKET_MODULATION_TCP:
+			sent_bytes =
+				SDLNet_TCP_Send(
+					(TCPsocket)software_dev_ptr->get_state_ptr(),
+					packetized[i].data(),
+					packetized[i].size());
+			if(sent_bytes == -1){
+				print("TCP send didn't work", P_WARN);
+				sent_bytes = 0;
+			}else if(sent_bytes < (int64_t)packetized[i].size()){
+				print("not all TCP data was sent", P_WARN);
+			}
+			break;
+		case NET_INTERFACE_MEDIUM_PACKET_MODULATION_UDP:
+			print("udp isn't implemented yet", P_CRIT);
+			break;
+		default:
+			print("unsupported encapsulation scheme for ip", P_ERR);
 		}
-	case NET_INTERFACE_MEDIUM_PACKET_MODULATION_UDP:
-		print("udp isn't implemented yet", P_CRIT);
-		break;
-	default:
-		print("unsupported encapsulation scheme for ip", P_ERR);
+		packetized[i].erase(
+			packetized[i].begin(),
+			packetized[i].begin()+sent_bytes);
+		if(packetized[i].size() == 0){
+			packetized.erase(
+				packetized.begin()+i);
+			i--;
+		}
 	}
-	payload->erase(
-		payload->begin(),
-		payload->begin()+sent_bytes);
 }
 
 INTERFACE_RECV_ALL(ip){
 	INTERFACE_SET_HW_PTR(hardware_dev_id);
 	INTERFACE_SET_SW_PTR(software_dev_id);
-	return {};
+	std::vector<uint8_t> retval;
+	char buffer[65536];
+	int32_t recv_bytes = -1;
+	while(recv_bytes != 0){
+		recv_bytes = 0;
+		switch(software_dev_ptr->get_packet_modulation()){
+		case NET_INTERFACE_MEDIUM_PACKET_MODULATION_TCP:
+			recv_bytes =
+				SDLNet_TCP_Recv(
+					(TCPsocket)software_dev_ptr->get_state_ptr(),
+					&(buffer[0]),
+					65536);
+			if(recv_bytes <= 0){
+				print("TCP recv didn't work", P_WARN);
+				recv_bytes = 0;
+			}
+			break;
+		case NET_INTERFACE_MEDIUM_PACKET_MODULATION_UDP:
+			print("udp isn't implemented yet", P_CRIT);
+			break;
+		default:
+			print("unsupported encapsulation scheme for ip", P_ERR);
+		}
+		if(recv_bytes != 0){
+			software_dev_ptr->add_inbound_data(
+				std::vector<uint8_t>(
+					buffer,
+					buffer+recv_bytes));
+		}
+	}
+	net_interface_medium_packet_t medium_packet =
+		medium_packet_lookup(
+			software_dev_ptr->get_medium(),
+			software_dev_ptr->get_packet_modulation(),
+			software_dev_ptr->get_packet_encapsulation());
+	std::vector<std::vector<uint8_t> > inbound_data_ =
+		software_dev_ptr->get_inbound_data();
+	std::vector<uint8_t> unpacketized =
+		medium_packet.depacketize(
+			hardware_dev_id,
+			software_dev_id,
+			&inbound_data_);
+	software_dev_ptr->set_inbound_data(
+		inbound_data_);
+	software_dev_ptr->add_inbound_data(
+		unpacketized);
 }
 
 INTERFACE_ADD_ADDRESS_COST(ip){

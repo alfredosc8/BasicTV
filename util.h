@@ -57,6 +57,7 @@
 #define ADD_DEL_VECTOR(data_to_set, type)				\
 	void add_##data_to_set(type datum){for(uint64_t i = 0;i < data_to_set.size();i++){if(data_to_set[i]==datum){return;}}data_to_set.push_back(datum);} \
 	void del_##data_to_set(type datum){for(uint64_t i = 0;i < data_to_set.size();i++){if(data_to_set[i]==datum){data_to_set.erase(data_to_set.begin()+i);break;}}} \
+	void append_##data_to_set(std::vector<type> datum){data_to_set.insert(data_to_set.end(), datum.begin(), datum.end());} \
 
 #define GET_SIZE_VECTOR(data_to_size)\
 	uint64_t get_size_##data_to_size(){return data_to_size.size();}

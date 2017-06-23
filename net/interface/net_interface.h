@@ -6,17 +6,6 @@
 #include "../../util.h"
 #include "../../state.h"
 
-#include "net_interface.h"
-#include "net_interface_ip.h"
-#include "net_interface_tcp.h"
-#include "net_interface_hardware.h"
-#include "net_interface_software.h"
-#include "net_interface_intermediary.h"
-#include "net_interface_medium.h"
-#include "net_interface_ip_address.h"
-#include "../net.h"
-
-
 #include <algorithm>
 
 /*
@@ -180,11 +169,14 @@
   net_interface_medium_t
 */
 
+#include "net_interface_medium.h"
+
 
 #define NET_INTERFACE_MEDIUM_COUNT 1
 #define NET_INTERFACE_MEDIUM_PACKET_COUNT 1
 
 extern net_interface_medium_t interface_medium_lookup(uint8_t medium);
 
+#include "../net.h"
 #endif
 		

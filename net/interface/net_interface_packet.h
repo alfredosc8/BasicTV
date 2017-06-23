@@ -27,12 +27,17 @@
 struct net_interface_medium_packet_t{
 private:
 	uint32_t mtu = 0;
+	// medium
+	uint8_t medium = 0;
 	// format is the modulation scheme used
-	uint8_t format = 0;
+	uint8_t packet_modulation = 0;
 	// encapsulation is any error correction or packetization,
-	uint8_t encapsulation = 0;
+	uint8_t packet_encapsulation = 0;
 public:
 	GET(mtu, uint32_t);
+	GET(packet_modulation, uint8_t);
+	GET(packet_encapsulation, uint8_t);
+	GET(medium, uint8_t);
 	std::vector<std::vector<uint8_t> > (*packetize)(
 		id_t_ hardware_dev_id,
 		id_t_ software_dev_id,
@@ -59,7 +64,15 @@ public:
 	}
 };
 
-extern void sanity_check_modulation_and_encapsulation(
+extern void sanity_check_medium_modulation_encapsulation(
+	uint8_t medium, 
+	uint8_t modulation,
+	uint8_t encapsulation);
+
+// both have to matchg
+
+extern net_interface_medium_packet_t medium_packet_lookup(
+	uint8_t medium, 
 	uint8_t modulation,
 	uint8_t encapsulation);
 

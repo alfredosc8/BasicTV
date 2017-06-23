@@ -1,6 +1,10 @@
 #ifndef NET_INTERFACE_HELPER_H
 #define NET_INTERFACE_HELPER_H
 
+#include "net_interface_hardware.h"
+#include "net_interface_software.h"
+#include "net_interface_ip_address.h"
+
 /*
   Try and use these for every function for now, it makes it
   easier to do sanity checks on the information later
