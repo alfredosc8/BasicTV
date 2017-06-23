@@ -156,6 +156,21 @@ private:
 	  Medium of transfer
 	*/
 	uint8_t medium = 0;
+
+	/*
+	  Packet format and packet encapsulation system to use
+
+	  The only current IP combination is TCP and TCP (TCP has pretty gnarly
+	  error correction at a protocol leve, so it has a special type here
+	  that leaves that alone). UDP and UDP_ORDERED just prefaces the
+	  packets with a 32-bit number designating the packet number, and a 
+	  32-bit number of the last packet in the set. The packetizer and
+	  depacketizer are allowed to use an agreed-upon escape character to
+	  communicate lost packet info to one another, but that isn't needed
+	  and would add bloat to a system like TCP.
+	 */
+	uint8_t packet_format = 0;
+	uint8_t packet_encapsulation = 0;
 public:
 	void list_virtual_data(data_id_t *id);
 	GET_SET(first_time_micro_s, uint64_t);
@@ -216,10 +231,10 @@ public:
 #define NET_INTERFACE_IP_ADDRESS_TYPE_IPV6 2
 #define NET_INTERFACE_IP_ADDRESS_TYPE_DOMAIN 3
 
-#define NET_INTERFACE_IP_ADDRESS_REQUIRED_INTERMEDIARY_UNDEFINED 0
-#define NET_INTERFACE_IP_ADDRESS_REQUIRED_INTERMEDIARY_NONE 1
-#define NET_INTERFACE_IP_ADDRESS_REQUIRED_INTERMEDIARY_TOR 2
-#define NET_INTERFACE_IP_ADDRESS_REQUIRED_INTERMEDIARY_I2P 3
+#define NET_INTERFACE_INTERMEDIARY_UNDEFINED 0
+#define NET_INTERFACE_INTERMEDIARY_NONE 1
+#define NET_INTERFACE_INTERMEDIARY_TOR 2
+#define NET_INTERFACE_INTERMEDIARY_I2P 3
 
 struct net_interface_ip_address_t : public net_interface_address_t {
 private:
@@ -275,6 +290,8 @@ private:
 	id_t_ intermediary_address = ID_BLANK_ID;
 	std::vector<id_t_> listed_soft_dev;
 
+	uint8_t intermediary = 0;
+	
 	id_t_ inbound_throughput_number_set_id = ID_BLANK_ID;
 	id_t_ outbound_throughput_number_set_id = ID_BLANK_ID;
 public:
@@ -287,6 +304,88 @@ public:
 	GET(listed_soft_dev, std::vector<id_t_>);
 	GET_ID(inbound_throughput_number_set_id);
 	GET_ID(outbound_throughput_number_set_id);
+	GET_SET(intermediary, uint8_t);
+};
+
+/*
+  Packetizing and protocols themselves are handled inside of
+  net_interface_medium_packet_t. This would handle TCP, UDP, packet radio,
+  error detection and correction, and all that jazz.
+
+  Internally, this functions like a state codec, except there is no need
+  to explicitly initialize, and the state is defined in 
+  net_interface_software_dev_t (state_ptr)
+
+  This function doesn't facilitate the transmission per-se, that's offloaded
+  back to net_interface_medium_t
+
+  
+
+  TCP is pretty flexible with the sizes. UDP would benefit from exact metadata
+  sizing information from net_interface_software_dev_t (?), and would optimize
+  performance by pushing us closer to the MTU. Packet radio 
+  
+ */
+
+#define NET_INTERFACE_MEDIUM_PACKET_MTU_UNDEFINED 0
+
+#define NET_INTERFACE_MEDIUM_PACKET_FORMAT_UNDEFINED 0
+// IP
+#define NET_INTERFACE_MEDIUM_PACKET_FORMAT_TCP 1
+#define NET_INTERFACE_MEDIUM_PACKET_FORMAT_UDP 2
+
+#define NET_INTERFACE_MEDIUM_PACKET_ENCAPSULATION_TCP 1
+#define NET_INTERFACE_MEDIUM_PACKET_ENCAPSULATION_UDP_ORDERED 2
+
+// Radio
+#define NET_INTERFACE_NEDIUM_PACKET_FORMAT_BELL_202 3 // 1200 baud
+#define NET_INTERFACE_MEDIUM_PACKET_FORMAT_G3RUH_DFSK 4 // 9600 baud
+
+#define NET_INTERFACE_MEDIUM_PACKET_ENCAPSULATION_AX_25 3
+#define NET_INTERFACE_MEDIUM_PACKET_ENCAPSULATION_FX_25 4 // AX.25 with FEC
+
+/*
+  NOTE TO SELF:
+  Error correction is ALWAYS going to be more important than transmission
+  speed (beyond 9600 baud G3RUH, that is)
+ */
+
+#define INTERFACE_PACKETIZE(medium, packet_) std::vector<std::vector<uint8_t> > net_interface_##medium##_##packet_##_packetize(id_t_ hardware_dev_id, id_t_ software_dev_id, std::vector<uint8_t> *packet)
+#define INTERFACE_DEPACKETIZE(medium, packet_) std::vector<uint8_t> net_interface_##medium##_##packet_##_depacketize(id_t_ hardware_dev_id, id_t_ software_dev_id, std::vector<std::vector<uint8_t> > *packet)
+
+struct net_interface_medium_packet_t{
+private:
+	uint32_t mtu = 0;
+	// format is the modulation scheme used
+	uint8_t format = 0;
+	// encapsulation is any error correction or packetization,
+	uint8_t encapsulation = 0;
+public:
+	GET(mtu, uint32_t);
+	std::vector<std::vector<uint8_t> > (*packetize)(
+		id_t_ hardware_dev_id,
+		id_t_ software_dev_id,
+		std::vector<uint8_t> *packet);
+
+	std::vector<uint8_t> (*depacketize)(
+		id_t_ hardware_dev_id,
+		id_t_ software_dev_id,
+		std::vector<std::vector<uint8_t> > *packet);
+
+	net_interface_medium_packet_t(
+		std::vector<std::vector<uint8_t> > (*packetize_)(
+			id_t_ hardware_dev_id,
+			id_t_ software_dev_id,
+			std::vector<uint8_t> *packet),
+		std::vector<uint8_t> (*depacketize_)(
+			id_t_ hardware_dev_id,
+			id_t_ software_dev_id,
+			std::vector<std::vector<uint8_t> > *packet),
+		uint32_t mtu_){
+		packetize = packetize_;
+		depacketize = depacketize_;
+		mtu = mtu_;
+	}
 };
 
 /*
@@ -414,9 +513,14 @@ private:
 	std::vector<uint8_t> outbound_data;
 	uint64_t last_good_outbound_micro_s = 0;
 
+	uint64_t max_packet_size_by_software = 0;
+	
 	// state has state_ptr and state_format
 	// state format is the medium
 	// state ptr is the socket or whatever
+
+	uint8_t packet_format = 0;
+	uint8_t packet_encapsulation = 0;
 	id_t_ hardware_dev_id = ID_BLANK_ID;	
 	id_t_ reliability_number_set_id = ID_BLANK_ID;
 	id_t_ address_id = ID_BLANK_ID;
@@ -430,14 +534,24 @@ public:
 	~net_interface_software_dev_t();
 	GET(last_good_inbound_micro_s, uint64_t);
 	GET(last_good_outbound_micro_s, uint64_t);
-	GET_SET_ID(hardware_dev_id);
-	GET_SET_ID(address_id);
-	GET_SET_ID(intermediary_id);
+
+	void set_hardware_dev_id(id_t_ hardware_dev_id_);
+	GET_ID(hardware_dev_id);
+
+	void set_address_id(id_t_ address_id_);
+	GET_ID(address_id);
+	GET(packet_format, uint8_t);
+	GET(packet_encapsulation, uint8_t);
+
+	void set_intermediary_id(id_t_ intermediary_id_);
+	GET_ID(intermediary_id);
 	GET(intermediary, uint8_t);
-	//GET_SET_ID(reliability_number_set_id); // really no need for public access
+
+	GET_ID(reliability_number_set_id);
 };
 
 #define NET_INTERFACE_MEDIUM_COUNT 1
+#define NET_INTERFACE_MEDIUM_PACKET_COUNT 1
 
 extern net_interface_medium_t interface_medium_lookup(uint8_t medium);
 

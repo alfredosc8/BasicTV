@@ -1,6 +1,8 @@
 #include "net_interface.h"
 #include "net_interface_ip.h"
 
+#include "net_interface_helper.h"
+
 static void hardware_software_address_sanity_check(
 	net_interface_hardware_dev_t *hardware_dev_ptr,
 	net_interface_software_dev_t *software_dev_ptr,
@@ -17,24 +19,6 @@ static void hardware_software_address_sanity_check(
 
 // getters and setters for the local-global variables
 
-#define IP_SET_HW_PTR(x)					\
-	net_interface_hardware_dev_t *hardware_dev_ptr =	\
-		PTR_DATA(x,					\
-			 net_interface_hardware_dev_t);		\
-	PRINT_IF_NULL(hardware_dev_ptr, P_ERR);			\
-	
-#define IP_SET_SW_PTR(x)					\
-	net_interface_software_dev_t *software_dev_ptr =	\
-		PTR_DATA(x,					\
-			 net_interface_software_dev_t);		\
-	PRINT_IF_NULL(software_dev_ptr, P_ERR);			\
-	
-#define IP_SET_ADDR_PTR(x)					\
-	net_interface_ip_address_t *ip_address_ptr =		\
-		PTR_DATA(x,					\
-			 net_interface_ip_address_t);		\
-	PRINT_IF_NULL(ip_address_ptr, P_ERR);			\
-
 
 /*
   The likelihoop that we need to formally call the drop function in IP is
@@ -43,8 +27,8 @@ static void hardware_software_address_sanity_check(
  */
 
 INTERFACE_CALCULATE_MOST_EFFICIENT_DROP(ip){
-	IP_SET_HW_PTR(hardware_dev_id);
-	IP_SET_ADDR_PTR(address_id);
+	INTERFACE_SET_HW_PTR(hardware_dev_id);
+	INTERFACE_SET_ADDR_PTR(address_id);
 	hardware_software_address_sanity_check(
 		hardware_dev_ptr,
 		nullptr,
@@ -86,8 +70,8 @@ INTERFACE_CALCULATE_MOST_EFFICIENT_DROP(ip){
 }
 
 INTERFACE_CALCULATE_MOST_EFFICIENT_TRANSFER(ip){
-	IP_SET_HW_PTR(hardware_dev_id);
-	IP_SET_ADDR_PTR(address_id);
+	INTERFACE_SET_HW_PTR(hardware_dev_id);
+	INTERFACE_SET_ADDR_PTR(address_id);
 	/*
 	  Until I implement modulation/packet schemes, we are keeping with TCP,
 	  and sockets can't be traded between interfaces easily without
@@ -97,20 +81,22 @@ INTERFACE_CALCULATE_MOST_EFFICIENT_TRANSFER(ip){
 }
 
 INTERFACE_SEND(ip){
-	IP_SET_HW_PTR(hardware_dev_id);
-	IP_SET_SW_PTR(software_dev_id);
+	INTERFACE_SET_HW_PTR(hardware_dev_id);
+	INTERFACE_SET_SW_PTR(software_dev_id);
 	ASSERT(payload.size() != 0, P_ERR);
+
+	
 }
 
 INTERFACE_RECV_ALL(ip){
-	IP_SET_HW_PTR(hardware_dev_id);
-	IP_SET_SW_PTR(software_dev_id);
+	INTERFACE_SET_HW_PTR(hardware_dev_id);
+	INTERFACE_SET_SW_PTR(software_dev_id);
 	return {};
 }
 
 INTERFACE_ADD_ADDRESS_COST(ip){
-	IP_SET_HW_PTR(hardware_dev_id);
-	IP_SET_ADDR_PTR(address_id);
+	INTERFACE_SET_HW_PTR(hardware_dev_id);
+	INTERFACE_SET_ADDR_PTR(address_id);
 	if(hardware_dev_ptr->get_max_soft_dev() < hardware_dev_ptr->get_size_soft_dev_list()){
 		return NET_INTERFACE_HARDWARE_ADD_ADDRESS_FREE;
 	}else{
