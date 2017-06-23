@@ -1,6 +1,4 @@
-Join the IRC chat at #basictv on Freenode [here](http://webchat.freenode.net/?channels=#basictv). IRC channel wasn't properly set up before, everybody should have been able to speak, and should now.
-
-Pretty rough around the edges, not a working testnet yet, but it'll be working okay soon enough (4/30/17)
+Join the IRC chat at #basictv on Freenode [here](http://webchat.freenode.net/?channels=#basictv) or the Matrix group chat at #BasicTV:matrix.org
 
 # BasicTV
 
@@ -49,11 +47,8 @@ A tiered storage model is used, which allows for archiving old and unpopular dat
 
 This means, as long as the ID is known to exist, it can be downloaded. You can also take streams off of the network and export them to local files. The age of the file may be taken into account for donations.
 
-## Tor integration
-One major highlight of BasicTV is the capability of using Tor efficiently. Tor conventionally creates one "circuit", or connection to the internet, since multiplexing simple webpages isn't efficient.
-
-
-BasicTV allows for creating multiple Tor circuits and effectively using them for all peer connections. Tor can allow for more connections than just a clearnet connection, as routers tend to drop TCP connections beyond a certain limit (routers don't see connections made inside of a Tor circuit).
+## Tor and I2P Integration
+One major highlight of BasicTV is the capability of using Tor and I2P efficiently. Tor and I2P typically work by creating one connection to the network to load one page. Since BasicTV doesn't follow this monolithic connection system, it can spread the load across multiple circuits and interfaces more efficiently.
 
 ## Dependencies
 * SDL2
