@@ -20,6 +20,9 @@ namespace net_interface{
 		id_t_ address_to_hardware(
 			id_t_ address_id,
 			id_t_ hardware_dev_id);
+		id_t_ software_to_hardware(
+			id_t_ software_dev_id,
+			id_t_ hardware_dev_id);
 	};
 	namespace unbind{
 		void software_to_hardware(
@@ -27,5 +30,4 @@ namespace net_interface{
 			id_t_ hardware_dev_id);
 	};
 };
-
 #endif

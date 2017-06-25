@@ -9,6 +9,14 @@
 
 #include "net_interface_helper.h"
 
+// state, so allocated in ADD_ADDRESS
+struct net_interface_medium_ip_ptr_t{
+public:
+	TCPsocket tcp_socket = nullptr;
+	SDLNet_SocketSet socket_set = nullptr;
+};
+
+
 static void hardware_software_address_sanity_check(
 	net_interface_hardware_dev_t *hardware_dev_ptr,
 	net_interface_software_dev_t *software_dev_ptr,
@@ -99,6 +107,9 @@ INTERFACE_SEND(ip){
 
 	int64_t sent_bytes = 0;
 
+	net_interface_medium_ip_ptr_t *working_state = 
+		static_cast<net_interface_medium_ip_ptr_t*>(software_dev_ptr->get_state_ptr());
+		
 	net_interface_medium_packet_t medium_packet =
 		medium_packet_lookup(
 			software_dev_ptr->get_medium(),
@@ -115,7 +126,7 @@ INTERFACE_SEND(ip){
 		case NET_INTERFACE_MEDIUM_PACKET_MODULATION_TCP:
 			sent_bytes =
 				SDLNet_TCP_Send(
-					(TCPsocket)software_dev_ptr->get_state_ptr(),
+					working_state->tcp_socket,
 					packetized[i].data(),
 					packetized[i].size());
 			if(sent_bytes == -1){
@@ -201,4 +212,23 @@ INTERFACE_ADD_ADDRESS_COST(ip){
 	}else{
 		return NET_INTERFACE_HARDWARE_ADD_ADDRESS_DROP;
 	}
+}
+
+INTERFACE_ADD_ADDRESS(ip){
+	INTERFACE_SET_HW_PTR(hardware_dev_id);
+	INTERFACE_SET_ADDR_PTR(address_id);
+	net_interface_software_dev_t *software_dev_ptr =
+		new net_interface_software_dev_t;
+	software_dev_ptr->set_address_id(
+		address_id);
+	software_dev_ptr->set_hardware_dev_id(
+		hardware_dev_id);
+	hardware_dev_ptr->add_soft_dev_list(
+		software_dev_ptr->id.get_id());
+	net_interface_medium_ip_ptr_t *working_state =
+		new net_interface_medium_ip_ptr_t;
+	working_state->socket_set =
+		SDLNet_AllocSocketSet(1);
+	ASSERT(working_state->socket_set != nullptr, P_ERR);
+	return software_dev_ptr->id.get_id();
 }
