@@ -113,14 +113,20 @@ static bool net_proto_facilitate_reverse_forward(
 		if(first_peer_ptr == nullptr){
 			print("can't establish a reverse forward connection without net_proto_peer_t data", P_ERR);
 		}
+		ASSERT(net_interface::medium::from_address(first_peer_ptr->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_ERR);
+		net_interface_ip_address_t *ip_address_ptr =
+			PTR_DATA(first_peer_ptr->get_address_id(),
+				 net_interface_ip_address_t);
+		PRINT_IF_NULL(ip_address_ptr, P_ERR);
 		net_socket_t *tmp_socket =
 			new net_socket_t;
 		net_proto_socket_t *proto_socket =
 			new net_proto_socket_t;
 		// Should I do this or create a net_con_req_t going out?
 		tmp_socket->set_net_ip(
-			first_peer_ptr->get_net_ip_str(),
-			first_peer_ptr->get_net_port());
+			net_interface::ip::raw::to_readable(
+				ip_address_ptr->get_address()),
+			ip_address_ptr->get_port());
 		tmp_socket->connect();
 		proto_socket->set_socket_id(
 			tmp_socket->id.get_id());
@@ -141,21 +147,39 @@ static void net_proto_accept_unorthodox_connections(){
 		if(con_req == nullptr){
 			continue;
 		}
-		id_t_ second_peer_id = ID_BLANK_ID;
+		id_t_ peer_ids[2] = {ID_BLANK_ID, ID_BLANK_ID};
 		con_req->get_peer_ids(
-			nullptr, &second_peer_id, nullptr);
-		if(second_peer_id != net_proto::peer::get_self_as_peer()){
+			&peer_ids[0], &peer_ids[1], nullptr);
+		if(peer_ids[1] != net_proto::peer::get_self_as_peer()){
 			continue;
 		}
-		switch(con_req->get_flags()){
-		case (NET_CON_REQ_TCP | NET_CON_REQ_HOLEPUNCH):
-			net_proto_facilitate_tcp_holepunch(con_req);
+		net_proto_peer_t *proto_peer_ptr =
+			PTR_DATA(peer_ids[0],
+				 net_proto_peer_t);
+		CONTINUE_IF_NULL(proto_peer_ptr, P_WARN);
+		ASSERT(net_interface::medium::from_address(proto_peer_ptr->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_WARN);
+		net_interface_ip_address_t *ip_address_ptr =
+			PTR_DATA(proto_peer_ptr->get_address_id(),
+				 net_interface_ip_address_t);
+		CONTINUE_IF_NULL(ip_address_ptr, P_WARN);
+		switch(ip_address_ptr->get_packet_encapsulation()){
+		case NET_INTERFACE_MEDIUM_PACKET_ENCAPSULATION_TCP:
+			switch(ip_address_ptr->get_nat_type()){
+			case NET_INTERFACE_IP_ADDRESS_NAT_TYPE_NONE:
+				net_proto_facilitate_tcp_holepunch(con_req);
+				break;
+			default:
+				print("attempting a reverse forward since this section of the code needs updating", P_WARN);
+				net_proto_facilitate_reverse_forward(con_req);
+				break;
+			}
 			break;
-		case (NET_CON_REQ_TCP | NET_CON_REQ_REVERSE_FORWARD):
-			net_proto_facilitate_reverse_forward(con_req);
+		case NET_INTERFACE_MEDIUM_PACKET_ENCAPSULATION_UDP_ORDERED:
+			print("we have no udp support right now", P_ERR);
 			break;
 		default:
-			print("unrecognized and unimplemented connection method", P_WARN);
+			print("unknown encapsulation scheme", P_ERR);
+			break;
 		}
 	}
 }

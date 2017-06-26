@@ -15,3 +15,9 @@ void net_interface_address_t::set_medium_modulation_encapsulation(
 	packet_modulation = modulation_;
 	packet_encapsulation = encapsulation_;
 }
+
+void net_interface_address_t::list_virtual_data(data_id_t *id){
+	id->add_data_raw(&medium, sizeof(medium));
+	id->add_data_raw(&packet_modulation, sizeof(packet_modulation));
+	id->add_data_raw(&packet_encapsulation, sizeof(packet_encapsulation));
+}

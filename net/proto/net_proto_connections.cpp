@@ -32,20 +32,20 @@ void net_proto_handle_tcp_holepunch(net_proto_con_req_t *con_req){
 			&second_id,
 			nullptr);
 		net_proto_peer_t *peer_ptr =
-			PTR_DATA_FAST(second_id,
-				      net_proto_peer_t);
-		if(peer_ptr == nullptr){
-			print("cannot holepunch to a null peer", P_ERR);
-		}
-		const std::string peer_ip =
-			peer_ptr->get_net_ip_str();
-		const uint16_t peer_port =
-			peer_ptr->get_net_port();
+			PTR_DATA(second_id,
+				 net_proto_peer_t);
+		PRINT_IF_NULL(peer_ptr, P_ERR);
+		ASSERT(net_interface::medium::from_address(peer_ptr->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_ERR);
+		net_interface_ip_address_t *ip_address_ptr =
+			PTR_DATA(peer_ptr->get_address_id(),
+				 net_interface_ip_address_t);
+		PRINT_IF_NULL(ip_address_ptr, P_ERR);
 		net_socket_t *holepunch_socket =
 			new net_socket_t;
 		holepunch_socket->set_net_ip(
-			peer_ip,
-			peer_port);
+			net_interface::ip::raw::to_readable(
+				ip_address_ptr->get_address()),
+			ip_address_ptr->get_port());
 		holepunch_socket->connect();
 		print("add logic to finish connection", P_CRIT);
 	}

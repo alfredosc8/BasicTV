@@ -3,7 +3,7 @@
 
 #define NET_INTERFACE_MEDIUM_UNDEFINED 0
 #define NET_INTERFACE_MEDIUM_IP 1
-/* #define NET_INTERFACE_MEDIUM_RADIO 2 */
+#define NET_INTERFACE_MEDIUM_RADIO 2
 
 // some macros for standard naming
 #define INTERFACE_ADD_ADDRESS_COST(interface) uint8_t net_interface_##interface##_add_address_cost(id_t_ hardware_dev_id, id_t_ address_id)

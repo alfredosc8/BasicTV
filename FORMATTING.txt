@@ -74,7 +74,7 @@ the function has been declared, to prevent spamming the "namespace" with short
 and non-documented macros.
 
 If a piece of code is unimplemented, but is referenced in the code, a #pragma
-is generated, letting the builder know what is not implemented yet. #pragma
+is made, letting the builder know what is not implemented yet. #pragma
 stays there until it has been implemented entirely, feel free to re-phrase the
 #pragma to give more detailed warnings about the problem.
 
@@ -85,3 +85,10 @@ all should with reasonable exceptions:
 
 I'm working on fixing actual errors as I'm working, but don't put the source
 code as a de-facto formatting guide before this guide.
+
+Passing pointers directly to functions should work fine, and is encouraged to
+help visualize if a variable is changed at a lower layer. Using 'delete' inline
+is dangerous (but used a little bit). Instead calling id_api::destroy can delist
+the ID from lookups and save the deletion for until all threads returned (temporary
+pointers aren't saved to a global state, only IDs are).
+

@@ -55,6 +55,21 @@ private:
 	*/
 	uint8_t packet_modulation = 0;
 	uint8_t packet_encapsulation = 0;
+
+	/*
+	  Required intermediary
+
+	  This is pretty IP-centric, but having a generic interface could be
+	  pretty useful for one on one links. I don't see a need for a specific
+	  proxy to be used to connect, but instead just to require either Tor or
+	  I2P to prevent collateral damage
+	 */
+	uint8_t required_intermediary = 0;
+
+	/*
+	  Last attempted connect time
+	 */
+	uint64_t last_attempted_connect_time = 0;
 public:
 	void list_virtual_data(data_id_t *id);
 	GET_SET(first_time_micro_s, uint64_t);
@@ -65,6 +80,8 @@ public:
 	GET_SET(latitude, std::vector<uint8_t>);
 	GET_SET(longitude, std::vector<uint8_t>);
 
+	GET_SET(last_attempted_connect_time, uint64_t);
+	
 	void set_medium_modulation_encapsulation(
 		uint8_t medium_,
 		uint8_t packet_modulation_,
@@ -73,6 +90,7 @@ public:
 	GET(medium, uint8_t);
 	GET(packet_modulation, uint8_t);
 	GET(packet_encapsulation, uint8_t);
+	GET(required_intermediary, uint8_t);
 };
 
 #endif

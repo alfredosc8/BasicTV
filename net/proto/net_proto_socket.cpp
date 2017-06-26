@@ -233,7 +233,7 @@ void net_proto_socket_t::load_blocks(){
 			if(inbound_std_data.peer_id != peer_id){
 				print("sent peer ID and current peer ID do not"
 				      " match, assume this is a bootstrap", P_NOTE);
-				/*
+ 				/*
 				  Because bootstrapping is creating a new
 				  peer ID for the other client, one with 
 				  my hash

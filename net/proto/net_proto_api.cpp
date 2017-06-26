@@ -44,22 +44,25 @@ void net_proto::peer::set_self_peer_id(id_t_ self_peer_id_){
   Should be done in net_proto_init, actually
  */
 
+static uint8_t net_proto_generate_ip_address_nat_type(){
+	print("assuming there is no NAT (not safe, but it'll work for now?)", P_WARN);
+	return NET_INTERFACE_IP_ADDRESS_NAT_TYPE_NONE;
+}
+
 void net_proto::peer::set_self_as_peer(std::string ip, uint16_t port){
 	net_proto_peer_t *proto_peer =
 		PTR_DATA(self_peer_id,
 			 net_proto_peer_t);
 	PRINT_IF_NULL(proto_peer, P_ERR);
-	print("TODO: check for open TCP ports, checking settings file", P_WARN);
-	uint8_t net_flags_tmp = NET_PEER_PUNCHABLE;
-	print("assuming we are TCP hole punchable", P_NOTE);
-	if(settings::get_setting("net_open_tcp_port") == "true"){
-		print("we have an open TCP port defined in settings, adding to my net_proto_peer_t", P_NOTE);
-		net_flags_tmp |= NET_PEER_PORT_OPEN;
-	}else{
-		print("we don't have an open TCP port defined in settings, consider making one for maximum connectivity", P_NOTE);
-	}
-	proto_peer->set_net_flags(net_flags_tmp);
-	proto_peer->set_net_ip(ip, port);
+	ASSERT(net_interface::medium::from_address(proto_peer->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_ERR);
+	net_interface_ip_address_t *ip_address_ptr =
+		PTR_DATA(proto_peer->get_address_id(),
+			 net_interface_ip_address_t);
+	PRINT_IF_NULL(ip_address_ptr, P_ERR);
+	ip_address_ptr->set_address_data(
+		ip,
+		port,
+		net_proto_generate_ip_address_nat_type());
 }
 
 id_t_ net_proto::peer::get_self_as_peer(){
@@ -131,6 +134,27 @@ id_t_ net_proto::peer::random_peer_id(){
 	return ID_BLANK_ID;
 }
 
+/*
+  The holepunching stuff here should also be abstracted out as a requirement
+  for connection initiation, but it works fine for here for now
+ */
+
+static id_t_ net_proto_generate_con_req(id_t_ peer_id){
+	net_proto_peer_t *proto_peer_ptr =
+		PTR_DATA(peer_id,
+			 net_proto_peer_t);
+	PRINT_IF_NULL(proto_peer_ptr, P_ERR);
+	ASSERT(net_interface::medium::from_address(proto_peer_ptr->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_ERR);
+	net_proto_con_req_t *con_req_ptr =
+		new net_proto_con_req_t;
+	con_req_ptr->set(
+		net_proto::peer::get_self_as_peer(),
+		peer_id,
+		ID_BLANK_ID,
+		get_time_microseconds()+10000000);  // TODO: make 10s a settings
+	return con_req_ptr->id.get_id();
+}
+
 void net_proto::socket::connect(id_t_ peer_id_, uint32_t min){
 	std::vector<id_t_> retval;
 	net_proto_peer_t *proto_peer_ptr =
@@ -140,8 +164,6 @@ void net_proto::socket::connect(id_t_ peer_id_, uint32_t min){
 	if(proto_peer_ptr == nullptr){
 		print("cannot connect to a null peer", P_ERR);
 	}
-	P_V_S(proto_peer_ptr->get_net_ip_str(), P_VAR);
-	P_V(proto_peer_ptr->get_net_port(), P_VAR);
 	int64_t sockets_to_open =
 		min-all_proto_socket_of_peer(peer_id_).size();
 	P_V(sockets_to_open, P_VAR);

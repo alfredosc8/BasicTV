@@ -224,15 +224,13 @@ void net_proto_handle_request_send(T request_ptr){
 		id_api::destroy(request_ptr->id.get_id());
 		return;
 	}
-	const id_t_ origin_peer_id =
-		request_ptr->get_origin_peer_id();
 	const id_t_ destination_peer_id =
 		request_ptr->get_destination_peer_id();
 	if(net_proto_valid_request_to_send(request_ptr)){
 		try{
 			net_proto_send_logic(
 				std::vector<id_t_>({request_ptr->id.get_id()}),
-				origin_peer_id);
+				destination_peer_id);
 			request_ptr->update_request_time();
 		}catch(...){
 			print("couldn't send request to peer, probably no available socket", P_SPAM);
