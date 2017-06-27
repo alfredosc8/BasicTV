@@ -71,10 +71,12 @@ int main(int argc_, char **argv_){
 	uint64_t start_time = get_time_microseconds();
 	uint64_t working_iter_time = start_time;
 	while(running){
-		tv_loop();
-		input_loop();
-		net_proto_loop();
-		console_loop();
+		try{
+			tv_loop();
+			input_loop();
+			net_proto_loop();
+			console_loop();
+		}catch(...){}
 
 		// main loop specific stuff
 		check_finite_execution_modes(

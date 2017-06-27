@@ -106,7 +106,6 @@ static void bootstrap_production_priv_key_id(){
 	P_V_S(convert::array::id::to_hex(pub_key->id.get_id()), P_NOTE);
 }
 
-
 void init(){
 	// debugging information for OpenSSL's error printing
 	ERR_load_crypto_strings();

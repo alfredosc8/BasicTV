@@ -219,6 +219,8 @@ void id_disk_index_t::set(uint8_t medium_, uint8_t tier_, uint8_t transport_, st
 	transport = transport_;
 	enhance = enhance_;
 	update_index_from_disk();
+
+	P_V_S(path_, P_NOTE);
 }
 
 std::string id_disk_index_t::get_path_of_id(id_t_ id_){

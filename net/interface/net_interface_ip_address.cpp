@@ -18,9 +18,6 @@ void net_interface_ip_address_t::set_address_data(
 		net_interface::ip::readable::to_raw(address_);
 	address = address_tmp.first;
 	address_type = address_tmp.second;
-	if(port_ != 58486){
-		std::raise(SIGINT);
-	}
 	port = port_;
 	nat_type = nat_type_;
 }
