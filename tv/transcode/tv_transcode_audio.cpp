@@ -395,7 +395,6 @@ std::vector<id_t_> transcode::audio::codec::to_frames(std::vector<std::vector<ui
 			&fresh_encode_state,
 			encode_codec,
 			output_audio_prop);
-		std::raise(SIGINT);
 		print("work on me later", P_CRIT);
 
 		for(uint64_t i = 0;i < codec_set->size();i++){

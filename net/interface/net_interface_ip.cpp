@@ -47,7 +47,7 @@ INTERFACE_CALCULATE_MOST_EFFICIENT_DROP(ip){
 		hardware_dev_ptr,
 		nullptr,
 		ip_address_ptr);
-	uint64_t soft_dev_to_remove = 0;
+uint64_t soft_dev_to_remove = 0;
 	if(hardware_dev_ptr->get_max_soft_dev() ==
 	   hardware_dev_ptr->get_size_soft_dev_list()){
 		print("sitting at max_soft_dev limit", P_NOTE);

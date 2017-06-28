@@ -19,7 +19,7 @@ static void net_proto_send_logic(std::vector<id_t_> id_vector,
 		if(net_proto_peer_id == ID_BLANK_ID){
 			print("network peer ID is intentionally blank, this is probably my fault, sorry...", P_WARN);
 		}
-		print("can't send request to an invalid network peer", P_ERR);
+		print("can't send request to an invalid network peer", P_UNABLE);
 	}
 	// TODO: effectively send across multiple?
 	id_t_ optimal_proto_socket_id =
@@ -218,21 +218,18 @@ void net_proto_handle_request_send(T request_ptr){
 	  that 100 percent of the requests are processed and no reply means
 	  they don't have it
 	 */
-	// TODO: reimplement timeout
 	if(get_time_microseconds()-request_ptr->get_request_time() > 10*1000*1000){
 		print("type request is over ten seconds old, deleting", P_NOTE);
 		id_api::destroy(request_ptr->id.get_id());
 		return;
 	}
-	const id_t_ origin_peer_id =
-		request_ptr->get_origin_peer_id();
 	const id_t_ destination_peer_id =
 		request_ptr->get_destination_peer_id();
 	if(net_proto_valid_request_to_send(request_ptr)){
 		try{
 			net_proto_send_logic(
 				std::vector<id_t_>({request_ptr->id.get_id()}),
-				origin_peer_id);
+				destination_peer_id);
 			request_ptr->update_request_time();
 		}catch(...){
 			print("couldn't send request to peer, probably no available socket", P_SPAM);

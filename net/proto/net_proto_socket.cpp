@@ -164,7 +164,8 @@ void net_proto_socket_t::send_id(id_t_ id_){
 		print("id to send is a nullptr", P_ERR);
 	}
 	std::vector<uint8_t> payload =
-		id_tmp->export_data(
+		id_api::export_id(
+			id_,
 			0,
 			ID_EXTRA_COMPRESS | ID_EXTRA_ENCRYPT,
 			ID_DATA_NETWORK_RULE_PUBLIC,
@@ -233,7 +234,7 @@ void net_proto_socket_t::load_blocks(){
 			if(inbound_std_data.peer_id != peer_id){
 				print("sent peer ID and current peer ID do not"
 				      " match, assume this is a bootstrap", P_NOTE);
-				/*
+ 				/*
 				  Because bootstrapping is creating a new
 				  peer ID for the other client, one with 
 				  my hash

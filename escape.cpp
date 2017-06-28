@@ -44,7 +44,6 @@ static uint64_t pos_of_next_true_escape(std::vector<uint8_t> vector,
 			return i;
 		}
 	}
-	std::raise(SIGINT);
 	return vector.size();
 }
 

@@ -71,12 +71,13 @@ data_id_t *id_api::array::ptr_id(id_t_ id,
 		return nullptr;
 	}
 	if(convert::type::from(get_id_type(id)) != type && type != ""){
-		print("type mis-match in ptr_id", P_SPAM);
+		print("type mis-match in ptr_id", P_DEBUG);
 		return nullptr;
 	}
 	for(uint64_t i = 0;i < id_lookup.size();i++){
 		if(id_lookup[i] == id){
-			print("preventing dead-lock with ID request, pretending we don't have it", P_SPAM);
+			print("preventing dead-lock with ID request, pretending we don't have it" + id_breakdown(id), P_WARN);
+			std::raise(SIGINT);
 			return nullptr;
 		}
 	}
@@ -149,6 +150,19 @@ void id_api::array::del(id_t_ id){
   data requests.
  */
 
+/*
+  We need a second function, otherwise deadlocks happens
+ */
+
+bool id_api::array::exists_in_array(id_t_ id){
+	for(uint64_t i = 0;i < id_list.size();i++){
+		if(unlikely(id_list[i]->get_id() == id)){
+			return true;
+		}
+	}
+	return false;
+}
+
 id_t_ id_api::array::add_data(std::vector<uint8_t> data_, bool raw){
 	id_t_ id = ID_BLANK_ID;
 	type_t_ type = 0;
@@ -176,13 +190,7 @@ id_t_ id_api::array::add_data(std::vector<uint8_t> data_, bool raw){
 					compressor::decompress(
 						data_);
 			}
-			data_id_t *tmp_id_ptr =
-				PTR_ID_PRE(id, );
-			if(tmp_id_ptr == nullptr){
-				// loaded in cache, not in memory, needs to load
-				// the real data into a new allocated type
-				continue;
-			}else{
+			if(exists_in_array(id)){
 				PTR_ID(id, )->import_data(data_);
 				return tmp_type_cache[i];
 			}
@@ -787,7 +795,7 @@ std::vector<uint8_t> id_api::raw::decrypt(std::vector<uint8_t> data){
 			encrypt_api::search::pub_key_from_hash(
 				get_id_hash(id));
 		if(pub_key_id == ID_BLANK_ID){
-			print("couldn't find public key for ID decryption", P_ERR);
+			print("couldn't find public key for ID decryption" + id_breakdown(id), P_ERR);
 		}else{
 			std::vector<uint8_t> decrypt_chunk =
 				encrypt_api::decrypt(
@@ -990,4 +998,49 @@ int64_t id_api::linked_list::pos_in_linked_list(id_t_ ref_id, id_t_ goal_id, uin
 	}
 	print("unable to find ID in linked list", P_ERR);
 	return 0;
+}
+
+
+std::vector<uint8_t> id_api::export_id(
+	id_t_ id_,
+	uint8_t flags,
+	uint8_t extra, 
+	uint8_t network_flags,
+	uint8_t export_flags,
+	uint8_t peer_flags){
+	const bool is_owner =
+		get_id_hash(id_) ==
+		get_id_hash(production_priv_key_id);
+	/*
+	  Because of space conerns with memory, IDs in memory don't store
+	  exported versions of themselves, meaning that direct exports from
+	  the ID only work if we are the owner
+	 */
+	if(is_owner){
+		data_id_t *id =
+			PTR_ID(id_, );
+		if(id != nullptr){
+			return id->export_data(
+				flags,
+				extra,
+				network_flags,
+				export_flags,
+				peer_flags);
+		}
+	}
+	std::vector<uint8_t> retval =
+		id_api::cache::get_id(
+			id_,
+			extra);
+	if(retval.size() == 0){
+		id_disk_api::load(id_);
+		retval =
+			id_api::cache::get_id(
+				id_,
+				extra);
+	}
+	if(retval.size() == 0){
+		print("unable to load ID", P_NOTE);
+	}
+	return retval;
 }

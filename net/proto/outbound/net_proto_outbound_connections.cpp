@@ -9,44 +9,46 @@
 
 #include <vector>
 
-static void net_proto_initiate_direct_tcp(net_proto_con_req_t *con_req){
-	if(con_req == nullptr){
-		print("con_req is a nullptr", P_ERR);
-	}
-	id_t_ peer_id = ID_BLANK_ID;
-	con_req->get_peer_ids(
-		nullptr, &peer_id, nullptr);
-	net_proto_peer_t *proto_peer =
-		PTR_DATA(peer_id,
-			 net_proto_peer_t);
-	if(proto_peer == nullptr){
-		print("proto_peer is a nullptr", P_ERR);
-	}
+static void net_proto_initiate_direct_tcp(
+	net_proto_con_req_t *con_req,
+	net_proto_peer_t *proto_peer_ptr,
+	net_interface_ip_address_t *ip_address_ptr){
+
+	ASSERT(con_req != nullptr, P_ERR);
+	ASSERT(proto_peer_ptr != nullptr, P_ERR);
+	ASSERT(ip_address_ptr != nullptr, P_ERR);
+	ASSERT(net_interface::medium::from_address(proto_peer_ptr->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_ERR);
+
 	net_socket_t *socket_ptr = nullptr;
 	net_proto_socket_t *proto_socket_ptr = nullptr;
 	try{
 		socket_ptr =
 			new net_socket_t;
 		socket_ptr->set_net_ip(
-			proto_peer->get_net_ip_str(),
-			proto_peer->get_net_port());
+			net_interface::ip::raw::to_readable(
+				ip_address_ptr->get_address()),
+			ip_address_ptr->get_port());
 		socket_ptr->connect();
 		if(socket_ptr->is_alive() == false){
 			print("couldn't connect to peer", P_NOTE);
 		}else{
 			print("opened connection with peer (IP: " +
-			      proto_peer->get_net_ip_str() + " port:" +
-			      std::to_string(proto_peer->get_net_port()) + ")",
+			      net_interface::ip::raw::to_readable(
+				      ip_address_ptr->get_address()) + " port:" +
+			      std::to_string(ip_address_ptr->get_port()) + ")",
 			      P_NOTE);
 			delete con_req;
 			con_req = nullptr;
 		}
-		proto_peer->set_last_attempted_connect_time(
+
+		ip_address_ptr->set_last_attempted_connect_time(
 			get_time_microseconds());
 		proto_socket_ptr =
 			new net_proto_socket_t;
-		proto_socket_ptr->set_peer_id(peer_id);
-		proto_socket_ptr->set_socket_id(socket_ptr->id.get_id());
+		proto_socket_ptr->set_peer_id(
+			proto_peer_ptr->id.get_id());
+		proto_socket_ptr->set_socket_id(
+			socket_ptr->id.get_id());
 		const id_t_ my_peer_id =
 			net_proto::peer::get_self_as_peer();
 		proto_socket_ptr->send_id(
@@ -68,31 +70,28 @@ static void net_proto_initiate_direct_tcp(net_proto_con_req_t *con_req){
 	}
 }
 
-static void net_proto_first_id_logic(net_proto_con_req_t *con_req){
-	switch(con_req->get_flags()){
-	case (NET_CON_REQ_TCP | NET_CON_REQ_DIRECT):
-		print("attempting a direct TCP connection", P_DEBUG);
-		net_proto_initiate_direct_tcp(con_req);
-		break;
-	case (NET_CON_REQ_TCP | NET_CON_REQ_HOLEPUNCH):
-		print("TODO: properly implement a TCP holepunch", P_WARN);
-		//print("attempting a TCP holepunch", P_DEBUG);
-		//net_proto_handle_tcp_holepunch(con_req);
-		//break;
-	default:
-		print("invalid flags for con_req, not establishing", P_WARN);
-		break;
-	}
+#pragma message("net_proto_first_id_logic only does direct TCP without any checks")
+
+static void net_proto_first_id_logic(net_proto_con_req_t *con_req_ptr,
+				     net_proto_peer_t *proto_peer_ptr,
+				     net_interface_ip_address_t *ip_address_ptr){
+	net_proto_initiate_direct_tcp(
+		con_req_ptr,
+		proto_peer_ptr,
+		ip_address_ptr);
 }
 
 void net_proto_initiate_all_connections(){
 	std::vector<id_t_> proto_con_req_vector =
 		id_api::cache::get(
 			"net_proto_con_req_t");
+	const uint64_t cur_time_micro_s =
+		get_time_microseconds();
 	for(uint64_t i = 0;i < proto_con_req_vector.size();i++){
 		net_proto_con_req_t *con_req =
-			PTR_DATA_FAST(proto_con_req_vector[i],
-				      net_proto_con_req_t);
+			PTR_DATA(proto_con_req_vector[i],
+				 net_proto_con_req_t);
+		CONTINUE_IF_NULL(con_req, P_WARN);
 		id_t_ first_id = ID_BLANK_ID;
 		id_t_ second_id = ID_BLANK_ID;
 		const id_t_ self_peer_id =
@@ -103,18 +102,22 @@ void net_proto_initiate_all_connections(){
 			&second_id,
 			nullptr);
 		if(first_id == self_peer_id){
+			ASSERT(second_id != self_peer_id, P_ERR);
 			net_proto_peer_t *second_peer_ptr =
 				PTR_DATA(second_id,
 					 net_proto_peer_t);
-			if(second_peer_ptr == nullptr){
-				print("second peer is a nullptr", P_NOTE);
-				continue;
-			}
-			if(get_time_microseconds() >
-			   second_peer_ptr->get_last_attempted_connect_time()+1000000){
-				net_proto_first_id_logic(con_req);
-			}else{
-				//print("skipping connection to peer, too fast", P_SPAM);
+			CONTINUE_IF_NULL(second_peer_ptr, P_NOTE);
+			ASSERT(net_interface::medium::from_address(second_peer_ptr->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_ERR);
+			net_interface_ip_address_t *ip_address_ptr =
+				PTR_DATA(second_peer_ptr->get_address_id(),
+					 net_interface_ip_address_t);
+			CONTINUE_IF_NULL(ip_address_ptr, P_ERR);
+			if(cur_time_micro_s >
+			   ip_address_ptr->get_last_attempted_connect_time()+1000000){
+				net_proto_first_id_logic(
+					con_req,
+					second_peer_ptr,
+					ip_address_ptr); // only write to IP address is last connect attempt time
 			}
 		}else{
 			P_V_S(convert::array::id::to_hex(first_id), P_VAR);

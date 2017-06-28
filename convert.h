@@ -76,10 +76,9 @@ namespace convert{
 		void from(uint8_t *, uint64_t);
 	}
 	namespace net{
-		namespace ip{
-			std::string to_string(std::string ip,
-					      uint16_t port);
-			std::pair<std::string, uint16_t> from_string(std::string);
+		namespace ip_port{
+			std::pair<std::string, uint8_t> deconstruct(
+				std::string ip);
 		};
 	}
 	namespace array{

@@ -243,3 +243,9 @@ void data_id_t::set_lowest_global_flag_level(uint8_t network_rules,
 		}
 	}
 }
+
+std::string id_breakdown(id_t_ id_){
+	return "(" + convert::array::id::to_hex(id_) +
+		" of type " +
+		convert::type::from(get_id_type(id_)) + ")";
+}

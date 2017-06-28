@@ -58,6 +58,7 @@ std::vector<uint8_t> data_id_t::export_data(
 	}
 	if(get_id_hash(id) != get_id_hash(
 		   net_proto::peer::get_self_as_peer())){
+		std::raise(SIGINT);
 		print("can't export somebody else's modified data", P_ERR);
 	}
 	uint8_t current_extra = 0;

@@ -106,7 +106,6 @@ static void bootstrap_production_priv_key_id(){
 	P_V_S(convert::array::id::to_hex(pub_key->id.get_id()), P_NOTE);
 }
 
-
 void init(){
 	// debugging information for OpenSSL's error printing
 	ERR_load_crypto_strings();
@@ -140,6 +139,7 @@ void init(){
 	settings::set_setting("run_tests", "true");
 	settings::set_setting("data_folder", ((std::string)getenv("HOME"))+"/.BasicTV/");
 	settings::set_setting("print_backtrace", "false");
+	settings::set_setting("print_color", "true");
 	settings_init();
 
 	/*
@@ -166,6 +166,10 @@ void init(){
 
 	bootstrap_production_priv_key_id();
 
+	// SDL2_net throws a SIGPIPE on client disconnects, I seriously need to
+	// upgrade to something better
+	signal(SIGPIPE, SIG_IGN);
+	
 	tv_init();
 	input_init();
 	net_proto_init();

@@ -303,6 +303,7 @@ uint8_t convert::type::to(std::string type){
 	CONV_CHECK_TYPE("id_disk_index_t", TYPE_ID_DISK_INDEX_T);
 	CONV_CHECK_TYPE("math_number_set_t", TYPE_MATH_NUMBER_SET_T);
 	CONV_CHECK_TYPE("tv_item_t", TYPE_TV_ITEM_T);
+	CONV_CHECK_TYPE("net_interface_ip_address_t", TYPE_NET_INTERFACE_IP_ADDRESS_T);
 	print("unknown type has been passed, returning zero", P_CRIT);
 	return 0;
 }
@@ -361,6 +362,8 @@ std::string convert::type::from(uint8_t type){
 		return "math_number_set_t";
 	case TYPE_TV_ITEM_T:
 		return "tv_item_t";
+	case TYPE_NET_INTERFACE_IP_ADDRESS_T:
+		return "net_interface_ip_address_t";
 	case 0:
 		print("zero type, something went wrong earlier", P_WARN);
 		return "";
@@ -369,10 +372,6 @@ std::string convert::type::from(uint8_t type){
 		print("invalid type, probably malicious (not zero)", P_ERR);
 		return "";
 	}
-}
-
-std::string convert::net::ip::to_string(std::string ip, uint16_t port){
-	return ip + ":" + std::to_string(port);
 }
 
 std::vector<uint8_t> convert::string::to_bytes(std::string data){

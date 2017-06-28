@@ -27,13 +27,6 @@
   the priorities list.
 */
 
-// first two bits are for the protocol
-
-#define NET_CON_REQ_TCP NET_PEER_TCP
-#define NET_CON_REQ_UDP NET_PEER_UDP
-
-// next six are for the style
-
 /*
   First peer (sender) wants to connect to the second peer (receiver). Second
   peer doesn't have a TCP port open, but the first does. 
@@ -81,7 +74,6 @@
 
 struct net_proto_con_req_t{
 private:
-	uint8_t flags = 0;
 	id_t_ first_peer_id = ID_BLANK_ID;
 	id_t_ second_peer_id = ID_BLANK_ID;
 	id_t_ third_peer_id = ID_BLANK_ID;
@@ -90,18 +82,14 @@ public:
 	data_id_t id;
 	net_proto_con_req_t();
 	~net_proto_con_req_t();
-	uint8_t get_flags();
 	void get_peer_ids(id_t_ *first_peer_id_, // initiator
 			  id_t_ *second_peer_id_, // receiver 
 			  id_t_ *third_peer_id_); // third party (UDP)
 	uint64_t get_timestamp();
-	void set(uint8_t flags_,
-		 id_t_ first_peer_id_,
+	void set(id_t_ first_peer_id_,
 		 id_t_ second_peer_id_,
 		 id_t_ third_peer_id_,
 		 uint64_t timestamp_);
 };
-
-id_t_ net_proto_generate_con_req(id_t_ peer_id);
 
 #endif

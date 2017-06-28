@@ -11,3 +11,8 @@ basictv
 \#*\#
 push.sh
 vgcore*
+output_gdb
+
+scripts/*wav
+scripts/finished
+scripts/TMP_OUT*

@@ -197,7 +197,7 @@ static void console_accept_connections(){
 	TCPsocket tmp_socket =
 		socket->get_tcp_socket();
 	if(tmp_socket == nullptr){
-		print("console inbound socket is a nullptr", P_ERR);
+		print("console inbound socket is a nullptr (port " + std::to_string(socket->get_net_port()) + ")", P_ERR);
 	}
 	TCPsocket new_socket =
 		nullptr;

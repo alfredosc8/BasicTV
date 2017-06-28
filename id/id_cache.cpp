@@ -44,7 +44,7 @@ static int64_t id_api_cache_find_id(id_t_ id){
 			return cache_other_state.size()-1;
 		}
 	}
-	print("can't find ID in cache", P_ERR);
+	print("can't find ID in cache", P_UNABLE);
 	return 0;
 }
 
@@ -118,4 +118,43 @@ void id_api::cache::load_id(id_t_ id){
 		cache_other_state.erase(
 			cache_other_state.begin()+id_state);
 	}catch(...){}
+}
+
+/*
+  since state information is bound to the returned value, the only thing
+  we really need to ensure is that the data is encrypted when it should be,
+  since compression isn't a big deal and decryption isn't too hard
+ */
+
+std::vector<uint8_t> id_api::cache::get_id(
+	id_t_ id_,
+	uint8_t state){
+	std::vector<uint8_t> retval;
+	const bool need_encryption =
+		state & ID_EXTRA_ENCRYPT;
+	const bool need_compression =
+		state & ID_EXTRA_COMPRESS;
+	if(need_compression){
+		print("asking for compression, doesn't make much sense", P_ERR);
+	}
+	if(!need_encryption){
+		for(uint64_t i = 0;i < cache_other_state.size();i++){
+			if(unlikely(id_api::raw::fetch_id(cache_other_state[i]) == id_)){
+				retval = cache_other_state[i];
+				break;
+			}
+		}
+	}
+	if(retval.size() == 0){
+		for(uint64_t i = 0;i < cache_encrypted_state.size();i++){
+			if(unlikely(id_api::raw::fetch_id(cache_encrypted_state[i]) == id_)){
+				retval = cache_encrypted_state[i];
+				break;
+			}
+		}
+	}
+	if(retval.size() == 0){
+		print("ID isn't in cache, or the state is incompatiable", P_NOTE);
+	}
+	return retval;
 }

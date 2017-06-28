@@ -1,9 +1,9 @@
 #ifndef UTIL_H
 #define UTIL_H
 #define PRINT_VAR 0
-#define PRINT_SPAM 1
-#define PRINT_DEBUG 2
-#define PRINT_UNABLE 3
+#define PRINT_UNABLE 1
+#define PRINT_SPAM 2
+#define PRINT_DEBUG 3
 #define PRINT_NOTICE 4
 #define PRINT_WARNING 5
 #define PRINT_ERROR 6

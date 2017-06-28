@@ -49,7 +49,7 @@ int search_for_argv(std::string value){
 	return -1;
 }
 
-static std::string print_level_text (int level){
+static std::string print_level_text(int level){
 	std::string retval;
 	switch(level){
 	case P_VAR:
@@ -82,38 +82,42 @@ static std::string print_level_text (int level){
 	return fix_to_length(retval, P_V_LEV_LEN);
 }
 
-static int print_level = P_SPAM;
+static int print_level = P_VAR;
 
 std::string print_color_text(std::string data, int level){
 	std::string prefix;
-	switch(level){
-	case P_CRIT:
-		prefix = "\033[0;31m";
-		break;
-	case P_ERR:
-		prefix = "\033[1;31m";
-		break;
-	case P_WARN:
-		prefix = "\033[1;36m";
-		break;
-	case P_UNABLE:
-	case P_NOTE:
-		prefix = "";
-		break;
-	case P_DEBUG:
-		prefix = "\033[0;34m";
-		break;
-	case P_SPAM:
-		prefix = "\033[1;32m";
-		break;
-	case P_VAR:
-	default:
-		// not seen by most people, only really ran through 'diff', so
-		// looks don't matter
-		prefix = "";
-		break;
+	if(settings::get_setting("print_color") != "true"){
+		return data;
+	}else{
+		switch(level){
+		case P_CRIT:
+			prefix = "\033[0;31m";
+			break;
+		case P_ERR:
+			prefix = "\033[1;31m";
+			break;
+		case P_WARN:
+			prefix = "\033[1;36m";
+			break;
+		case P_UNABLE:
+		case P_NOTE:
+			prefix = "";
+			break;
+		case P_DEBUG:
+			prefix = "\033[0;34m";
+			break;
+		case P_SPAM:
+			prefix = "\033[1;32m";
+			break;
+		case P_VAR:
+		default:
+			// not seen by most people, only really ran through 'diff', so
+			// looks don't matter
+			prefix = "";
+			break;
+		}
+		return prefix + data + "\033[0m";
 	}
-	return prefix + data + "\033[0m";
 }
 
 /*
@@ -134,7 +138,7 @@ static bool print_is_sane(std::string data){
 }
 
 void print(std::string data, int level, const char *func){
-	if(print_level == P_SPAM){
+	if(print_level == P_VAR){
 		try{
 			print_level =
 				std::stoi(
@@ -169,7 +173,6 @@ void print(std::string data, int level, const char *func){
 		if(settings::get_setting_unsigned_def(
 			   "throw_level", P_CRIT) <= (uint64_t)level){
 			std::cerr << "CRITICAL ERROR" << std::endl;
-			// standard throws aren't as easily debuggable
 			std::raise(SIGKILL);
 		}
 		if(level >= P_ERR){
@@ -189,15 +192,14 @@ void print(std::string data, int level, const char *func){
 				std::cout << "Finished backtrace" << std::endl;
 			}
 		}
-		if(level >= P_ERR || level == P_UNABLE){
-			throw std::runtime_error(data);
-		}
-
 		// if(level >= P_WARN){
 		// 	sleep_ms(1000, true);
 		// }else{
 		// 	sleep_ms(250, true);
 		// }
+	}
+	if(level >= P_ERR || level == P_UNABLE){
+		throw std::runtime_error(data);
 	}
 }
 
