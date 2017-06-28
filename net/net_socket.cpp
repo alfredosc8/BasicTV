@@ -178,6 +178,7 @@ void net_socket_t::connect(){
 	}
 	socket = SDLNet_TCP_Open(&tmp_ip);
 	if(socket == nullptr){
+		P_V(get_net_port(), P_WARN);
 		print((std::string)"cannot open socket (" + std::to_string(errno) + "):"+SDL_GetError(),
 		      P_WARN);
 	}else{

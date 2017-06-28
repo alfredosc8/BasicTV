@@ -225,10 +225,8 @@ void id_disk_index_t::set(uint8_t medium_, uint8_t tier_, uint8_t transport_, st
 
 std::string id_disk_index_t::get_path_of_id(id_t_ id_){
 	std::string retval;
-	data_id_t *id_ptr =
-		PTR_ID_MEM(id_, );
-	if(id_ptr == nullptr){
-		print("ID doesn't exist in memory already, searching disk for ID", P_NOTE);
+	if(!id_api::array::exists_in_array(id_)){
+		print("ID doesn't exist in memory already, searching disk for ID", P_SPAM);
 		std::vector<std::string> rgrep_output =
 			system_handler::find_all_files(
 				get_path(),
@@ -241,6 +239,9 @@ std::string id_disk_index_t::get_path_of_id(id_t_ id_){
 			return "";
 		}
 	}else{
+		data_id_t *id_ptr =
+			PTR_ID(id_, );
+		PRINT_IF_NULL(id_ptr, P_ERR);
 		print("ID exists in memory already, generating new filename", P_SPAM);
 		retval += file::ensure_slash_at_end((char*)(path.data()));
 		retval += id_ptr->get_type() + "/";
@@ -251,15 +252,14 @@ std::string id_disk_index_t::get_path_of_id(id_t_ id_){
 }
 
 void id_disk_index_t::export_id(id_t_ id_){
-	data_id_t *ptr =
-		PTR_ID(id_, );
 	std::vector<uint8_t> exportable_data =
-		ptr->export_data(
+		id_api::export_id(
+			id_,
 			0,
-			ID_EXTRA_COMPRESS | ID_EXTRA_ENCRYPT,
-			ID_DATA_RULE_UNDEF, // wildcard
-			ID_DATA_EXPORT_RULE_ALWAYS,
-			ID_DATA_RULE_UNDEF);
+		 	ID_EXTRA_ENCRYPT,
+		 	ID_DATA_RULE_UNDEF, // wildcard
+		 	ID_DATA_EXPORT_RULE_ALWAYS,
+		 	ID_DATA_RULE_UNDEF);
 	if(exportable_data.size() == 0){
 		print("no data to export from ID", P_SPAM);
 		return;
@@ -270,7 +270,7 @@ void id_disk_index_t::export_id(id_t_ id_){
 	system_handler::mkdir(
 		file::ensure_slash_at_end(
 			get_path())
-		+ptr->get_type());
+		+convert::type::from(get_id_type(id_)));
 	std::ofstream out(filename, std::ios::out | std::ios::binary);
 	if(out.is_open() == false){
 	 	print("cannot open file for exporting", P_ERR);
@@ -284,7 +284,7 @@ void id_disk_index_t::import_id(id_t_ id_){
 		get_path_of_id(id_);
 	std::ifstream in(get_path_of_id(id_), std::ios::in | std::ios::binary);
 	if(in.is_open() == false){
-		print("couldn't open file for ID", P_ERR);
+		print("couldn't open file for ID", P_UNABLE);
 	}
 	in >> std::noskipws;
 	std::vector<uint8_t> full_file;

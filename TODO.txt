@@ -1,5 +1,9 @@
 TODO for BasicTV, no particular order of importance
 
+CODE UPKEEP
+1. Start using P_UNABLE instead of P_ERR, to post an almost spam-y sort of output whenever a section of code is unable to be ran, since
+   I can't really tell whether a code path is supposed to happen if errors are the only way of handling a majority of failing code (failing
+   meaning unable to complete).
 
 MATH
 1. Make a standardized unit converter/generator/extractor, based on the information given and some definition of what we want
@@ -7,11 +11,10 @@ MATH
 2. Allow for higher and lower precision than 64-bit (casting to uint64_t is pretty wack, 32-bit length is good)
 
 TV
-1. Audio compression (Opus)
-2. Video compression (VP9)
-3. Intuitive UI
-4. Finish webcam recording (not a priority)
-5. Decode online streams and re-encode into WebM
+1. Video compression (VP9)
+2. Intuitive UI
+3. Finish webcam recording (not a priority)
+4. Decode online streams and re-encode into WebM
 
 NETWORKING
 1. Finish network request handling

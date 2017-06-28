@@ -235,4 +235,6 @@ extern void set_id_type(id_t_ *id, type_t_ type);
 		ID_DATA_EXPORT_RULE_NEVER,	\
 		ID_DATA_PEER_RULE_NEVER);	\
 			
+std::string id_breakdown(id_t_ id_);
+
 #endif

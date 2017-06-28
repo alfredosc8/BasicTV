@@ -162,7 +162,7 @@ void net_proto::socket::connect(id_t_ peer_id_, uint32_t min){
 			 net_proto_peer_t);
 	P_V_S(convert::array::id::to_hex(peer_id_), P_VAR);
 	if(proto_peer_ptr == nullptr){
-		print("cannot connect to a null peer", P_ERR);
+		print("cannot connect to a null peer" + id_breakdown(peer_id_), P_WARN);
 	}
 	int64_t sockets_to_open =
 		min-all_proto_socket_of_peer(peer_id_).size();

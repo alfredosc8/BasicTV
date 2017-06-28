@@ -69,9 +69,9 @@ namespace id_api{
 		data_id_t *ptr_id(id_t_ id,
 				  type_t_ type);
 		void *ptr_data(id_t_ id,
-				  std::string type);
+			       std::string type);
 		void *ptr_data(id_t_ id,
-				  type_t_ type);
+			       type_t_ type);
 		void add(data_id_t *ptr);
 		void del(id_t_ id); // no type
 		id_t_ add_data(std::vector<uint8_t> data_, bool raw = false);
@@ -81,6 +81,8 @@ namespace id_api{
 					  std::array<uint8_t, 32> sha_hash);
 		// TODO: create a version that throws on more than one
 		uint64_t get_id_count();
+
+		bool exists_in_array(id_t_ id_);
 	}
 	namespace cache{
 		// get_type_vector_ptr should never be used outside of id_api.cpp	
@@ -100,6 +102,9 @@ namespace id_api{
 		void hint_decrement_id(id_t_ id);
 		void add_data(std::vector<uint8_t> data);
 		void load_id(id_t_ id);
+		std::vector<uint8_t> get_id(
+			id_t_ id_,
+			uint8_t state);
 	}
 	namespace linked_list{
 		// next and previous are in the id itself, no interdependency
@@ -115,7 +120,7 @@ namespace id_api{
 		std::vector<id_t_> fingerprint(std::vector<id_t_> tmp);
 		/*
 		  Perhaps sort by last access time (when that gets implemented)?
-		 */
+		*/
 	};
 	// comment out import really soon
 	namespace import{
@@ -131,6 +136,13 @@ namespace id_api{
 	std::vector<id_t_> get_all();
 	void free_mem();
 	void add_data(std::vector<uint8_t> data);
+	std::vector<uint8_t> export_id(
+		id_t_ id,
+		uint8_t flags,
+		uint8_t extra,
+		uint8_t network_flags,
+		uint8_t export_flags,
+		uint8_t peer_flags);
 	void destroy(id_t_ id);
 	void destroy_all_data();
 	namespace raw{

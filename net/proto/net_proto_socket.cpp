@@ -164,7 +164,8 @@ void net_proto_socket_t::send_id(id_t_ id_){
 		print("id to send is a nullptr", P_ERR);
 	}
 	std::vector<uint8_t> payload =
-		id_tmp->export_data(
+		id_api::export_id(
+			id_,
 			0,
 			ID_EXTRA_COMPRESS | ID_EXTRA_ENCRYPT,
 			ID_DATA_NETWORK_RULE_PUBLIC,

@@ -3,6 +3,8 @@
 #include "net_interface_packet.h"
 #include "net_interface_address.h"
 
+#pragma message("times for availability should be set with a conversion function from HH:MM:SS to offsets from midnight UTC")
+
 void net_interface_address_t::set_medium_modulation_encapsulation(
 	uint8_t medium_,
 	uint8_t modulation_,

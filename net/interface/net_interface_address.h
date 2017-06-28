@@ -3,9 +3,6 @@
 
 #include "net_interface.h"
 
-
-#pragma message("times for availability should be set with a conversion function from HH:MM:SS to offsets from midnight UTC")
-
 struct net_interface_address_t{
 private:
 	/*

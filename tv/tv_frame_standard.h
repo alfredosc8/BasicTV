@@ -77,14 +77,12 @@ id_t_ tv_frame_scroll_to_time(T data, uint64_t play_time){
 				if(linked_list.second.size() >= 1){
 					new_id = linked_list.second[0];
 				}else{
-					std::raise(SIGINT);
 					new_id = ID_BLANK_ID;
 				}
 			}else{
 				if(linked_list.first.size() >= 1){
 					new_id = linked_list.first[0];
 				}else{
-					std::raise(SIGINT);
 					new_id = ID_BLANK_ID;
 				}
 			}

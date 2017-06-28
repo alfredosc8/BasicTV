@@ -8,6 +8,8 @@
 #include "../../net_socket.h"
 #include "net_proto_inbound_connections.h"
 
+#include "../../../encrypt/encrypt.h"
+
 // socket ID
 static id_t_ incoming_id = ID_BLANK_ID;
 
@@ -35,6 +37,10 @@ static void net_proto_accept_direct_connections(net_socket_t *incoming_conn){
 			new_socket->id.get_id());
 		new_proto_socket->send_id(
 			net_proto::peer::get_self_as_peer());
+		new_proto_socket->send_id(
+			encrypt_api::search::pub_key_from_hash(
+				get_id_hash(
+					net_proto::peer::get_self_as_peer())));
 		/*
 		  I can't pull any valid IP or port info from SDL, so we are
 		  going to live without it until data comes in, then we can
