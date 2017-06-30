@@ -68,9 +68,10 @@ std::vector<uint8_t> math::number::calc::add(
 			math::number::get::unit(
 				data[0]));
 	for(uint64_t i = 0;i < data.size();i++){
-		math_simple_add(
-			retval,
-			data[i]);
+		retval =
+			math_simple_add(
+				retval,
+				data[i]);
 	}
 	return retval;
 }
