@@ -756,7 +756,9 @@ std::vector<uint8_t> id_api::raw::encrypt(std::vector<uint8_t> data){
 					data.end());
 			P_V(unencrypt_chunk.size(), P_VAR);
 			if(unencrypt_chunk.size() == 0){
-				print("unencrypt_chunk is empty", P_ERR);
+				// having no actual payload still works
+				print("unencrypt_chunk is empty", P_WARN);
+				return data;
 			}
 			std::vector<uint8_t> encrypt_chunk =
 				encrypt_api::encrypt(

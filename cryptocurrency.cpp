@@ -1,6 +1,8 @@
 #include "cryptocurrency.h"
 
 wallet_set_t::wallet_set_t() : id(this, TYPE_WALLET_SET_T){
+	id.add_data_one_byte_vector_vector(&prefixes, ~0, ~0);
+	id.add_data_one_byte_vector_vector(&wallets, ~0, ~0);
 }
 
 wallet_set_t::~wallet_set_t(){}

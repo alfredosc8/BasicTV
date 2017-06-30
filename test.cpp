@@ -754,7 +754,9 @@ void test_nc(){
   Might be able to multithread (?)
  */
 
-#define RUN_TEST(test) try{test();print("TEST " + fix_to_length(((std::string)#test), 40) + " OK", P_NOTE);}catch(...){print((std::string)(#test) + " FAIL", P_ERR);throw std::runtime_error("failed test");}
+// #define RUN_TEST(test) try{test();print("TEST " + fix_to_length(((std::string)#test), 40) + " OK", P_NOTE);}catch(...){print((std::string)(#test) + " FAIL", P_ERR);throw std::runtime_error("failed test");}
+
+#define RUN_TEST(test) test()
 
 /*
   Golden Rule for Tests:
@@ -924,6 +926,31 @@ void test_audio_format(uint8_t format){
 			channel_count).at(0));
 }
 
+static void test_number_calc(){
+	const std::vector<uint8_t> one =
+		math::number::create(
+			(uint64_t)1,
+			UNIT(MATH_NUMBER_USE_NONE,
+			     MATH_NUMBER_BASE_BLANK,
+			     0));
+	// TODO: allow for passing standard ints to the calc functions
+	std::vector<uint8_t> num = 
+		math::number::create(
+			(uint64_t)0,
+			UNIT(MATH_NUMBER_USE_NONE,
+			     MATH_NUMBER_BASE_BLANK,
+			     0));
+	uint64_t other = 0;
+	for(uint64_t i = 0;i < 1024;i++){
+		num = math::number::calc::add(
+			{num, one});
+		other++;
+		P_V(math::number::get::number(num), P_NOTE);
+		P_V(other, P_NOTE);
+			
+	}
+}
+
 void test(){
 	std::vector<id_t_> full_id_set =
 		id_api::get_all();
@@ -938,6 +965,7 @@ void test(){
 	RUN_TEST(test_net_proto_socket_transcoding);
 	RUN_TEST(test_lock);
 	RUN_TEST(test_number_cmp);
+	RUN_TEST(test_number_calc);
 	RUN_TEST(test_id_api_raw_fetch);
 	test_audio_format(TV_AUDIO_FORMAT_OPUS);
 	std::vector<id_t_> extra_id_set =

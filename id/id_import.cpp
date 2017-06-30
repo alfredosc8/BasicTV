@@ -1,50 +1,119 @@
 #include "id.h"
 #include "id_api.h"
 
-static void id_import_raw(uint8_t* var, uint8_t flags, uint64_t size, std::vector<uint8_t> *vector){
-	if(size == 0){
-		return;
+static void id_import_raw_real(
+	std::vector<uint8_t> *vector,
+	uint8_t *var,
+	uint8_t flags,
+	uint32_t size,
+	bool nbo = true){
+	if(vector->size() < size){
+		P_V(flags, P_NOTE);
+		P_V(size, P_NOTE);
+		P_V(vector->size(), P_NOTE);
+		HANG();
+		print("not enough runway to import information, see where it went off track", P_ERR);
 	}
+	memcpy(var, vector->data(), size);
+	vector->erase(vector->begin(), vector->begin()+size);
+	if(nbo){
+		convert::nbo::from((uint8_t*)var, size);
+	}
+}
+
+static void id_import_raw(
+	uint8_t *var,
+	uint8_t flags, 
+	uint64_t size,
+	std::vector<uint8_t> *vector){
 	if(flags & ID_DATA_BYTE_VECTOR){
 		std::vector<uint8_t> *local_vector =
 			(std::vector<uint8_t>*)var;
 		// not the fastest
 		local_vector->clear();
-		local_vector->insert(local_vector->end(),
-				   size,
-				   0);
-		var = local_vector->data();
+		local_vector->insert(
+			local_vector->end(),
+			size,
+			0);
+		id_import_raw_real(
+			vector,
+			local_vector->data(),
+			flags,
+			size);
 	}else if(flags & ID_DATA_EIGHT_BYTE_VECTOR){
 		std::vector<uint64_t> *local_vector =
 			(std::vector<uint64_t>*)var;
 		local_vector->clear();
-		local_vector->insert(local_vector->end(),
-				     size,
-				     0);
-		var = (uint8_t*)local_vector->data();
+		local_vector->insert(
+			local_vector->end(),
+			size,
+			0);
+		id_import_raw_real(
+			vector,
+			reinterpret_cast<uint8_t*>(local_vector->data()),
+			flags,
+			size);
 	}else if(flags & ID_DATA_ID_VECTOR){
 		std::vector<id_t_> *local_vector =
 			(std::vector<id_t_>*)var;
 		local_vector->clear();
-		local_vector->insert(local_vector->end(),
-				     size,
-				     ID_BLANK_ID);
-		var = (uint8_t*)local_vector->data();
+		local_vector->insert(
+			local_vector->end(),
+			size,
+			ID_BLANK_ID);
+		id_import_raw_real(
+			vector,
+			reinterpret_cast<uint8_t*>(local_vector->data()),
+			flags,
+			size);
+	}else if(flags & ID_DATA_BYTE_VECTOR_VECTOR){
+		std::vector<std::vector<uint8_t> > *local_vector =
+			(std::vector<std::vector<uint8_t> >*)(var);
+		local_vector->clear();
+		std::vector<uint8_t> global_vector =
+			std::vector<uint8_t>(
+				vector->begin(),
+				vector->begin()+size);
+		vector->erase(
+			vector->begin(),
+			vector->begin()+size);
+		global_vector =
+			convert::nbo::from(
+				global_vector);
+		transport_size_t elem_count = 0;
+		id_import_raw_real(
+			&global_vector,
+			reinterpret_cast<uint8_t*>(&elem_count),
+			0,
+			sizeof(transport_size_t),
+			false);
+		P_V(elem_count, P_SPAM);
+		for(uint64_t i = 0;i < elem_count;i++){
+			transport_size_t trans_size = 0;
+			id_import_raw_real(
+				&global_vector,
+				reinterpret_cast<uint8_t*>(&trans_size),
+				0, 
+				sizeof(transport_size_t),
+				false);
+			std::vector<uint8_t> tmp(trans_size, 0);
+			id_import_raw_real(
+				&global_vector,
+				reinterpret_cast<uint8_t*>(tmp.data()),
+				0,
+				trans_size,
+				false);
+			local_vector->push_back(
+				tmp);
+		}
 	}else{
-		// sanity check
-		//P_V(flags, P_SPAM);
-		//P_V(size, P_SPAM);
 		memset(var, 0, size);
+		id_import_raw_real(
+			vector,
+			var,
+			flags,
+			size);
 	}
-	if(vector->size() < size){
-		P_V(flags, P_NOTE);
-		P_V(size, P_NOTE);
-		P_V(vector->size(), P_NOTE);
-		print("not enough runway to export information, see where it went off track", P_ERR);
-	}
-	memcpy(var, vector->data(), size);
-	vector->erase(vector->begin(), vector->begin()+size);
-	convert::nbo::from((uint8_t*)var, size);
 }
 
 /*
@@ -74,8 +143,8 @@ void data_id_t::import_data(std::vector<uint8_t> data){
 	while(data.size() > sizeof(transport_i_t) + sizeof(transport_size_t)){
 		ID_IMPORT(trans_i);
 		ID_IMPORT(trans_size);
-		// P_V(trans_i, P_SPAM);
-		// P_V(trans_size, P_SPAM);
+		P_V(trans_i, P_SPAM);
+		P_V(trans_size, P_SPAM);
 		const bool valid_entry =
 			trans_i < data_vector.size();
 		if(unlikely(!valid_entry)){
@@ -89,13 +158,14 @@ void data_id_t::import_data(std::vector<uint8_t> data){
 		if(unlikely(trans_size > data.size())){
 			print("fetched size is greater than working data", P_ERR);
 			return;
-		}else if(unlikely(trans_size > data_vector[trans_i].get_length())){
+		}else if(unlikely(trans_size > data_vector[trans_i].get_length_vector().at(0))){
 			print("fetched size is greater than the local version", P_ERR);
 			return;
 		}
-		id_import_raw((uint8_t*)data_vector[trans_i].get_ptr(),
-			      data_vector[trans_i].get_flags(),
-			      trans_size,
-			      &data);
+		id_import_raw(
+			reinterpret_cast<uint8_t*>(data_vector[trans_i].get_ptr()),
+			data_vector[trans_i].get_flags(),
+			trans_size,
+			&data);
 	}
 }

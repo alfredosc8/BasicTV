@@ -124,13 +124,19 @@ std::vector<uint8_t> data_id_t::export_data(
 				//print("vector is empty, skipping", P_SPAM);
 				continue;
 			}
-			for(uint64_t c = 0;c < vector->size();c++){
-				transport_size_t trans_size =
+			transport_size_t vector_size =
+				vector->size();
+			data_to_export.insert(
+				data_to_export.end(),
+				reinterpret_cast<uint8_t*>(&vector_size),
+				reinterpret_cast<uint8_t*>(&vector_size)+sizeof(transport_size_t));
+			for(uint64_t c = 0;c < vector_size;c++){
+				transport_size_t trans_size_tmp =
 					(*vector)[c].size();
 				data_to_export.insert(
 					data_to_export.end(),
-					&trans_size,
-					&trans_size+1);
+					reinterpret_cast<uint8_t*>(&trans_size_tmp),
+					reinterpret_cast<uint8_t*>(&trans_size_tmp)+sizeof(transport_size_t));
 				if((*vector)[c].data() == nullptr){
 					//print("vector is empty, skipping", P_SPAM);
 					continue;
@@ -139,9 +145,8 @@ std::vector<uint8_t> data_id_t::export_data(
 				data_to_export.insert(
 					data_to_export.end(),
 					(uint8_t*)(*vector)[c].data(),
-					(uint8_t*)(*vector)[c].data()+trans_size);
+					(uint8_t*)(*vector)[c].data()+trans_size_tmp);
 			}
-
 		}else{
 			data_to_export =
 				std::vector<uint8_t>(
@@ -155,7 +160,7 @@ std::vector<uint8_t> data_id_t::export_data(
 		transport_i_t trans_i = i; // size fixing
 		transport_size_t trans_size = data_to_export.size();
 		//P_V(trans_i, P_SPAM);
-		//P_V(trans_size, P_SPAM);
+		P_V(trans_size, P_SPAM);
 		ID_EXPORT(trans_i, retval);
 		ID_EXPORT(trans_size, retval);
 		id_export_raw(data_to_export, &retval);

@@ -138,14 +138,12 @@ static bool print_is_sane(std::string data){
 }
 
 void print(std::string data, int level, const char *func){
-	if(print_level == P_VAR){
-		try{
-			print_level =
-				std::stoi(
-					settings::get_setting(
-						"print_level"));
-		}catch(...){}
-	}
+	try{
+		print_level =
+			std::stoi(
+				settings::get_setting(
+					"print_level"));
+	}catch(...){}
 	if(unlikely(level >= print_level)){
 		if(!print_is_sane(data)){
 			std::cout << "[OHCOMEON] something happened" << std::endl;
