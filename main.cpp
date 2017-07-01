@@ -47,20 +47,20 @@ bool id_throw_exception = true;
 static uint64_t avg_iter_time = 0;
 static uint64_t iter_count = 0;
 
-
 int main(int argc_, char **argv_){
 	argc = argc_;
 	argv = argv_;
 	init();
-	if(settings::get_setting("run_tests") == "true"){
-		const uint64_t old_id_count =
-			id_api::array::get_id_count();
-		test();
-		if(old_id_count != id_api::array::get_id_count()){
-			P_V(id_api::array::get_id_count()-old_id_count, P_WARN);
-			print("tests are leaking possibly invalid data, fix this", P_CRIT);
-		}
-	}
+	// ehh, forget about it
+	// if(settings::get_setting("run_tests") == "true"){
+	// 	const uint64_t old_id_count =
+	// 		id_api::array::get_id_count();
+	// 	test();
+	// 	if(old_id_count != id_api::array::get_id_count()){
+	// 		P_V(id_api::array::get_id_count()-old_id_count, P_WARN);
+	// 		print("tests are leaking possibly invalid data, fix this", P_CRIT);
+	// 	}
+	// }
 	try{
 		running =
 			settings::get_setting("init_close_only") == "false";
