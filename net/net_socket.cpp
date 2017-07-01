@@ -108,24 +108,19 @@ std::vector<uint8_t> net_socket_t::recv(uint64_t byte_count, uint64_t flags){
 	do{
 		uint64_t data_received = 0;
 		while(activity()){
-			int32_t recv_retval = 0;
-			if((recv_retval = SDLNet_TCP_Recv(socket, &(buffer[0]), 512)) > 0){
-				if(recv_retval <= 0){
-					print("SDLNet_TCP_Recv failed, closing socket: " + (std::string)SDL_GetError(), P_SPAM);
-					disconnect();
-					break;
-				}else{
-					local_buffer.insert(
-						local_buffer.end(),
-						&(buffer[0]),
-						&(buffer[recv_retval]));
-					data_received += recv_retval;
-				}
+			const int32_t recv_retval = 
+				SDLNet_TCP_Recv(socket, &(buffer[0]), 512);
+			if(recv_retval <= 0){
+				print("SDLNet_TCP_Recv failed, closing socket: " + (std::string)SDL_GetError(), P_SPAM);
+				disconnect();
+				break;
 			}else{
-				net_socket_recv_posix_error_checking(recv_retval);
+				local_buffer.insert(
+					local_buffer.end(),
+					&(buffer[0]),
+					&(buffer[recv_retval]));
+				data_received += recv_retval;
 			}
-		}
-		if(data_received != 0){
 		}
 		if(local_buffer.size() >= byte_count){
 			auto start = local_buffer.begin();
@@ -231,8 +226,11 @@ bool net_socket_t::activity(){
 		print("socket is nullptr", P_WARN);
 		return false;
 	}
-	bool activity_ = SDLNet_CheckSockets(socket_set, 0) > 0;
-	return activity_;
+	int activity_ = SDLNet_CheckSockets(socket_set, 0) > 0;
+	if(activity_ == -1){
+		print("SDLNet_CheckSockets failed:" + (std::string)SDL_GetError(), P_ERR);
+	}
+	return SDLNet_SocketReady(socket) != 0;
 }
 
 id_t_ net_socket_t::get_proxy_id(){

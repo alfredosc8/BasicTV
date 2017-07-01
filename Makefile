@@ -1,5 +1,5 @@
 CXXFLAGS += -Wall -Wextra -Werror -std=c++14 -Wno-unused-function -O0 -g -Wfloat-equal -Wundef -Wshadow -Wpointer-arith -Wcast-align -Wswitch-default -Wunreachable-code -I/usr/include/opus -I/usr/local/include/opus
-LDLIBS = -lcurl -lSDL2_net -lSDL2_mixer -lSDL2 -lz -lcrypto -lopus -lzstd -lopusfile
+LDLIBS = -lcurl -lSDL2_net -lSDL2_mixer -lSDL2 -lz -lcrypto -lopus -lzstd -lopusfile -rdynamic
 CPPFLAGS = -DDEBUG
 
 SRC = $(shell find . -name '*.cpp')

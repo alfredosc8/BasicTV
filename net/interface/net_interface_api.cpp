@@ -59,6 +59,9 @@ void net_interface::unbind::software_to_hardware(
 	
 uint8_t net_interface::medium::from_address(id_t_ address_id){
 	// more efficient for sure
+	if(address_id == ID_BLANK_ID){
+		return NET_INTERFACE_MEDIUM_UNDEFINED; // a.k.a. 0
+	}
 	switch(get_id_type(address_id)){
 	case TYPE_NET_INTERFACE_IP_ADDRESS_T:
 		return NET_INTERFACE_MEDIUM_IP;

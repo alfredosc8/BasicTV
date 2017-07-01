@@ -144,7 +144,7 @@ static id_t_ net_proto_generate_con_req(id_t_ peer_id){
 		PTR_DATA(peer_id,
 			 net_proto_peer_t);
 	PRINT_IF_NULL(proto_peer_ptr, P_ERR);
-	ASSERT(net_interface::medium::from_address(proto_peer_ptr->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_ERR);
+	ASSERT(net_interface::medium::from_address(proto_peer_ptr->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_UNABLE);
 	net_proto_con_req_t *con_req_ptr =
 		new net_proto_con_req_t;
 	con_req_ptr->set(

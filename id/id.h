@@ -153,7 +153,6 @@ public:
 	void import_data(std::vector<uint8_t> data);
 	void rsa_decrypt_backlog();
 	uint64_t get_last_access_timestamp_micro_s(){return last_access_timestamp_micro_s;}
-
 	void set_lowest_global_flag_level(uint8_t network_rules,
 					  uint8_t export_rules,
 					  uint8_t peer_rules);

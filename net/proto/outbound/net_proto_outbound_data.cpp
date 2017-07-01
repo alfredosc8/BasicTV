@@ -50,7 +50,11 @@ static void net_proto_send_logic(std::vector<id_t_> id_vector,
 		try{
 			proto_socket->send_id(id_vector[i]);
 		}catch(...){
-			print("couldn't send ID to peer", P_WARN);
+			print("proto_socket is broken, deleting net_socket_t and net_proto_socket_t", P_WARN);
+			id_api::destroy(proto_socket->get_socket_id());
+			id_api::destroy(proto_socket->id.get_id());
+			proto_socket = nullptr;
+			break;
 		}
 	}
 }
