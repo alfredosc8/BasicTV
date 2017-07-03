@@ -12,36 +12,7 @@
 /*
   We have more flexibility to make things right now that the codebase
   has switched to SDL_Audio
-
-  tv_audio_raw_queue_t stores the raw samples that need to be played,
-  as well as the actual time to play them (incorporating the window's
-  timestamp offset)
-
-  The SDL audio callback function just goes through that list, 
-  finds all of the chunks of audio to play next, asserts there is
-  only one, and appends that to the data to play.
-
-  Multiple streams can be a problem, since with only one stream, we know
-  that the information we have that is next in line (via the timestamp) is
-  what should be queried up next, but creating another type via SDL's userdata
-  field for a seperate datatype to help with this would be needed and useful.
  */
-
-struct tv_audio_raw_queue_t{
-public:
-	std::vector<uint8_t> raw_samples;
-	uint32_t sampling_freq = 0;
-	uint8_t bit_depth = 0;
-	uint8_t channel_count = 0;
-
-	uint64_t start_time_micro_s = 0;
-	uint64_t end_time_micro_s = 0;
-
-	uint32_t window_active_stream_entry = 0;
-	uint32_t item_active_stream_entry = 0;
-
-	id_t_ frame_id = ID_BLANK_ID;
-};
 
 static SDL_AudioDeviceID audio_device_id = 0;
 static SDL_AudioSpec desired, have;
