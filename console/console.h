@@ -170,7 +170,10 @@ public:
 			vector[i].push_back("NULL");			\
 		}							\
 	}								\
-	
+
+// used by console_manager, quick fix
+extern std::vector<id_t_> console_tv_test_load_opus(std::string file);
+
 extern std::vector<std::vector<std::string> > console_generate_generic_id_table(std::vector<id_t_> id_vector);
 
 extern void console_init();

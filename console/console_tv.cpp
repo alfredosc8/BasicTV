@@ -173,7 +173,7 @@ DEC_CMD(tv_audio_load_wav){
   is being ran, obviously)
  */
 
-static std::vector<id_t_> console_tv_test_load_opus(std::string file){
+std::vector<id_t_> console_tv_test_load_opus(std::string file){
 	std::vector<uint8_t> raw_samples;
 	int32_t ogg_opus_error;
 	OggOpusFile *opus_file =
@@ -195,7 +195,6 @@ static std::vector<id_t_> console_tv_test_load_opus(std::string file){
 			(uint8_t*)(&(pcm[0])),
 			(uint8_t*)(&(pcm[0])+samples_read));
 	}
-
 	op_free(opus_file);
 	opus_file = nullptr;
 	

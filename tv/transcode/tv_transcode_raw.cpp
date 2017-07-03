@@ -16,10 +16,11 @@ std::vector<uint8_t> transcode::audio::raw::signed_to_unsigned(
 		P_V(bit_depth, P_WARN);
 		print("bit depths above 64 aren't supported", P_ERR);
 	}
-	const uint64_t half = flip_bit_section(0, bit_depth)/2;
+	const uint64_t half = (1 << bit_depth)/2;
+	P_V(half, P_NOTE);
 	for(uint64_t i = 0;i < signed_payload.size();i += bit_depth/8){
-		uint64_t *ptr =
-			(uint64_t*)(&signed_payload[i]);
+		int16_t *ptr =
+			(int16_t*)(&signed_payload[i]);
 		(*ptr) += half;
 	}
 	return signed_payload;
@@ -37,10 +38,11 @@ std::vector<uint8_t> transcode::audio::raw::unsigned_to_signed(
 		P_V(bit_depth, P_WARN);
 		print("bit depths above 64 aren't supported", P_ERR);
 	}
-	const uint64_t half = flip_bit_section(0, bit_depth)/2;
+	const uint64_t half = (1 << bit_depth)/2;
+	P_V(half, P_NOTE);
 	for(uint64_t i = 0;i < unsigned_payload.size();i += bit_depth/8){
-		uint64_t *ptr =
-			(uint64_t*)(&unsigned_payload[i]);
+		int16_t *ptr =
+			(int16_t*)(&unsigned_payload[i]);
 		(*ptr) -= half;
 	}
 	return unsigned_payload;

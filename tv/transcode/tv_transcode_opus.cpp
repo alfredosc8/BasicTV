@@ -153,7 +153,7 @@ std::vector<uint8_t> opus_decode_snippets_to_samples(
 				((uint8_t*)&tmp[0])+(sizeof(opus_int16)*opus_retval));
 			snippet_vector->erase(
 				snippet_vector->begin());
-		}else if(opus_retval == 0){
+ 		}else if(opus_retval == 0){
 			print("no opus data to decode", P_WARN);
 			break;
 		}else{

@@ -32,9 +32,9 @@ tv_transcode_encode_state_t *wave_encode_init_state(tv_audio_prop_t *audio_prop)
 	audio_prop->set_format(
 		TV_AUDIO_FORMAT_WAV);
 	if(audio_prop->get_snippet_duration_micro_s() == 0){
-		print("no snippet duration provided for WAVE, assuming 10ms", P_WARN);
+		print("no snippet duration provided for WAVE, assuming 1000ms", P_WARN);
 		audio_prop->set_snippet_duration_micro_s(
-			1000*10);
+			1000*1000);
 	}
 	audio_prop->set_sampling_freq(
 		48000);

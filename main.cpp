@@ -51,7 +51,6 @@ int main(int argc_, char **argv_){
 	argc = argc_;
 	argv = argv_;
 	init();
-	// ehh, forget about it
 	// if(settings::get_setting("run_tests") == "true"){
 	// 	const uint64_t old_id_count =
 	// 		id_api::array::get_id_count();

@@ -951,6 +951,26 @@ static void test_number_calc(){
 	}
 }
 
+static void test_audio_sign_unsign(){
+	std::vector<uint8_t> sample_vector;
+	for(uint64_t i = 0;i < 1024;i++){
+		int16_t signed_sample =
+			(int16_t)true_rand(-32768, 32767);
+		P_V(signed_sample, P_SPAM);
+		sample_vector.insert(
+			sample_vector.end(),
+			&signed_sample,
+			&((&signed_sample)[1]));
+	}
+	std::vector<uint8_t> new_sample_vector =
+		transcode::audio::raw::unsigned_to_signed(
+			transcode::audio::raw::signed_to_unsigned(
+				sample_vector,
+				16),
+			16);
+	ASSERT(new_sample_vector == sample_vector, P_ERR);
+}
+
 void test(){
 	std::vector<id_t_> full_id_set =
 		id_api::get_all();
@@ -968,6 +988,7 @@ void test(){
 	RUN_TEST(test_number_calc);
 	RUN_TEST(test_id_api_raw_fetch);
 	test_audio_format(TV_AUDIO_FORMAT_OPUS);
+	RUN_TEST(test_audio_sign_unsign);
 	std::vector<id_t_> extra_id_set =
 		id_api::get_all();
 	for(uint64_t i = 0;i < full_id_set.size();i++){
