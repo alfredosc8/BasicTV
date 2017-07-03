@@ -71,111 +71,66 @@ void tv_audio_prop_t::list_virtual_data(data_id_t *id){
 	id->add_data_raw(&sampling_freq, sizeof(sampling_freq));
 }
 
-static std::vector<tv_audio_raw_queue_t> audio_queue;
+static std::vector<std::pair<id_t_, std::vector<uint8_t> > > samples_to_play;
 
-static std::vector<uint8_t> get_standard_sine_wave_form(){
-	std::vector<uint8_t> retval;
-	for(uint64_t i = 0;i < 48000*10;i++){
-		uint16_t tmp =
-			(uint16_t)((long double)(sin(1000 * (2 * 3.1415) * i / 48000))*65535);
-		retval.push_back((uint8_t)(tmp&0xFF));
-		retval.push_back((uint8_t)((tmp>>8)&0xFF));
+static void tv_audio_sdl_callback(void *userdata, uint8_t *stream, int32_t len){
+	// only plays the first for now
+	ASSERT(userdata == nullptr, P_ERR);
+	if(len == 0){
+		return;
 	}
-	return retval;
-}
-
-static void tv_audio_load_samples_queue(){
-	uint64_t audio_to_queue = 0;
-	for(uint64_t i = 0;i < audio_queue.size();i++){
-		if(audio_queue[i].start_time_micro_s > get_time_microseconds() &&
-		   audio_queue[i].start_time_micro_s < audio_queue[audio_to_queue].start_time_micro_s){
-			audio_to_queue = i;
+	SDL_memset(stream, 0, len);
+	if(samples_to_play.size() != 0){
+		int32_t true_len = len;
+		if(samples_to_play.at(0).second.size() < (uint32_t)true_len){
+			print("we need to queue more audio data", P_WARN);
+			true_len = samples_to_play.at(0).second.size();
 		}
-	}
-	if(audio_queue.size() != 0){
-		SDL_QueueAudio(
-			audio_device_id,
-			audio_queue[audio_to_queue].raw_samples.data(),
-			audio_queue[audio_to_queue].raw_samples.size());
-		audio_queue.erase(
-			audio_queue.begin()+audio_to_queue);
+		SDL_MixAudio(
+			stream,
+			samples_to_play.at(0).second.data(),
+			true_len,
+			SDL_MIX_MAXVOLUME);
+		samples_to_play.at(0).second.erase(
+			samples_to_play.at(0).second.begin()+true_len);
 	}
 }
 
-/*
-  We can assume that frame_audio_id is from the output of 
-  tv_frame_scroll_to_time
- */
-
-static void tv_audio_add_id_to_audio_queue(id_t_ window_id,
-					   id_t_ frame_audio_id,
-					   uint64_t forward_buffer_micro_s){
-	std::vector<id_t_> id_vector;
-	tv_window_t *window_ptr =
-		PTR_DATA(window_id,
-			 tv_window_t);
-	tv_frame_audio_t *frame_audio_ptr =
-		PTR_DATA(frame_audio_id,
-			 tv_frame_audio_t);
-	const uint64_t time_micro_s =
-		get_time_microseconds();
-	while(frame_audio_ptr != nullptr &&
-	      frame_audio_ptr->get_end_time_micro_s()-time_micro_s <= forward_buffer_micro_s){
-		std::pair<std::vector<id_t_>, std::vector<id_t_> > linked_list =
-			frame_audio_ptr->id.get_linked_list();
-		id_vector.push_back(
-			frame_audio_ptr->id.get_id());
-		if(linked_list.second.size() > 0){
-			frame_audio_ptr =
-				PTR_DATA(linked_list.second[0],
-					 tv_frame_audio_t);
-		}else{
-			frame_audio_ptr = nullptr;
+static void tv_audio_add_id_to_audio_queue(
+	id_t_ window_id,
+	id_t_ frame_id,
+	uint64_t forward_buffer_micro_s){
+	P_V(forward_buffer_micro_s, P_NOTE); // not yet re-implemented
+	uint32_t sampling_freq = 0;
+	uint8_t bit_depth = 0;
+	uint8_t channel_count = 0;
+	std::vector<uint8_t> raw =
+		transcode::audio::frames::to_raw(
+			{frame_id},
+			&sampling_freq,
+			&bit_depth,
+			&channel_count);
+	ASSERT(have.freq == (int32_t)sampling_freq, P_ERR);
+	ASSERT(bit_depth == 16, P_ERR);
+	ASSERT(channel_count == 1, P_ERR); //temporary
+	int64_t entry = -1;
+	SDL_LockAudioDevice(audio_device_id);
+	for(uint64_t i = 0;i < samples_to_play.size();i++){
+		if(samples_to_play[i].first == window_id){
+			entry = (int64_t)i;
 		}
 	}
-	for(uint64_t i = 0;i < audio_queue.size();i++){
-		for(uint64_t c = 0;c < id_vector.size();c++){
-			if(audio_queue[i].frame_id == id_vector[c]){
-				id_vector.erase(
-					id_vector.begin()+c);
-			}
-		}
+	if(entry == -1){
+		samples_to_play.push_back(
+			std::make_pair(window_id, raw));
+		entry = samples_to_play.size()-1;
+	}else{
+		samples_to_play[entry].second.insert(
+			samples_to_play[entry].second.begin(),
+			raw.begin(),
+			raw.end());
 	}
-	for(uint64_t i = 0;i < id_vector.size();i++){
-		tv_audio_raw_queue_t queue;
-		queue.raw_samples =
-			transcode::audio::frames::to_raw(
-				std::vector<id_t_>({id_vector[i]}),
-				&queue.sampling_freq,
-				&queue.bit_depth,
-				&queue.channel_count);
-		switch(have.format){
-		case AUDIO_U16:
-			print("audio is fine as it is, no conversion needed", P_NOTE);
-			break;
-		case AUDIO_S16:
-			print("performing unsigned to signed conversion", P_NOTE);
-			queue.raw_samples =
-				transcode::audio::raw::signed_to_unsigned(
-					queue.raw_samples,
-					queue.bit_depth);
-			break;
-		default:
-			print("unrecognized audio format, this is bad", P_CRIT);
-		}
-		tv_frame_audio_t *frame_audio_ptr_ =
-			PTR_DATA(id_vector[i],
-				 tv_frame_audio_t);
-		CONTINUE_ON_NULL(frame_audio_ptr, P_WARN);
-		queue.start_time_micro_s =
-			frame_audio_ptr_->get_start_time_micro_s()+window_ptr->get_timestamp_offset();
-		queue.end_time_micro_s =
-			frame_audio_ptr_->get_end_time_micro_s()+window_ptr->get_timestamp_offset();
-		queue.frame_id =
-			id_vector[i];
-		audio_queue.push_back(
-			queue);
-	}
+	SDL_UnlockAudioDevice(audio_device_id);
 }
 
 void tv_audio_init(){
@@ -217,7 +172,7 @@ void tv_audio_init(){
 		desired.channels =
 			1; // temporary
 		desired.callback =
-			nullptr;
+			tv_audio_sdl_callback;
 		desired.userdata =
 			nullptr;
 		audio_device_id =
@@ -226,7 +181,7 @@ void tv_audio_init(){
 				0,
 				&desired,
 				&have,
-				SDL_AUDIO_ALLOW_ANY_CHANGE);
+				0);
 		P_V(desired.freq, P_WARN);
 		P_V(desired.format, P_WARN);
 		P_V(desired.channels, P_WARN);
@@ -235,6 +190,8 @@ void tv_audio_init(){
 		P_V(have.format, P_WARN);
 		P_V(have.channels, P_WARN);
 		P_V(have.samples, P_WARN);
+
+		P_V_B(have.format, P_WARN); // comments in SDL_audio.h make for better debuggin
 		if(audio_device_id == 0){
 			print("cannot open audio:" + (std::string)(SDL_GetError()), P_ERR);
 		}
@@ -302,7 +259,6 @@ void tv_audio_loop(){
 				current_frame_audios[i].second,
 				1000*1000*5);
 		}
-		tv_audio_load_samples_queue();
 	}
 }
 
