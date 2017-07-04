@@ -104,6 +104,8 @@ net_proto_socket_t::net_proto_socket_t() : id(this, TYPE_NET_PROTO_SOCKET_T){
 }
 
 net_proto_socket_t::~net_proto_socket_t(){
+	id_api::destroy(inbound_id_set_id);
+	id_api::destroy(outbound_id_set_id);
 }
 
 void net_proto_socket_t::update_working_buffer(){
@@ -113,8 +115,20 @@ void net_proto_socket_t::update_working_buffer(){
 	if(socket_ptr == nullptr){
 		print("socket is a nullptr", P_ERR);
 	}
-	std::vector<uint8_t> buffer =
-		socket_ptr->recv_all_buffer();
+	std::vector<uint8_t> buffer;
+	try{
+		buffer =
+			socket_ptr->recv_all_buffer();
+	}catch(...){
+		print("socket is broken, deleting net_socket_t, deferenceing, unpacking buffer, and throwing", P_NOTE);
+		id_api::destroy(socket_id);
+		socket_id = ID_BLANK_ID;
+		socket_ptr = nullptr;
+		update_block_buffer();
+		load_blocks();
+		check_state();
+		print("telling caller to destroy me", P_UNABLE);
+	}
 	if(buffer.size() != 0){
 		P_V(buffer.size(), P_VAR);
 		last_recv_micro_s = get_time_microseconds();

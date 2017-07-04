@@ -154,9 +154,9 @@ void net_proto_create_random_connections(){
 		get_all_peer_socket_count(
 			peer_socket_count);
 	const uint64_t connection_number =
-		settings::get_setting_unsigned_def(
-			"tcp_max_con",
-			64); // semi-reasonable max
+		(uint64_t)std::stoi(
+			settings::get_setting(
+				"net_interface_ip_tcp_max_con"));
 	std::vector<id_t_> peer_id_vector =
 		id_api::cache::get(
 			"net_proto_peer_t");
@@ -172,13 +172,13 @@ void net_proto_create_random_connections(){
 		if(peer_id_vector[i] == net_proto::peer::get_self_as_peer()){
 			continue;
 		}
+		if(peer_id_vector[i] == ID_BLANK_ID){
+			continue;
+		}
 		if(pending_clearnet_con_req_for_peer(peer_id_vector[i]) == false){
-			try{
-				net_proto::socket::connect(
-					peer_id_vector[i], 1);
-			}catch(...){}
-		}else{
-			//print("not initiating another connection until first con_req is handled somehow", P_DEBUG);
+			print("creating connection with peer " + convert::array::id::to_hex(peer_id_vector[i]), P_DEBUG);
+			net_proto::socket::connect(
+				peer_id_vector[i], 1);
 		}
 	}
 }

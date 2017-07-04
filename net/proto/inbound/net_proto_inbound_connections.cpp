@@ -14,27 +14,12 @@
 static id_t_ incoming_id = ID_BLANK_ID;
 
 static void net_proto_accept_direct_connections(net_socket_t *incoming_conn){
-	TCPsocket incoming_socket =
-		incoming_conn->get_tcp_socket();
-	if(incoming_socket == nullptr){
-		return;
-	}
-	TCPsocket tcp_socket = nullptr;
-	while((tcp_socket = SDLNet_TCP_Accept(incoming_socket)) != nullptr){
-		net_socket_t *new_socket =
-			new net_socket_t;
+	id_t_ new_socket_id = ID_BLANK_ID;
+	while((new_socket_id = incoming_conn->accept()) != ID_BLANK_ID){
 		net_proto_socket_t *new_proto_socket =
 			new net_proto_socket_t;
-		IPaddress *ip_tmp =
-			SDLNet_TCP_GetPeerAddress(
-				tcp_socket);
-		if(ip_tmp == nullptr){
-			print("couldn't pull ip info from new socket: " + (std::string)SDL_GetError(), P_WARN);
-		}
-		new_socket->set_tcp_socket(
-			tcp_socket);
 		new_proto_socket->set_socket_id(
-			new_socket->id.get_id());
+			new_socket_id);
 		new_proto_socket->send_id(
 			net_proto::peer::get_self_as_peer());
 		new_proto_socket->send_id(
@@ -97,11 +82,6 @@ static bool net_proto_facilitate_tcp_holepunch(net_proto_con_req_t *con_req){
 	  some extra code here to do that (probably to signify connection type
 	  used in the socket)
 	 */
-	TCPsocket sdl_tcp_socket =
-		incoming_socket_ptr->get_tcp_socket();
-	if(sdl_tcp_socket == nullptr){
-		print("sdl_tcp_socket is a nullptr", P_ERR);
-	}
  	print("TODO: implement a TCP hole punch", P_CRIT);
 	return false;
 }
@@ -197,9 +177,9 @@ static void net_proto_create_incoming_socket(){
 		incoming_conn->id.get_id();
 	incoming_conn->set_net_ip(
 		"",
- 		settings::get_setting_unsigned_def(
-			"net_port",
-			58486));
+ 		std::stoi(
+			settings::get_setting(
+				"net_interface_ip_tcp_port")));
 	incoming_conn->connect();
 }
 

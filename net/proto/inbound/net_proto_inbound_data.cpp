@@ -19,6 +19,9 @@ void net_proto_handle_inbound_data(){
 				print("proto_socket is a nullptr", P_ERR);
 			}
 			proto_socket->update();
-		}catch(...){}
+		}catch(...){
+			print("proto_socket is broken, removing", P_NOTE);
+			id_api::destroy(proto_sockets[i]);
+		}
 	}
 }

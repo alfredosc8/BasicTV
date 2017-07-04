@@ -34,7 +34,12 @@ static void throw_on_wrong_dict(uint8_t dictionary){
 std::vector<uint8_t> compressor::zstd::to(std::vector<uint8_t> data,
 					  uint8_t compression_level,
 					  uint8_t dictionary){
-	std::vector<uint8_t> retval;
+	std::vector<uint8_t> retval;	
+	if(data.size() == 0){
+		print("can't compress empty payload", P_WARN);
+		HANG();
+		return retval;
+	}
 	try{
 		throw_on_wrong_dict(dictionary);
 	}catch(...){
@@ -85,6 +90,10 @@ std::vector<uint8_t> compressor::zstd::to(std::vector<uint8_t> data,
 
 std::vector<uint8_t> compressor::zstd::from(std::vector<uint8_t> data){
 	std::vector<uint8_t> retval;
+	if(data.size() == 0){
+		print("can't decompress empty payload", P_UNABLE);
+		return retval;
+	}
 	uint8_t dictionary = data[0];
 	data.erase(data.begin());
 	throw_on_wrong_dict(dictionary);

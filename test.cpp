@@ -95,43 +95,27 @@ static id_t_ test_create_generic_id(){
   4. I said so
  */
 
-static void test_nc_socket(){
-	/*
-	  I cannot locally connect to this computer without using another IP
-	  address (breaking 4-tuple), so just test this with laptop
-	 */
-	net_socket_t *test_socket_ = new net_socket_t;
-	test_socket_->id.set_lowest_global_flag_level(
-		ID_DATA_RULE_UNDEF,
-		ID_DATA_EXPORT_RULE_NEVER,
-		ID_DATA_RULE_UNDEF);
-	std::string ip;
-	uint16_t port = 0;
-	bool recv = false;
-	try{
-		recv = settings::get_setting(
-			"test_recv") == "1";
-	}catch(...){}
-	if(recv){
-		while(true){
-			net_proto_loop();
-		}
-	}else{
-		print("IP address to test", P_NOTE);
-		std::cin >> ip;
-		print("Port to test", P_NOTE);
-		std::cin >> port;
-		std::pair<std::string, uint16_t> laptop_conn =
-			std::make_pair(ip, port);
-		test_socket_->set_net_ip(ip, port);
-		test_socket_->connect();
-		test_socket_->send("AAAA");
-		while(true){
-			sleep_ms(1);
-		}
-	}
-	id_api::destroy(test_socket_->id.get_id());
-	test_socket_ = nullptr;
+static void test_socket(){
+	net_socket_t *first_ptr =
+		new net_socket_t;
+	first_ptr->set_net_ip(
+		"", 59050);
+	first_ptr->connect();
+	net_socket_t *second_ptr =
+		new net_socket_t;
+	second_ptr->set_net_ip(
+		"127.0.0.1", 59050);
+	second_ptr->connect();
+	id_t_ new_socket_id =
+		first_ptr->accept();
+	ASSERT(new_socket_id != ID_BLANK_ID, P_ERR);
+	net_socket_t *new_ptr =
+		PTR_DATA(new_socket_id,
+			 net_socket_t);
+	ASSERT(new_ptr != nullptr, P_ERR);
+	new_ptr->send(
+		std::vector<uint8_t>({'A', 'A', 'A', 'A'}));
+	second_ptr->recv(4, 0);
 }
 
 /*
@@ -209,43 +193,43 @@ static void test_compressor(){
  */
 
 static void test_max_tcp_sockets_local(){
-	print("Local IP address:", P_NOTE);
-	std::string ip;
-	std::cin >> ip;
-	std::vector<std::pair<id_t_, id_t_> > socket_pair;
-	bool dropped = false;
-	net_socket_t *inbound =
-		new net_socket_t;
-	inbound->set_net_ip("", 50000);
-	inbound->connect();
-	while(!dropped){
-		for(uint64_t i = 0;i < 128;i++){
-			net_socket_t *first =
-				new net_socket_t;
-			first->set_net_ip(ip, 50000);
-			first->connect();
-			net_socket_t *second =
-				new net_socket_t;
-			sleep_ms(1); // probably isn't needed
-			TCPsocket tmp_socket =
-				SDLNet_TCP_Accept(inbound->get_tcp_socket());
-			if(tmp_socket != nullptr){
-				second->set_tcp_socket(tmp_socket);
-			}else{
-				print("unable to receive connection request", P_ERR);
-			}
-			socket_pair.push_back(
-				std::make_pair(
-					first->id.get_id(),
-					second->id.get_id()));
-		}
-		test_nc_socket_array(socket_pair);
-	}
-	id_api::destroy(inbound->id.get_id());
-	for(uint64_t i = 0;i < socket_pair.size();i++){
-		id_api::destroy(socket_pair[i].first);
-		id_api::destroy(socket_pair[i].second);
-	}
+	// print("Local IP address:", P_NOTE);
+	// std::string ip;
+	// std::cin >> ip;
+	// std::vector<std::pair<id_t_, id_t_> > socket_pair;
+	// bool dropped = false;
+	// net_socket_t *inbound =
+	// 	new net_socket_t;
+	// inbound->set_net_ip("", 50000);
+	// inbound->connect();
+	// while(!dropped){
+	// 	for(uint64_t i = 0;i < 128;i++){
+	// 		net_socket_t *first =
+	// 			new net_socket_t;
+	// 		first->set_net_ip(ip, 50000);
+	// 		first->connect();
+	// 		net_socket_t *second =
+	// 			new net_socket_t;
+	// 		sleep_ms(1); // probably isn't needed
+	// 		TCPsocket tmp_socket =
+	// 			SDLNet_TCP_Accept(inbound->get_tcp_socket());
+	// 		if(tmp_socket != nullptr){
+	// 			second->set_tcp_socket(tmp_socket);
+	// 		}else{
+	// 			print("unable to receive connection request", P_ERR);
+	// 		}
+	// 		socket_pair.push_back(
+	// 			std::make_pair(
+	// 				first->id.get_id(),
+	// 				second->id.get_id()));
+	// 	}
+	// 	test_nc_socket_array(socket_pair);
+	// }
+	// id_api::destroy(inbound->id.get_id());
+	// for(uint64_t i = 0;i < socket_pair.size();i++){
+	// 	id_api::destroy(socket_pair[i].first);
+	// 	id_api::destroy(socket_pair[i].second);
+	// }
 }
 
 static void test_id_transport_print_exp(std::vector<uint8_t> exp){
@@ -675,7 +659,7 @@ void test_net_proto_socket_transcoding(){
 	  one port opens and uses it, since ports fit nicely (with the exception
 	  of 0) into a 16-bit variable
 	 */
-	while(intermediate_socket->get_tcp_socket() == nullptr){
+	while(intermediate_socket->get_socket_fd() == 0){
 		port++; // 60000 is the typical
 		intermediate_socket->set_net_ip("", port); // blank means accepts incoming
 		intermediate_socket->connect();
@@ -684,7 +668,7 @@ void test_net_proto_socket_transcoding(){
 		{std::make_pair(new net_proto_socket_t,
 				new net_socket_t),
 		 std::make_pair(new net_proto_socket_t,
-				new net_socket_t)};
+				nullptr)};
 	socket_vector[0].first->id.set_lowest_global_flag_level(
 		ID_DATA_RULE_UNDEF,
 		ID_DATA_EXPORT_RULE_NEVER,
@@ -704,18 +688,17 @@ void test_net_proto_socket_transcoding(){
 
 	socket_vector[0].first->set_socket_id(
 		socket_vector[0].second->id.get_id());
-	socket_vector[1].first->set_socket_id(
-		socket_vector[1].second->id.get_id());
 	// 0 attempts a connect, intermediate_socket accepts, shifts ownership
 	// to 1, and allows for transmission of data over the proto_socket
 	socket_vector[0].second->set_net_ip("127.0.0.1", port);
 	socket_vector[0].second->connect();
 	// accept incoming
-	TCPsocket new_socket = nullptr;
-	while((new_socket = SDLNet_TCP_Accept(intermediate_socket->get_tcp_socket())) == nullptr){
+	// while((new_socket = SDLNet_TCP_Accept(intermediate_socket->get_tcp_socket())) == nullptr){
+	while((socket_vector[1].second = PTR_DATA(intermediate_socket->accept(), net_socket_t)) == nullptr){
 		sleep_ms(1);
 	}
-	socket_vector[1].second->set_tcp_socket(new_socket);
+	socket_vector[1].first->set_socket_id(
+		socket_vector[1].second->id.get_id());
 	// load, export, delete, send, reload
 	id_t_ wallet_set_id = test_create_generic_id();
 	socket_vector[0].first->send_id(wallet_set_id);
@@ -742,9 +725,9 @@ void test_net_proto_socket_transcoding(){
   other rule)
  */
 
-void test_nc(){
-	test_nc_socket();
-}
+// void test_nc(){
+// 	test_nc_socket();
+// }
 
 /*
   Ran with --run_tests (enabled by default)
@@ -974,6 +957,7 @@ static void test_audio_sign_unsign(){
 void test(){
 	std::vector<id_t_> full_id_set =
 		id_api::get_all();
+	RUN_TEST(test_socket);
 	RUN_TEST(test_math_number_set);
 	RUN_TEST(test_id_transport);
 	RUN_TEST(test_escape_string);

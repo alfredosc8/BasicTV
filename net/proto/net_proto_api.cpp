@@ -144,18 +144,31 @@ static id_t_ net_proto_generate_con_req(id_t_ peer_id){
 		PTR_DATA(peer_id,
 			 net_proto_peer_t);
 	PRINT_IF_NULL(proto_peer_ptr, P_ERR);
-	ASSERT(net_interface::medium::from_address(proto_peer_ptr->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_UNABLE);
-	net_proto_con_req_t *con_req_ptr =
-		new net_proto_con_req_t;
-	con_req_ptr->set(
-		net_proto::peer::get_self_as_peer(),
-		peer_id,
-		ID_BLANK_ID,
-		get_time_microseconds()+10000000);  // TODO: make 10s a settings
-	return con_req_ptr->id.get_id();
+	ASSERT(net_interface::medium::from_address(proto_peer_ptr->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_ERR);
+	net_interface_ip_address_t *ip_address_ptr =
+		PTR_DATA(proto_peer_ptr->get_address_id(),
+			 net_interface_ip_address_t);
+	ASSERT(ip_address_ptr != nullptr, P_ERR);
+	if(get_time_microseconds()-ip_address_ptr->get_last_attempted_connect_time_micro_s() >
+	   settings::get_setting_unsigned_def("net_interface_ip_address_connection_delay_micro_s", 10000000)){
+		print("creating a new net_proto_con_req_t", P_DEBUG);
+		net_proto_con_req_t *con_req_ptr =
+			new net_proto_con_req_t;
+		con_req_ptr->set(
+			net_proto::peer::get_self_as_peer(),
+			peer_id,
+			ID_BLANK_ID,
+			get_time_microseconds()+10000000);  // TODO: make 10s a settings
+		return con_req_ptr->id.get_id();
+	}else{
+		print("can't connect, too soon", P_UNABLE);
+		return ID_BLANK_ID;
+	}
 }
 
 void net_proto::socket::connect(id_t_ peer_id_, uint32_t min){
+	ASSERT(false, P_WARN); // get a backtrace
+	ASSERT(min > 0, P_WARN); // assertions with warnings now give backtraces
 	std::vector<id_t_> retval;
 	net_proto_peer_t *proto_peer_ptr =
 		PTR_DATA(peer_id_,

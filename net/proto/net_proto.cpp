@@ -44,25 +44,27 @@ static void net_proto_init_self_peer(){
 	}
 	if(settings::get_setting("net_interface_ip_tcp_enabled") == "true"){
 		const uint16_t tmp_port =
-			settings::get_setting_unsigned_def(
-				"net_interface_ip_tcp_port",
-				58486);
-		std::string ip_addr =
-			settings::get_setting(
-				"net_interface_ip_hostname");
-		if(ip_addr == ""){
+			std::stoi(
+				settings::get_setting(
+					"net_interface_ip_tcp_port"));
+		std::string ip_addr = "";
+		try{
+			ip_addr =
+				settings::get_setting(
+					"net_interface_ip_hostname");
+		}catch(...){
+			print("finding IP address automatically", P_NOTE);
 			ip_addr = net_get_ip();
-		}else{
-			print("assuming the hostname of " + ip_addr, P_NOTE);
 		}
+		print("Peer information as seen by the network is " + ip_addr + ":" + std::to_string(tmp_port), P_NOTE);
 		P_V(tmp_port, P_NOTE);
 		P_V_S(ip_addr, P_NOTE);
 		net_proto_peer_t *proto_peer_ptr =
 			new net_proto_peer_t;
 		proto_peer_ptr->id.set_lowest_global_flag_level(
-			ID_DATA_RULE_UNDEF,
+			ID_DATA_NETWORK_RULE_PUBLIC,
 			ID_DATA_EXPORT_RULE_NEVER,
-			ID_DATA_RULE_UNDEF);
+			ID_DATA_PEER_RULE_ALWAYS);
 		net_interface_ip_address_t *ip_address_ptr =
 			new net_interface_ip_address_t;
 		ip_address_ptr->set_medium_modulation_encapsulation(
@@ -90,7 +92,7 @@ static void net_proto_init_self_peer(){
   Forces no encryption (generated locally)
  */
 
-static std::vector<std::pair<std::string, uint16_t> > bootstrap_nodes;
+static std::vector<std::pair<std::string, uint16_t> > bootstrap_nodes = {};
 
 static void net_proto_verify_bootstrap_nodes(){
 	std::vector<id_t_> peer_vector =

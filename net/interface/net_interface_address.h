@@ -66,7 +66,7 @@ private:
 	/*
 	  Last attempted connect time
 	 */
-	uint64_t last_attempted_connect_time = 0;
+	uint64_t last_attempted_connect_time_micro_s = 0;
 public:
 	void list_virtual_data(data_id_t *id);
 	GET_SET(first_time_micro_s, uint64_t);
@@ -77,7 +77,7 @@ public:
 	GET_SET(latitude, std::vector<uint8_t>);
 	GET_SET(longitude, std::vector<uint8_t>);
 
-	GET_SET(last_attempted_connect_time, uint64_t);
+	GET_SET(last_attempted_connect_time_micro_s, uint64_t);
 	
 	void set_medium_modulation_encapsulation(
 		uint8_t medium_,

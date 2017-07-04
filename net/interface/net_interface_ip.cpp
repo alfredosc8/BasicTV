@@ -9,11 +9,16 @@
 
 #include "net_interface_helper.h"
 
-// state, so allocated in ADD_ADDRESS
+/*
+  Moving away from SDL_net and towards POSIX sockets
+
+  TODO: completely rewrite net_interface_ip.cpp for
+  Windows
+ */
+
 struct net_interface_medium_ip_ptr_t{
 public:
-	TCPsocket tcp_socket = nullptr;
-	SDLNet_SocketSet socket_set = nullptr;
+	int socket_fd = 0;
 };
 
 
@@ -47,7 +52,7 @@ INTERFACE_CALCULATE_MOST_EFFICIENT_DROP(ip){
 		hardware_dev_ptr,
 		nullptr,
 		ip_address_ptr);
-uint64_t soft_dev_to_remove = 0;
+	uint64_t soft_dev_to_remove = 0;
 	if(hardware_dev_ptr->get_max_soft_dev() ==
 	   hardware_dev_ptr->get_size_soft_dev_list()){
 		print("sitting at max_soft_dev limit", P_NOTE);
@@ -124,16 +129,21 @@ INTERFACE_SEND(ip){
 	for(uint64_t i = 0;i < packetized.size();i++){
 		switch(software_dev_ptr->get_packet_modulation()){
 		case NET_INTERFACE_MEDIUM_PACKET_MODULATION_TCP:
+			// sent_bytes =
+			// 	SDLNet_TCP_Send(
+			// 		working_state->tcp_socket,
+			// 		packetized[i].data(),
+			// 		packetized[i].size());
 			sent_bytes =
-				SDLNet_TCP_Send(
-					working_state->tcp_socket,
-					packetized[i].data(),
-					packetized[i].size());
+				send(working_state->socket_fd,
+				     packetized[i].data(),
+				     packetized[i].size(),
+				     MSG_NOSIGNAL);
 			if(sent_bytes == -1){
 				print("TCP send didn't work", P_WARN);
 				sent_bytes = 0;
-			}else if(sent_bytes < (int64_t)packetized[i].size()){
-				print("not all TCP data was sent", P_WARN);
+			}else if(sent_bytes < (int64_t)packetized[i].size() || (sent_bytes == -EPIPE)){
+				print("not all TCP data was sent (socket was probably broken)", P_WARN);
 			}
 			break;
 		case NET_INTERFACE_MEDIUM_PACKET_MODULATION_UDP:
@@ -153,21 +163,31 @@ INTERFACE_SEND(ip){
 	}
 }
 
+/*
+  Instead of offloading the data, maybe use MSG_PEEK for the block, get the
+  appropriate size, somehow get the size of the received buffer through POSIX,
+  and do a copy-on-write
+ */
+
 INTERFACE_RECV_ALL(ip){
 	INTERFACE_SET_HW_PTR(hardware_dev_id);
 	INTERFACE_SET_SW_PTR(software_dev_id);
 	std::vector<uint8_t> retval;
 	char buffer[65536];
 	int32_t recv_bytes = -1;
+
+	net_interface_medium_ip_ptr_t *working_state = 
+		static_cast<net_interface_medium_ip_ptr_t*>(software_dev_ptr->get_state_ptr());
+	
 	while(recv_bytes != 0){
 		recv_bytes = 0;
 		switch(software_dev_ptr->get_packet_modulation()){
 		case NET_INTERFACE_MEDIUM_PACKET_MODULATION_TCP:
 			recv_bytes =
-				SDLNet_TCP_Recv(
-					(TCPsocket)software_dev_ptr->get_state_ptr(),
-					&(buffer[0]),
-					65536);
+				recv(working_state->socket_fd,
+				     &(buffer[0]),
+				     65536,
+				     MSG_DONTWAIT);
 			if(recv_bytes <= 0){
 				print("TCP recv didn't work", P_WARN);
 				recv_bytes = 0;
@@ -217,6 +237,7 @@ INTERFACE_ADD_ADDRESS_COST(ip){
 INTERFACE_ADD_ADDRESS(ip){
 	INTERFACE_SET_HW_PTR(hardware_dev_id);
 	INTERFACE_SET_ADDR_PTR(address_id);
+	ASSERT(address_id != ID_BLANK_ID, P_ERR);
 	net_interface_software_dev_t *software_dev_ptr =
 		new net_interface_software_dev_t;
 	software_dev_ptr->set_address_id(
@@ -227,8 +248,7 @@ INTERFACE_ADD_ADDRESS(ip){
 		software_dev_ptr->id.get_id());
 	net_interface_medium_ip_ptr_t *working_state =
 		new net_interface_medium_ip_ptr_t;
-	working_state->socket_set =
-		SDLNet_AllocSocketSet(1);
-	ASSERT(working_state->socket_set != nullptr, P_ERR);
+	software_dev_ptr->set_state_ptr(
+		(void*)working_state);
 	return software_dev_ptr->id.get_id();
 }

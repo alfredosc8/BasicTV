@@ -117,8 +117,6 @@ void init(){
 	  critical to setting default values
 	*/
 	// default port for ID networking
-	settings::set_setting("net_port", "58486");
-	settings::set_setting("net_hostname", "");
 	settings::set_setting("net_open_tcp_port", "false");
 	// console port
 	settings::set_setting("console_port", "59000");

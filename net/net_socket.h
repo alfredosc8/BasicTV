@@ -8,6 +8,12 @@
 
 #include <SDL2/SDL_net.h>
 
+#include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/tcp.h>
+#include <fcntl.h>
+
 /*
   net_socket_t: Manages network sockets. Socket is stored inside of this file. 
   Using torsocks should work with this program, as there are no plans for UDP
@@ -32,12 +38,15 @@
 struct net_socket_t : public net_ip_t{
 private:
 	uint8_t status = 0;
-	std::vector<uint8_t> local_buffer;
+	std::vector<uint8_t> local_inbound_buffer;
+	std::vector<uint8_t> local_outbound_buffer;
 	// raw socket for SDL
-	SDLNet_SocketSet socket_set = nullptr;
-	TCPsocket socket = nullptr;
-	void socket_check();
+	int socket_fd = 0;
 	id_t_ proxy_id = ID_BLANK_ID;
+
+	fd_set wrfds;
+	
+	bool conn_wait = false;
 	
 	/*
 	  inbound is throughput
@@ -56,10 +65,11 @@ public:
 
 	// general socket stuff
 	bool is_alive();
-	uint8_t get_status();
 	void connect();
 	void disconnect();
 	void reconnect();
+
+	id_t_ accept(); // returns a net_socket_t
 	
 	// send and recv functions
 	void send(std::vector<uint8_t> data);
@@ -72,7 +82,7 @@ public:
 	id_t_ get_proxy_id();
 
 	// hacky stuff that should be streamlined and abstracted
-	void set_tcp_socket(TCPsocket);
-	TCPsocket get_tcp_socket();
+	void set_socket_fd(int socket_fd);
+	int get_socket_fd();
 };
 #endif

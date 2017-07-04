@@ -194,22 +194,13 @@ static void console_accept_connections(){
 	if(socket == nullptr){
 		print("socket is a nullptr", P_ERR);
 	}
-	TCPsocket tmp_socket =
-		socket->get_tcp_socket();
-	if(tmp_socket == nullptr){
-		print("console inbound socket is a nullptr (port " + std::to_string(socket->get_net_port()) + ")", P_ERR);
-	}
-	TCPsocket new_socket =
-		nullptr;
-	if((new_socket = SDLNet_TCP_Accept(tmp_socket)) != nullptr){
+	id_t_ new_socket_id = ID_BLANK_ID;
+	if((new_socket_id = socket->accept()) != ID_BLANK_ID){
 		print("accepting a new console connection", P_NOTE);
 		console_t *console_new =
 			new console_t;
-		net_socket_t *console_socket =
-			new net_socket_t;
-		console_socket->set_tcp_socket(new_socket);
-		console_socket->send("BasicTV console\n");
-		console_new->set_socket_id(console_socket->id.get_id());
+		console_new->set_socket_id(
+			new_socket_id);
 	}
 }
 

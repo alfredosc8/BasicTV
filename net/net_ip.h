@@ -5,6 +5,11 @@
 #include <cstdint>
 #include "../id/id.h"
 
+#include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+
+
 /*
   net_ip_t: virtual overlay for any type needing an IP
 
@@ -34,6 +39,7 @@ public:
 			uint16_t port_);
 	std::string get_net_ip_str();
 	std::string get_address();
+	std::vector<uint8_t> get_net_ip_raw();
 	uint16_t get_net_port();
 };
 

@@ -503,6 +503,7 @@ void id_api::destroy(id_t_ id){
 	data_id_t *ptr =
 		PTR_ID(id, );
 	if(ptr == nullptr){
+		print("data is already destroyed?", P_WARN);
 		return;
 	}
 	DELETE_TYPE_2(tv_frame_video_t);

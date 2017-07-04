@@ -20,12 +20,15 @@
 /*
   Remember that net_interface_address_t covers the mediums being used,
   modulation, and encapsulation scheme identifiers
+
+  TODO: really start enforcing not storing things in NBO internally, it
+  makes debugging a lot simpler
  */
 
 struct net_interface_ip_address_t : public net_interface_address_t{
 private:
-	// IPv4 is stored as four bytes in NBO
-	// IPv6 is stored as sixteen bytes in NBO
+	// IPv4 is stored as four bytes in SYSTEM BYTE ORDER
+	// IPv6 is stored as sixteen bytes in SYSTEM BYTE ORDER
 	// Domain names are stored in system byte order
 	std::vector<uint8_t> address;
 	uint8_t address_type = 0;

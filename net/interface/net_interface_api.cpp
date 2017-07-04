@@ -60,6 +60,7 @@ void net_interface::unbind::software_to_hardware(
 uint8_t net_interface::medium::from_address(id_t_ address_id){
 	// more efficient for sure
 	if(address_id == ID_BLANK_ID){
+		print("address to derive medium from is blank", P_UNABLE);
 		return NET_INTERFACE_MEDIUM_UNDEFINED; // a.k.a. 0
 	}
 	switch(get_id_type(address_id)){
@@ -101,35 +102,23 @@ std::string net_interface::ip::raw::to_readable(std::pair<std::vector<uint8_t>, 
 	switch(raw.second){
 	case NET_INTERFACE_IP_ADDRESS_TYPE_IPV4:	
 		if(true){
-			ASSERT(raw.first.size() == 4, P_ERR);
-			IPaddress ipaddress;
-			memcpy(&ipaddress.host, &(raw.first[0]), 4);
-			ipaddress.host =
-				NBO_32(ipaddress.host);
-			ipaddress.port = 0;
-			retval =
-				SDLNet_ResolveIP(&ipaddress);
+			struct in_addr addr;
+			CLEAR(addr);
+			memcpy(&addr.s_addr, raw.first.data(), 4);
+			addr.s_addr =
+				NBO_32(addr.s_addr);
+			char buf[INET_ADDRSTRLEN];
+			inet_ntop(
+				AF_INET,
+				(struct in_addr*)&addr,
+				&(buf[0]),
+				INET_ADDRSTRLEN);
+			retval = buf;
 		}
 		break;
 	default:
 		print("UNSUPPORTED ADDRESS TYPE", P_ERR);
 		break;
-		// case NET_INTERFACE_IP_ADDRESS_TYPE_IPV6:
-	// 	ASSERT(raw.first.size() == 16, P_ERR);
-	// 	for(uint8_t i = 0;i < 16;i+=2){
-	// 		retval += convert::number::to_hex(
-	// 			std::vector<uint8_t>(
-	// 				&(raw.first[i]),
-	// 				&(raw.first[i])+2)) + ".";
-	// 	}
-	// 	retval.erase(retval.end()-1,
-	// 		     retval.end());
-	// 	break;
-	// default:
-	// 	P_V_S((char*)raw.first.data(), P_NOTE);
-	// 	print("assuming this is a domain name", P_NOTE);
-	// 	retval = (std::string)(char*)(raw.first.data());
-	// 	break;
 	}
 	P_V_S(retval, P_DEBUG);
 	return retval;
@@ -142,15 +131,16 @@ std::pair<std::vector<uint8_t>, uint8_t> net_interface::ip::readable::to_raw(std
 	switch((address_type = get_address_type(readable))){
 	case NET_INTERFACE_IP_ADDRESS_TYPE_IPV4:
 		if(true){
-			// just so we can define IPaddress
-			IPaddress ipaddress;
-			SDLNet_ResolveHost(&ipaddress, readable.c_str(), 0);
-			uint32_t ip_addr_real =
-				NBO_32(ipaddress.host);
+			struct in_addr addr;
+			CLEAR(addr);
+			if(inet_pton(AF_INET, readable.c_str(), &addr) < 0){
+				print("couldn't convert to network representation", P_ERR);
+			}
 			retval.first =
-				std::vector<uint8_t>(
-					((uint8_t*)&ip_addr_real),
-					((uint8_t*)&ip_addr_real)+sizeof(ip_addr_real));
+				convert::nbo::from(
+					std::vector<uint8_t>(
+						((uint8_t*)&addr.s_addr),
+						((uint8_t*)&addr.s_addr)+sizeof(addr.s_addr)));
 		}
 		break;
 	case NET_INTERFACE_IP_ADDRESS_TYPE_IPV6:

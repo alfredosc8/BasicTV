@@ -136,6 +136,11 @@ namespace convert{
 			std::vector<uint64_t> samples,
 			uint8_t bit_depth);
 	};
+	namespace error{
+		namespace posix{
+			std::string to_string(int32_t error_code);
+		};
+	};
 };
 
 #endif

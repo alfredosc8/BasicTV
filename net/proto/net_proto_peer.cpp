@@ -9,4 +9,3 @@ net_proto_peer_t::net_proto_peer_t() : id(this, TYPE_NET_PROTO_PEER_T){
 
 net_proto_peer_t::~net_proto_peer_t(){
 }
-

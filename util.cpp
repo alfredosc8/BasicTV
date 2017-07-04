@@ -173,7 +173,7 @@ void print(std::string data, int level, const char *func){
 			std::cerr << "CRITICAL ERROR" << std::endl;
 			std::raise(SIGKILL);
 		}
-		if(level >= P_ERR){
+		if(level >= P_WARN){
 			if(settings::get_setting("print_backtrace") == "true"){
 				void *trace[16];
 				uint32_t trace_size =

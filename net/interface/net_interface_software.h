@@ -33,7 +33,7 @@ public:
 	GET(last_good_inbound_micro_s, uint64_t);
 	GET(last_good_outbound_micro_s, uint64_t);
 
-	GET(state_ptr, void*);
+	GET_SET(state_ptr, void*);
 	
 	void set_hardware_dev_id(id_t_ hardware_dev_id_);
 	GET_ID(hardware_dev_id);

@@ -189,5 +189,7 @@ std::string to_hex(uint8_t s);
 
 std::string get_readable_time(uint64_t time_micro_s);
 
+#define GEN_POSIX(errno_) ((std::string)strerror(errno_) + " (" + std::to_string(errno_) + ")")
+
 #endif
 #include "convert.h"
