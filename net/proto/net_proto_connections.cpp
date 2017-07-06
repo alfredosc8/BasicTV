@@ -35,7 +35,7 @@ void net_proto_handle_tcp_holepunch(net_proto_con_req_t *con_req){
 			PTR_DATA(second_id,
 				 net_proto_peer_t);
 		PRINT_IF_NULL(peer_ptr, P_ERR);
-		ASSERT(net_interface::medium::from_address(peer_ptr->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_ERR);
+		// ASSERT(net_interface::medium::from_address(peer_ptr->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_ERR);
 		net_interface_ip_address_t *ip_address_ptr =
 			PTR_DATA(peer_ptr->get_address_id(),
 				 net_interface_ip_address_t);
@@ -155,7 +155,7 @@ void net_proto_create_random_connections(){
 			peer_socket_count);
 	const uint64_t connection_number =
 		settings::get_setting_unsigned_def(
-			"tcp_max_con",
+			"net_interface_ip_tcp_max_con",
 			64); // semi-reasonable max
 	std::vector<id_t_> peer_id_vector =
 		id_api::cache::get(

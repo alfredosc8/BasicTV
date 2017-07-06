@@ -45,9 +45,8 @@ void set_id_type(id_t_ *id, type_t_ type){
 }
 
 void data_id_t::init_list_all_data(){
-	add_data_id(&id,
-		 {sizeof(id_t_)},
-		 ID_DATA_ID);
+	add_data_id(
+		&id, 1);
 	add_data_id_vector(
 		&(linked_list.first),
 		{ID_MAX_LINKED_LIST_SIZE});
@@ -106,10 +105,10 @@ data_id_t::data_id_t(void *ptr_, type_t_ type_){
 }
 
 data_id_t::~data_id_t(){
-	id_api::array::del(id);
 	try{
 		id_api::cache::del(id, get_id_type(id));
 	}catch(...){}
+	id_api::array::del(id);
 }
 
 id_t_ data_id_t::get_id(bool skip){

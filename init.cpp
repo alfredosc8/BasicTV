@@ -106,6 +106,8 @@ static void bootstrap_production_priv_key_id(){
 	P_V_S(convert::array::id::to_hex(pub_key->id.get_id()), P_NOTE);
 }
 
+#define SHORT_TO_FULL(short_, full) try{settings::set_setting(full, settings::get_setting(short_));}catch(...){}
+
 void init(){
 	// debugging information for OpenSSL's error printing
 	ERR_load_crypto_strings();
@@ -116,10 +118,10 @@ void init(){
 	  settings_init() only reads from the file, it doesn't do anything
 	  critical to setting default values
 	*/
-	// default port for ID networking
-	settings::set_setting("net_port", "58486");
-	settings::set_setting("net_hostname", "");
-	settings::set_setting("net_open_tcp_port", "false");
+	// // default port for ID networking
+	// settings::set_setting("net_port", "58486");
+	// settings::set_setting("net_hostname", "");
+	// settings::set_setting("net_open_tcp_port", "false");
 	// console port
 	settings::set_setting("console_port", "59000");
 	// disable socks
@@ -136,12 +138,22 @@ void init(){
 	// throw level
 	settings::set_setting("throw_level", std::to_string(P_CRIT));
 	// shouldn't need to disable other stuff
-	settings::set_setting("run_tests", "true");
+	settings::set_setting("run_tests", "false");
 	settings::set_setting("data_folder", ((std::string)getenv("HOME"))+"/.BasicTV/");
 	settings::set_setting("print_backtrace", "false");
 	settings::set_setting("print_color", "true");
 	settings_init();
 
+	// copy shortcut settings over to full names for in-program use
+	// most calls still need console_port
+	SHORT_TO_FULL("hostname", "net_interface_ip_hostname");
+	SHORT_TO_FULL("conport", "console_port");
+	SHORT_TO_FULL("port", "net_interface_ip_tcp_port");
+	SHORT_TO_FULL("bsip", "net_proto_ip_tcp_bootstrap_ip");
+	SHORT_TO_FULL("bsp", "net_proto_ip_tcp_bootstrap_port");
+	SHORT_TO_FULL("df", "data_folder");
+	
+	
 	/*
 	  Using "~" doesn't work with C++, so get the information from getenv()
 

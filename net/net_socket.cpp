@@ -7,11 +7,10 @@
 
 net_socket_t::net_socket_t() : id(this, TYPE_NET_SOCKET_T){
 	id.add_data_raw(&status, sizeof(status));
-	ID_MAKE_TMP(id.get_id());
 	id.set_lowest_global_flag_level(
 		ID_DATA_NETWORK_RULE_NEVER,
 		ID_DATA_EXPORT_RULE_NEVER,
-		ID_DATA_RULE_UNDEF);
+		ID_DATA_PEER_RULE_NEVER);
 }
 
 net_socket_t::~net_socket_t(){}
@@ -23,7 +22,7 @@ net_socket_t::~net_socket_t(){}
 
 void net_socket_t::socket_check(){
 	if(socket == nullptr){
-		print("socket is null", P_ERR);
+		print("socket is null", P_UNABLE);
 		/*
 		  Not only because of IP and port data, but also because
 		  of guaranteed anonymity.
@@ -223,8 +222,7 @@ TCPsocket net_socket_t::get_tcp_socket(){
 
 bool net_socket_t::activity(){
 	if(socket == nullptr){
-		print("socket is nullptr", P_WARN);
-		return false;
+		print("socket is nullptr", P_UNABLE);
 	}
 	int activity_ = SDLNet_CheckSockets(socket_set, 0) > 0;
 	if(activity_ == -1){

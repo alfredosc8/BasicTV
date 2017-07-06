@@ -2,19 +2,6 @@
 #include "id_api.h"
 #include "../net/proto/net_proto.h"
 
-static std::array<std::string, 2> encrypt_blacklist = {
-	"encrypt_pub_key_t",
-	"encrypt_priv_key_t"
-};
-
-static bool encrypt_blacklist_type(std::string type_){
-	return std::find(
-		encrypt_blacklist.begin(),
-		encrypt_blacklist.end(),
-		type_) != encrypt_blacklist.end();
-}
-
-
 static void id_export_raw(std::vector<uint8_t> tmp, std::vector<uint8_t> *vector){
 	if(tmp.size() == 0){
 		print("attempted to export completely blank data set", P_WARN);
@@ -39,6 +26,11 @@ static bool should_export(std::pair<uint8_t, uint8_t> network_flags,
 }
 
 //#define ID_EXPORT(var, list) id_export_raw((uint8_t*)&var, sizeof(var), &list)
+/*
+  ID_EXPORT exports the size of the payload, and the payload itself in NBO
+  
+  The only variable not used for this is the beginning extra byte
+ */
 #define ID_EXPORT(var, list) id_export_raw(std::vector<uint8_t>((uint8_t*)&var, (uint8_t*)&var+sizeof(var)), &list)
 
 std::vector<uint8_t> data_id_t::export_data(
@@ -47,12 +39,13 @@ std::vector<uint8_t> data_id_t::export_data(
 	uint8_t network_rules,
 	uint8_t export_rules,
 	uint8_t peer_rules){
+	ASSERT((extra & ID_EXTRA_ENCRYPT) && (extra & ID_EXTRA_COMPRESS), P_WARN);
 	if(flags_ != 0){
 		print("we have no current use for a generic flag", P_WARN);
 	}
 	std::vector<uint8_t> retval;
 	if(encrypt_blacklist_type(
-		   convert::type::from(get_id_type(id)))){
+		   get_id_type(id))){
 		print("forcing no encryption on basis of encryption blacklist", P_SPAM);
 		extra &= ~ID_EXTRA_ENCRYPT;
 	}
@@ -61,8 +54,9 @@ std::vector<uint8_t> data_id_t::export_data(
 		std::raise(SIGINT);
 		print("can't export somebody else's modified data", P_ERR);
 	}
-	uint8_t current_extra = 0;
-	ID_EXPORT(current_extra, retval); // current extra is nothing
+	ASSERT((get_id_type(id) == TYPE_ENCRYPT_PUB_KEY_T) == !(extra & ID_EXTRA_ENCRYPT), P_ERR);
+	retval.push_back(0); // current_extra
+	// ID_EXPORT(current_extra, retval);
 	ID_EXPORT(id, retval);
 	ID_EXPORT(modification_incrementor, retval);
 	for(uint64_t i = 0;i < data_vector.size();i++){
@@ -130,6 +124,7 @@ std::vector<uint8_t> data_id_t::export_data(
 				data_to_export.end(),
 				reinterpret_cast<uint8_t*>(&vector_size),
 				reinterpret_cast<uint8_t*>(&vector_size)+sizeof(transport_size_t));
+			P_V(vector->size(), P_VAR);
 			for(uint64_t c = 0;c < vector_size;c++){
 				transport_size_t trans_size_tmp =
 					(*vector)[c].size();
@@ -148,6 +143,7 @@ std::vector<uint8_t> data_id_t::export_data(
 					(uint8_t*)(*vector)[c].data()+trans_size_tmp);
 			}
 		}else{
+			P_V(data_vector[i].get_length(), P_SPAM);
 			data_to_export =
 				std::vector<uint8_t>(
 					(uint8_t*)data_vector[i].get_ptr(),
@@ -165,6 +161,8 @@ std::vector<uint8_t> data_id_t::export_data(
 		ID_EXPORT(trans_size, retval);
 		id_export_raw(data_to_export, &retval);
 	}
+	ASSERT((0b11111100 & extra) == 0, P_ERR);
+	P_V(extra, P_SPAM);
 	if(extra & ID_EXTRA_COMPRESS){
 		retval = id_api::raw::compress(retval);
 	}

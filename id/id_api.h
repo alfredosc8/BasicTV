@@ -161,4 +161,7 @@ namespace id_api{
 
 extern std::vector<std::string> id_gdb_lookup(const char *hex_id);
 
+extern std::vector<type_t_> encrypt_blacklist;
+extern bool encrypt_blacklist_type(type_t_ type);
+
 #endif

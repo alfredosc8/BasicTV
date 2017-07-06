@@ -54,7 +54,7 @@ void net_proto::peer::set_self_as_peer(std::string ip, uint16_t port){
 		PTR_DATA(self_peer_id,
 			 net_proto_peer_t);
 	PRINT_IF_NULL(proto_peer, P_ERR);
-	ASSERT(net_interface::medium::from_address(proto_peer->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_ERR);
+	// ASSERT(net_interface::medium::from_address(proto_peer->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_ERR);
 	net_interface_ip_address_t *ip_address_ptr =
 		PTR_DATA(proto_peer->get_address_id(),
 			 net_interface_ip_address_t);
@@ -144,7 +144,7 @@ static id_t_ net_proto_generate_con_req(id_t_ peer_id){
 		PTR_DATA(peer_id,
 			 net_proto_peer_t);
 	PRINT_IF_NULL(proto_peer_ptr, P_ERR);
-	ASSERT(net_interface::medium::from_address(proto_peer_ptr->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_UNABLE);
+	// ASSERT(net_interface::medium::from_address(proto_peer_ptr->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_UNABLE);
 	net_proto_con_req_t *con_req_ptr =
 		new net_proto_con_req_t;
 	con_req_ptr->set(
@@ -155,21 +155,29 @@ static id_t_ net_proto_generate_con_req(id_t_ peer_id){
 	return con_req_ptr->id.get_id();
 }
 
+/*
+  TODO: should define hardware devices, software devices, and all that jazz
+  when that part of the program is developed enough
+ */
+
 void net_proto::socket::connect(id_t_ peer_id_, uint32_t min){
 	std::vector<id_t_> retval;
 	net_proto_peer_t *proto_peer_ptr =
 		PTR_DATA(peer_id_,
 			 net_proto_peer_t);
-	P_V_S(convert::array::id::to_hex(peer_id_), P_VAR);
 	if(proto_peer_ptr == nullptr){
 		print("cannot connect to a null peer" + id_breakdown(peer_id_), P_WARN);
-	}
-	int64_t sockets_to_open =
+	}	
+	net_interface_ip_address_t *ip_address_ptr =
+		PTR_DATA(proto_peer_ptr->get_address_id(),
+			 net_interface_ip_address_t);
+	PRINT_IF_NULL(ip_address_ptr);
+	const int64_t sockets_to_open =
 		min-all_proto_socket_of_peer(peer_id_).size();
-	P_V(sockets_to_open, P_VAR);
-	for(;sockets_to_open > 0;sockets_to_open--){
+	for(int64_t i = 0;i < sockets_to_open;i){
 		net_proto_generate_con_req(peer_id_);
 	}
+	print("created " + std::to_string(sockets_to_open) + " connections to peer" + convert::array::id::to_hex(peer_id_) + " as " + net_interface::ip::ra::to_readable(ip_address_ptr->get_address()) + " : " + std::to_string(ip_address_ptr->get_port()), P_NOTE);
 }
 
 

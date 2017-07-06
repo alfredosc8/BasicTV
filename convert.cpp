@@ -365,12 +365,12 @@ std::string convert::type::from(uint8_t type){
 	case TYPE_NET_INTERFACE_IP_ADDRESS_T:
 		return "net_interface_ip_address_t";
 	case 0:
-		print("zero type, something went wrong earlier", P_WARN);
-		return "";
+		print("zero type, something went wrong earlier", P_ERR);
+		return "NOTYPE";
 	default:
 		P_V(type, P_WARN);
 		print("invalid type, probably malicious (not zero)", P_ERR);
-		return "";
+		return "INVALID";
 	}
 }
 

@@ -256,7 +256,7 @@ void id_disk_index_t::export_id(id_t_ id_){
 		id_api::export_id(
 			id_,
 			0,
-		 	ID_EXTRA_ENCRYPT,
+		 	ID_EXTRA_ENCRYPT | ID_EXTRA_COMPRESS,
 		 	ID_DATA_RULE_UNDEF, // wildcard
 		 	ID_DATA_EXPORT_RULE_ALWAYS,
 		 	ID_DATA_RULE_UNDEF);

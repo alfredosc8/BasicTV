@@ -25,14 +25,16 @@ static std::vector<uint8_t> routine_request_slow_vector = {
 static std::vector<id_t_> id_request_buffer;
 static std::vector<std::pair<id_t_, int64_t> > linked_list_request_buffer;
 
-net_proto_request_bare_t::net_proto_request_bare_t(){}
+net_proto_request_bare_t::net_proto_request_bare_t(){
+}
 
 net_proto_request_bare_t::~net_proto_request_bare_t(){}
 
 void net_proto_request_bare_t::list_bare_virtual_data(data_id_t *id){
 	id->add_data_id(&origin_peer_id, 1);
 	id->add_data_id(&destination_peer_id, 1);
-	id->add_data_raw((uint8_t*)&request_time, 8);
+	id->add_data_raw((uint8_t*)&request_time, sizeof(request_time));
+	id->add_data_raw((uint8_t*)&ttl_micro_s, sizeof(ttl_micro_s));
 }
 
 id_t_ net_proto_request_bare_t::get_origin_peer_id(){
@@ -97,7 +99,7 @@ net_proto_id_request_t::net_proto_id_request_t() : id(this, TYPE_NET_PROTO_ID_RE
 	list_set_virtual_data(&id);
 	list_bare_virtual_data(&id);
 	id.set_lowest_global_flag_level(
-		ID_DATA_RULE_UNDEF,
+		ID_DATA_NETWORK_RULE_PUBLIC,
 		ID_DATA_EXPORT_RULE_NEVER,
 		ID_DATA_RULE_UNDEF);
 }
@@ -111,7 +113,7 @@ net_proto_type_request_t::net_proto_type_request_t() : id(this, TYPE_NET_PROTO_T
 	list_bare_virtual_data(&id);
 	id.add_data_raw(&type, sizeof(type));
 	id.set_lowest_global_flag_level(
-		ID_DATA_RULE_UNDEF,
+		ID_DATA_NETWORK_RULE_PUBLIC,
 		ID_DATA_EXPORT_RULE_NEVER,
 		ID_DATA_RULE_UNDEF);
 }	
@@ -123,7 +125,7 @@ net_proto_type_request_t::~net_proto_type_request_t(){}
 net_proto_linked_list_request_t::net_proto_linked_list_request_t() : id(this, TYPE_NET_PROTO_LINKED_LIST_REQUEST_T){
 	list_bare_virtual_data(&id);
 	id.set_lowest_global_flag_level(
-		ID_DATA_RULE_UNDEF,
+		ID_DATA_NETWORK_RULE_PUBLIC,
 		ID_DATA_EXPORT_RULE_NEVER,
 		ID_DATA_RULE_UNDEF);
 }
@@ -296,7 +298,9 @@ static void net_proto_routine_request_create(
 	const uint64_t time_micro_s =
 		get_time_microseconds();
 	if(time_micro_s-(*last_request_time_micro_s) > request_interval_micro_s){
+		print("creating routine request with frequency " + std::to_string(request_interval_micro_s) + "micro_s", P_SPAM);
 		for(uint64_t i = 0;i < type_vector.size();i++){
+			P_V_S(convert::type::from(type_vector[i]), P_VAR);
 			// all request names are in the perspective of the
 			// sender, not the receiver. This makes the receiver
 			// the person we send it to, and the sender ourselves.
@@ -315,6 +319,8 @@ static void net_proto_routine_request_create(
 					new net_proto_type_request_t;
 				type_request->update_type(
 					type_vector[i]);
+				type_request->set_ttl_micro_s(
+					request_interval_micro_s);
 				type_request->set_destination_peer_id(
 					net_proto::peer::random_peer_id());
 				type_request->set_origin_peer_id(
@@ -328,15 +334,11 @@ static void net_proto_routine_request_create(
 static void net_proto_routine_request_loop(){
  	net_proto_routine_request_create(
  		routine_request_fast_vector,
-		settings::get_setting_unsigned_def(
-			"net_proto_routine_request_fast_interval_micro_s",
-			NET_PROTO_ROUTINE_REQUEST_DEFAULT_FAST_INTERVAL),
+		1*1000*1000,
  		&last_request_fast_time_micro_s);
  	net_proto_routine_request_create(
  		routine_request_slow_vector,
-		settings::get_setting_unsigned_def(
-			"net_proto_routine_request_slow_interval_micro_s",
-			NET_PROTO_ROUTINE_REQUEST_DEFAULT_SLOW_INTERVAL),
+		1*1000*1000,
  		&last_request_slow_time_micro_s);
 }
 
@@ -347,13 +349,12 @@ static void net_proto_create_id_request_loop(){
 			net_proto::peer::optimal_peer_for_id(
 				id_request_buffer[i]);
 		if(preferable_peer_id == ID_BLANK_ID){
-			print("preferable_peer_id is blank", P_WARN);
+			print("preferable_peer_id is blank", P_ERR);
 		}
 		for(uint64_t c = 0;c < id_peer_pair.size();c++){
 			if(id_peer_pair[c].second == preferable_peer_id){
 				id_peer_pair[c].first.push_back(
 					id_request_buffer[i]);
-				
 			}
 		}
 		id_peer_pair.push_back(
@@ -369,6 +370,8 @@ static void net_proto_create_id_request_loop(){
 		try{
 			net_proto_id_request_t *id_request_ptr =
 				new net_proto_id_request_t;
+			id_request_ptr->set_ttl_micro_s(
+				30*1000*1000); // TODO: should make this a setting
 			id_request_ptr->set_ids(
 				id_peer_pair[i].first);
 			id_request_ptr->set_origin_peer_id(
@@ -403,7 +406,42 @@ static void net_proto_simple_request_loop(){
 	//net_proto_create_linked_list_request_loop();
 }
 
+template
+<typename T>
+void net_proto_request_cleanup(T request_ptr,
+			       uint64_t timestamp_micro_s){
+	ASSERT(request_ptr != nullptr, P_ERR);
+	if(request_ptr->get_request_time()+request_ptr->get_ttl_micro_s() >= timestamp_micro_s){
+		print("request has expired, deleting", P_NOTE);
+		id_api::destroy(request_ptr->id.get_id());
+	}
+}
+
+#define NET_PROTO_REQUEST_CLEANUP_CREATOR(type)			\
+	if(true){						\
+		std::vector<id_t_> vector =			\
+			id_api::cache::get(#type);		\
+		for(uint64_t i = 0;i < vector.size();i++){	\
+			try{					\
+				net_proto_request_cleanup(	\
+					PTR_DATA(vector[i],	\
+						 type),		\
+					timestamp_micro_s);	\
+			}catch(...){}				\
+		}						\
+	}							\
+
+static void net_proto_all_request_cleanup(){
+	const uint64_t timestamp_micro_s =
+		get_time_microseconds();
+	NET_PROTO_REQUEST_CLEANUP_CREATOR(net_proto_id_request_t);
+	NET_PROTO_REQUEST_CLEANUP_CREATOR(net_proto_type_request_t);
+	NET_PROTO_REQUEST_CLEANUP_CREATOR(net_proto_linked_list_request_t);
+}
+
+
 void net_proto_requests_loop(){
 	net_proto_routine_request_loop();
 	net_proto_simple_request_loop();
+	net_proto_all_request_cleanup();
 }

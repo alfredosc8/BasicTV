@@ -31,6 +31,11 @@
 static std::vector<data_id_t*> id_list;
 static std::vector<std::pair<std::vector<id_t_>, type_t_ > > type_cache;
 
+std::vector<type_t_> encrypt_blacklist = {
+	TYPE_ENCRYPT_PUB_KEY_T,
+	TYPE_ENCRYPT_PRIV_KEY_T
+};
+
 uint64_t id_api::array::get_id_count(){
 	return id_list.size();
 }
@@ -64,14 +69,14 @@ std::vector<id_t_> id_lookup;
 /*
   Should probably change around to optimize somehow
  */
-
+ 
 data_id_t *id_api::array::ptr_id(id_t_ id,
 				 std::string type){
 	if(id == ID_BLANK_ID){
 		return nullptr;
 	}
 	if(convert::type::from(get_id_type(id)) != type && type != ""){
-		print("type mis-match in ptr_id", P_DEBUG);
+		print("type mis-match in ptr_id", P_WARN);
 		return nullptr;
 	}
 	for(uint64_t i = 0;i < id_lookup.size();i++){
@@ -124,7 +129,7 @@ void id_api::array::del(id_t_ id){
 			return;
 		}
 	}
-	print("cannot find ID in list", P_ERR);
+	print("cannot find ID in list", P_WARN);
 }
 
 #define CHECK_TYPE(a)					\
@@ -207,7 +212,10 @@ id_t_ id_api::array::add_data(std::vector<uint8_t> data_, bool raw){
 	CHECK_TYPE(encrypt_pub_key_t);
 	CHECK_TYPE(encrypt_priv_key_t);
 	CHECK_TYPE(wallet_set_t);
-	print("type isn't valid", P_CRIT);
+	CHECK_TYPE(net_socket_t);
+	CHECK_TYPE(math_number_set_t);
+	CHECK_TYPE(net_interface_ip_address_t);
+	print("type " + convert::type::from(type) + " needs a loader", P_CRIT);
 	return id;
 }
 
@@ -419,7 +427,7 @@ std::vector<id_t_> id_api::get_all(){
 
 // make this less stupid
 
-#define DELETE_TYPE_2(a) if(ptr->get_type() == #a){print("deleting " + (std::string)(#a), P_SPAM);delete (a*)ptr->get_ptr();return;}
+#define DELETE_TYPE_2(a) if(ptr->get_type() == #a){print("deleting " + (std::string)(#a), P_DEBUG);delete (a*)ptr->get_ptr();ptr = nullptr;return;}
 
 // refactor
 
@@ -503,6 +511,7 @@ void id_api::destroy(id_t_ id){
 	data_id_t *ptr =
 		PTR_ID(id, );
 	if(ptr == nullptr){
+		print("already destroying a destroyed type " + id_breakdown(id), P_WARN);
 		return;
 	}
 	DELETE_TYPE_2(tv_frame_video_t);
@@ -541,9 +550,11 @@ void id_api::destroy(id_t_ id){
 
 	// Math
 	DELETE_TYPE_2(math_number_set_t);
+
+	DELETE_TYPE_2(net_interface_ip_address_t);
 	
 	print("No proper type was found for clean deleting, cutting losses "
-	      "and delisting it, memory leak occuring: " + ptr->get_type(), P_WARN);
+	      "and delisting it, memory leak occuring: " + ptr->get_type(), P_ERR);
 
 	/*
 	  Shouldn't get this far, but if it does, delist it manually
@@ -757,7 +768,7 @@ std::vector<uint8_t> id_api::raw::encrypt(std::vector<uint8_t> data){
 			P_V(unencrypt_chunk.size(), P_VAR);
 			if(unencrypt_chunk.size() == 0){
 				// having no actual payload still works
-				print("unencrypt_chunk is empty", P_WARN);
+				print("unencrypt_chunk is empty for " + id_breakdown(id) + "(function call for supplied data probably had exporting restrictions of some sort)", P_SPAM);
 				return data;
 			}
 			std::vector<uint8_t> encrypt_chunk =
@@ -846,11 +857,13 @@ std::vector<uint8_t> id_api::raw::decompress(std::vector<uint8_t> data){
 		print("can't decompress uncompressed data", P_WARN);
 	}else{
 		data[0] &= ~ID_EXTRA_COMPRESS;
+		std::vector<uint8_t> raw_chunk =
+			std::vector<uint8_t>(
+				data.begin()+ID_PREAMBLE_SIZE,
+				data.end());
 		std::vector<uint8_t> compress_chunk =
 			compressor::decompress(
-				std::vector<uint8_t>(
-					data.begin()+ID_PREAMBLE_SIZE,
-					data.end()));
+				raw_chunk);
 		data.erase(
 			data.begin()+ID_PREAMBLE_SIZE,
 			data.end());
@@ -1033,7 +1046,7 @@ std::vector<uint8_t> id_api::export_id(
 	std::vector<uint8_t> retval =
 		id_api::cache::get_id(
 			id_,
-			extra);
+			extra & (~ID_EXTRA_COMPRESS));
 	if(retval.size() == 0){
 		id_disk_api::load(id_);
 		retval =
@@ -1045,4 +1058,11 @@ std::vector<uint8_t> id_api::export_id(
 		print("unable to load ID", P_NOTE);
 	}
 	return retval;
+}
+
+bool encrypt_blacklist_type(type_t_ type_){
+	return std::find(
+		encrypt_blacklist.begin(),
+		encrypt_blacklist.end(),
+		type_) != encrypt_blacklist.end();
 }

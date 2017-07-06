@@ -44,7 +44,8 @@ std::vector<uint8_t> compressor::decompress(std::vector<uint8_t> data){
 			std::vector<uint8_t>(data.begin()+1, data.end()));
 		break;
 	default:
-		print("invalid ID for compressed data", P_ERR);
+		print("invalid compression scheme for compressed data", P_ERR);
+		HANG();
 	}
 	return retval;
 }

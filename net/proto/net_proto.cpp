@@ -73,6 +73,8 @@ static void net_proto_init_self_peer(){
 			ip_addr,
 			tmp_port,
 			NET_INTERFACE_IP_ADDRESS_NAT_TYPE_NONE);
+		proto_peer_ptr->set_address_id(
+			ip_address_ptr->id.get_id());
 		net_proto::peer::set_self_peer_id(
 			proto_peer_ptr->id.get_id());
 		P_V_S(net_interface::ip::raw::to_readable(

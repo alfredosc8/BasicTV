@@ -1,5 +1,6 @@
 #include "id.h"
 #include "id_api.h"
+#include "id_import.h"
 
 static void id_import_raw_real(
 	std::vector<uint8_t> *vector,
@@ -27,6 +28,7 @@ static void id_import_raw(
 	uint64_t size,
 	std::vector<uint8_t> *vector){
 	if(flags & ID_DATA_BYTE_VECTOR){
+		print("reading as a byte vector", P_SPAM);
 		std::vector<uint8_t> *local_vector =
 			(std::vector<uint8_t>*)var;
 		// not the fastest
@@ -41,6 +43,7 @@ static void id_import_raw(
 			flags,
 			size);
 	}else if(flags & ID_DATA_EIGHT_BYTE_VECTOR){
+		print("reading as an eight byte vector", P_SPAM);
 		std::vector<uint64_t> *local_vector =
 			(std::vector<uint64_t>*)var;
 		local_vector->clear();
@@ -54,6 +57,7 @@ static void id_import_raw(
 			flags,
 			size);
 	}else if(flags & ID_DATA_ID_VECTOR){
+		print("reading as an ID vector", P_SPAM);
 		std::vector<id_t_> *local_vector =
 			(std::vector<id_t_>*)var;
 		local_vector->clear();
@@ -67,6 +71,7 @@ static void id_import_raw(
 			flags,
 			size);
 	}else if(flags & ID_DATA_BYTE_VECTOR_VECTOR){
+		print("reading as a byte vector vector", P_SPAM);
 		std::vector<std::vector<uint8_t> > *local_vector =
 			(std::vector<std::vector<uint8_t> >*)(var);
 		local_vector->clear();
@@ -87,7 +92,7 @@ static void id_import_raw(
 			0,
 			sizeof(transport_size_t),
 			false);
-		P_V(elem_count, P_SPAM);
+		P_V(elem_count, P_VAR);
 		for(uint64_t i = 0;i < elem_count;i++){
 			transport_size_t trans_size = 0;
 			id_import_raw_real(
@@ -107,6 +112,8 @@ static void id_import_raw(
 				tmp);
 		}
 	}else{
+		print("using a simple read", P_SPAM);
+		P_V(size, P_VAR);
 		memset(var, 0, size);
 		id_import_raw_real(
 			vector,
@@ -122,11 +129,23 @@ static void id_import_raw(
 #define ID_IMPORT(var) id_import_raw((uint8_t*)&var, 0, sizeof(var), &data)
 
 void data_id_t::import_data(std::vector<uint8_t> data){
-	data = id_api::raw::decrypt(data);
-	data = id_api::raw::decompress(data);
 	id_t_ trans_id = ID_BLANK_ID;
-	uint8_t extra = 0;
-	ID_IMPORT(extra);
+	uint8_t extra =
+		data[0];	
+	ASSERT((0b11111100 & extra) == 0, P_ERR);
+	if((extra & ID_EXTRA_ENCRYPT) &&
+	   encrypt_blacklist_type(
+		   get_id_type(id))){
+		print("contradiction between encrypt_blacklist_type and extra byte", P_WARN);
+		HANG();
+	}
+	if(extra & ID_EXTRA_ENCRYPT){
+		data = id_api::raw::decrypt(data);
+	}
+	if(extra & ID_EXTRA_COMPRESS){
+		data = id_api::raw::decompress(data);
+	}	
+	ID_IMPORT(extra); // just to remove it
 	ID_IMPORT(trans_id);
 	ID_IMPORT(modification_incrementor);
 	// P_V_S(convert::array::id::to_hex(trans_id), P_SPAM);

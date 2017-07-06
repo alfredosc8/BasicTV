@@ -11,7 +11,7 @@ net_proto_con_req_t::net_proto_con_req_t() : id(this, TYPE_NET_PROTO_CON_REQ_T){
 	ADD_DATA(third_peer_id);
 	ADD_DATA(timestamp);
 	id.set_lowest_global_flag_level(
-		ID_DATA_RULE_UNDEF,
+		ID_DATA_NETWORK_RULE_PUBLIC,
 		ID_DATA_EXPORT_RULE_NEVER,
 		ID_DATA_RULE_UNDEF);
 }

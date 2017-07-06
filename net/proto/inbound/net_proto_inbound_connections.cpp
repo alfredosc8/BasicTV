@@ -119,7 +119,7 @@ static bool net_proto_facilitate_reverse_forward(
 		if(first_peer_ptr == nullptr){
 			print("can't establish a reverse forward connection without net_proto_peer_t data", P_ERR);
 		}
-		ASSERT(net_interface::medium::from_address(first_peer_ptr->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_ERR);
+		// ASSERT(net_interface::medium::from_address(first_peer_ptr->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_ERR);
 		net_interface_ip_address_t *ip_address_ptr =
 			PTR_DATA(first_peer_ptr->get_address_id(),
 				 net_interface_ip_address_t);
@@ -163,7 +163,7 @@ static void net_proto_accept_unorthodox_connections(){
 			PTR_DATA(peer_ids[0],
 				 net_proto_peer_t);
 		CONTINUE_IF_NULL(proto_peer_ptr, P_WARN);
-		ASSERT(net_interface::medium::from_address(proto_peer_ptr->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_WARN);
+		// ASSERT(net_interface::medium::from_address(proto_peer_ptr->get_address_id()) == NET_INTERFACE_MEDIUM_IP, P_WARN);
 		net_interface_ip_address_t *ip_address_ptr =
 			PTR_DATA(proto_peer_ptr->get_address_id(),
 				 net_interface_ip_address_t);
@@ -197,9 +197,9 @@ static void net_proto_create_incoming_socket(){
 		incoming_conn->id.get_id();
 	incoming_conn->set_net_ip(
 		"",
- 		settings::get_setting_unsigned_def(
-			"net_port",
-			58486));
+ 		std::stoi(
+			settings::get_setting(
+				"net_interface_ip_tcp_port")));
 	incoming_conn->connect();
 }
 

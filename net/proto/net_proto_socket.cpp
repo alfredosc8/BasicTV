@@ -104,6 +104,12 @@ net_proto_socket_t::net_proto_socket_t() : id(this, TYPE_NET_PROTO_SOCKET_T){
 }
 
 net_proto_socket_t::~net_proto_socket_t(){
+	id_api::destroy(socket_id);
+	socket_id = ID_BLANK_ID;
+	id_api::destroy(inbound_id_set_id);
+	inbound_id_set_id = ID_BLANK_ID;
+	id_api::destroy(outbound_id_set_id);
+	outbound_id_set_id = ID_BLANK_ID;	       
 }
 
 void net_proto_socket_t::update_working_buffer(){
@@ -113,8 +119,15 @@ void net_proto_socket_t::update_working_buffer(){
 	if(socket_ptr == nullptr){
 		print("socket is a nullptr", P_ERR);
 	}
-	std::vector<uint8_t> buffer =
-		socket_ptr->recv_all_buffer();
+	std::vector<uint8_t> buffer;
+	try{
+		buffer = socket_ptr->recv_all_buffer();
+	}catch(...){
+		print("socket has closed, deleting and self-terminating", P_DEBUG);
+		id_api::destroy(socket_ptr->id.get_id());
+		socket_ptr = nullptr;
+		print("throwing for caller to delete me", P_UNABLE);
+	}
 	if(buffer.size() != 0){
 		P_V(buffer.size(), P_VAR);
 		last_recv_micro_s = get_time_microseconds();
@@ -168,9 +181,12 @@ void net_proto_socket_t::send_id(id_t_ id_){
 			id_,
 			0,
 			ID_EXTRA_COMPRESS | ID_EXTRA_ENCRYPT,
-			ID_DATA_NETWORK_RULE_PUBLIC,
+			ID_DATA_RULE_UNDEF,
 			ID_DATA_RULE_UNDEF,
 			ID_DATA_RULE_UNDEF);
+			// ID_DATA_NETWORK_RULE_PUBLIC,
+			// ID_DATA_EXPORT_RULE_NEVER,
+			// ID_DATA_PEER_RULE_NEVER);
 	if(payload.size() == 0){
 		print("exported size of ID is zero, not sending", P_NOTE);
 		return;

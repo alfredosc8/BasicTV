@@ -1,0 +1,5 @@
+Immediate TODO list for BasicTV, for a 0.0.1 release
+
+More reliable connections
+Allow for automatic offset for the console
+

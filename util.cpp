@@ -160,7 +160,7 @@ void print(std::string data, int level, const char *func){
 		  TODO: instead of sleeping, stack requests back on each other
 		  until a limit is reached (to keep printed output and the
 		  program state in-line, in case of errors or exceptions)
-		 */
+		*/
 		sleep_ms(print_delay_milli_s, true);
 		std::string func_;
 		if(func != nullptr){
@@ -173,28 +173,31 @@ void print(std::string data, int level, const char *func){
 			std::cerr << "CRITICAL ERROR" << std::endl;
 			std::raise(SIGKILL);
 		}
-		if(level >= P_ERR){
-			if(settings::get_setting("print_backtrace") == "true"){
-				void *trace[16];
-				uint32_t trace_size =
-					backtrace(
-						trace, 16);
-				char **backtrace_symbol_retval =
-					backtrace_symbols(
-						trace, trace_size);
-				for(uint32_t i = 0;i < trace_size;i++){
-					std::cout << backtrace_symbol_retval[i] << std::endl;
-				}
-				free(backtrace_symbol_retval);
-				backtrace_symbol_retval = nullptr;
-				std::cout << "Finished backtrace" << std::endl;
-			}
-		}
 		// if(level >= P_WARN){
 		// 	sleep_ms(1000, true);
 		// }else{
 		// 	sleep_ms(250, true);
 		// }
+	}
+	if(level >= P_WARN){
+		if(settings::get_setting("print_backtrace") == "true"){
+			void *trace[16];
+			uint32_t trace_size =
+				backtrace(
+					trace, 16);
+			char **backtrace_symbol_retval =
+				backtrace_symbols(
+					trace, trace_size);
+			for(uint32_t i = 0;i < trace_size;i++){
+				std::cout << backtrace_symbol_retval[i] << std::endl;
+			}
+			free(backtrace_symbol_retval);
+			backtrace_symbol_retval = nullptr;
+			std::cout << "Finished backtrace" << std::endl;
+		}
+	}
+	if(level >= P_ERR && settings::get_setting("print_soe") == "true"){ // SIGINT-on-error, GDB
+		std::raise(SIGINT);
 	}
 	if(level >= P_ERR || level == P_UNABLE){
 		throw std::runtime_error(data);

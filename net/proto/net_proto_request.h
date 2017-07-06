@@ -15,6 +15,7 @@
 struct net_proto_request_bare_t{
 private:
 	uint64_t request_time = 0;
+	uint64_t ttl_micro_s = 0;
 	id_t_ origin_peer_id = ID_BLANK_ID;
 	id_t_ destination_peer_id = ID_BLANK_ID;
 public:
@@ -27,6 +28,7 @@ public:
 	
 	void update_request_time();
 	uint64_t get_request_time(){return request_time;}
+	GET_SET(ttl_micro_s, uint64_t);
 	void list_bare_virtual_data(data_id_t *id);
 };
 
