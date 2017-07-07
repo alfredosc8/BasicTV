@@ -22,6 +22,8 @@ namespace net_proto{
 		id_t_ get_self_as_peer();
 		id_t_ random_peer_id();
 		id_t_ optimal_peer_for_id(id_t_ id);
+
+		std::string get_breakdown(id_t_ peer_id_);
 	};
 	namespace socket{
 		/*

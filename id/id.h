@@ -14,6 +14,7 @@
  */
 
 #define ADD_DATA(x) id.add_data_raw((uint8_t*)&x, sizeof(x))
+#define ADD_DATA_PTR(x) id->add_data_raw((uint8_t*)&x, sizeof(x))
 
 typedef std::array<uint8_t, 41> id_t_;
 typedef uint8_t type_t_;

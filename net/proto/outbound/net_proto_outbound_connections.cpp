@@ -34,10 +34,8 @@ static void net_proto_initiate_direct_tcp(
 		if(socket_ptr->is_alive() == false){
 			print("couldn't connect to peer", P_NOTE);
 		}else{
-			print("opened connection with peer (IP: " +
-			      net_interface::ip::raw::to_readable(
-				      ip_address_ptr->get_address()) + " port:" +
-			      std::to_string(ip_address_ptr->get_port()) + ")",
+			print("opened connection with peer " +
+			      net_proto::peer::get_breakdown(ip_address_ptr->id.get_id()),
 			      P_NOTE);
 			delete con_req;
 			con_req = nullptr;

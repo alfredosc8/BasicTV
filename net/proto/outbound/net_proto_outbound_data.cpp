@@ -119,6 +119,7 @@ static void net_proto_fill_type_requests(){
 	 		continue;
 	 	}
 		if(net_proto_valid_request_to_fill(proto_type_request)){
+			print("filling a valid type request " + id_breakdown(net_proto_type_requests[i]) + "for type " + convert::type::from(proto_type_request->get_type()), P_DEBUG);
 			const std::vector<id_t_> raw_id_vector =
 				proto_type_request->get_ids();
 			const std::vector<id_t_> type_vector =
@@ -135,7 +136,7 @@ static void net_proto_fill_type_requests(){
 			if(real_payload.size() == 0){
 				print("we don't have any new data to send out, "
 				      "not sending anything (should probably have "
-				      "some sort of response for not finding it)", P_SPAM);
+				      "some sort of response for not finding it)", P_DEBUG);
 			}else{
 				try{
 					net_proto_send_logic(
@@ -235,8 +236,10 @@ void net_proto_handle_request_send(T request_ptr){
 				std::vector<id_t_>({request_ptr->id.get_id()}),
 				destination_peer_id);
 			request_ptr->update_request_time();
+			print("sent request to peer" + net_proto::peer::get_breakdown(
+				      destination_peer_id), P_DEBUG);
 		}catch(...){
-			print("couldn't send request to peer, probably no available socket", P_SPAM);
+			print("couldn't send request to peer, probably no available socket", P_DEBUG);
 			net_proto::socket::connect(
 				destination_peer_id,
 				1);

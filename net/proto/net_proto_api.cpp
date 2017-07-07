@@ -171,13 +171,13 @@ void net_proto::socket::connect(id_t_ peer_id_, uint32_t min){
 	net_interface_ip_address_t *ip_address_ptr =
 		PTR_DATA(proto_peer_ptr->get_address_id(),
 			 net_interface_ip_address_t);
-	PRINT_IF_NULL(ip_address_ptr);
+	PRINT_IF_NULL(ip_address_ptr, P_WARN);
 	const int64_t sockets_to_open =
 		min-all_proto_socket_of_peer(peer_id_).size();
-	for(int64_t i = 0;i < sockets_to_open;i){
+	for(int64_t i = 0;i < sockets_to_open;i++){
 		net_proto_generate_con_req(peer_id_);
 	}
-	print("created " + std::to_string(sockets_to_open) + " connections to peer" + convert::array::id::to_hex(peer_id_) + " as " + net_interface::ip::ra::to_readable(ip_address_ptr->get_address()) + " : " + std::to_string(ip_address_ptr->get_port()), P_NOTE);
+	print("created " + std::to_string(sockets_to_open) + " sockets to a peer " + net_proto::peer::get_breakdown(peer_id_), P_DEBUG);
 }
 
 
@@ -196,4 +196,59 @@ id_t_ net_proto::peer::optimal_peer_for_id(id_t_ id){
 		}
 	}
 	return ID_BLANK_ID;
+}
+
+/*
+  TODO: should provide a more generic interface to allow getting an IP/radio
+  breakdown either in reference to an address, or in reference to a
+  peer itself
+ */
+
+std::string net_proto::peer::get_breakdown(id_t_ id_){
+	id_t_ peer_id = ID_BLANK_ID;
+	id_t_ ip_address_id = ID_BLANK_ID;	
+	std::string ip_addr;
+	uint16_t port = 0;
+	net_interface_ip_address_t *ip_address_ptr =
+		nullptr;
+	if(id_ != ID_BLANK_ID){
+		switch(get_id_type(id_)){
+		case TYPE_NET_PROTO_PEER_T:
+			if(true){	
+				peer_id = id_;
+				net_proto_peer_t *proto_peer_ptr =
+					PTR_DATA(peer_id,
+						 net_proto_peer_t);
+				if(proto_peer_ptr != nullptr){
+					ip_address_id =
+						proto_peer_ptr->get_address_id();
+					ip_address_ptr =
+						PTR_DATA(ip_address_id,
+							 net_interface_ip_address_t);
+				}
+			}
+			break;
+		case TYPE_NET_INTERFACE_IP_ADDRESS_T:
+			ip_address_id =
+				id_;
+			ip_address_ptr =
+				PTR_DATA(ip_address_id,
+					 net_interface_ip_address_t);
+			break;
+		default:
+			print("invalid type for get_breakdown", P_WARN);
+		}
+		if(ip_address_ptr != nullptr){ // GCC optimized out (probably)
+			ip_addr =
+				net_interface::ip::raw::to_readable(
+					ip_address_ptr->get_address());
+			port =
+				ip_address_ptr->get_port();
+		}else{
+			print("ip_address_ptr is a nullptr", P_WARN);
+			ip_addr = "NOIP";
+			port = 0;
+		}
+	}
+	return "(" + id_breakdown(peer_id) + id_breakdown(ip_address_id) + " IP: " + ip_addr + ":" + std::to_string(port) + ")";
 }

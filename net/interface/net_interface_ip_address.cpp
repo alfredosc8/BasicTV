@@ -5,6 +5,7 @@ net_interface_ip_address_t::net_interface_ip_address_t() : id(this, TYPE_NET_INT
 	id.add_data_one_byte_vector(&address, 1024); // beyond sane
 	ADD_DATA(address_type);
 	ADD_DATA(nat_type);
+	ADD_DATA(port);
 	id.set_lowest_global_flag_level(
 		ID_DATA_NETWORK_RULE_PUBLIC,
 		ID_DATA_EXPORT_RULE_ALWAYS,

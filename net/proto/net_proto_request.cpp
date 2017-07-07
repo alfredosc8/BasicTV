@@ -351,10 +351,12 @@ static void net_proto_create_id_request_loop(){
 		if(preferable_peer_id == ID_BLANK_ID){
 			print("preferable_peer_id is blank", P_ERR);
 		}
+		ASSERT(preferable_peer_id != net_proto::peer::get_self_as_peer(), P_ERR);
 		for(uint64_t c = 0;c < id_peer_pair.size();c++){
 			if(id_peer_pair[c].second == preferable_peer_id){
 				id_peer_pair[c].first.push_back(
 					id_request_buffer[i]);
+				break;
 			}
 		}
 		id_peer_pair.push_back(
