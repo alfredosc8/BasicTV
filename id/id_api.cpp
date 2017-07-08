@@ -31,9 +31,26 @@
 static std::vector<data_id_t*> id_list;
 static std::vector<std::pair<std::vector<id_t_>, type_t_ > > type_cache;
 
+/*
+  TODO (SERIOUS):
+  Even though there is no cryptographic proof of ownership, make sure that
+  the hash of any requests come from a socket whose bound peer has the same
+  hash, since there is no need (right now, for these simple types
+  specifically) to forward them. There might be a case in the future where
+  another type is allowed to be forwarded to find really obscure information,
+  but that's pretty far off.
+
+  (Also forwardable types are probably prone to DoS, unless we do something
+  crafty with rules and rule enforcement with public key hashes)
+ */
+
 std::vector<type_t_> encrypt_blacklist = {
 	TYPE_ENCRYPT_PUB_KEY_T,
-	TYPE_ENCRYPT_PRIV_KEY_T
+	TYPE_ENCRYPT_PRIV_KEY_T,
+	TYPE_NET_PROTO_CON_REQ_T,
+	TYPE_NET_PROTO_TYPE_REQUEST_T,
+	TYPE_NET_PROTO_LINKED_LIST_REQUEST_T,
+	TYPE_NET_PROTO_ID_REQUEST_T
 };
 
 uint64_t id_api::array::get_id_count(){
@@ -1023,15 +1040,27 @@ std::vector<uint8_t> id_api::export_id(
 	uint8_t network_flags,
 	uint8_t export_flags,
 	uint8_t peer_flags){
-	const bool is_owner =
-		get_id_hash(id_) ==
-		get_id_hash(production_priv_key_id);
 	/*
 	  Because of space conerns with memory, IDs in memory don't store
 	  exported versions of themselves, meaning that direct exports from
 	  the ID only work if we are the owner
 	 */
-	if(is_owner){
+	const uint8_t cache_extra =
+		extra & (~ID_EXTRA_COMPRESS); // anything encrypted should be compressed
+	std::vector<uint8_t> retval =
+		id_api::cache::get_id(
+			id_,
+			cache_extra);
+	if(retval.size() == 0){
+		print("ID not found in cache, loading from disk" + id_breakdown(id_), P_NOTE);
+		id_disk_api::load(id_);
+		retval =
+			id_api::cache::get_id(
+				id_,
+				cache_extra);
+	} // assuming faster reads than encryption, should be accurate
+	if(retval.size() == 0 && get_id_hash(id_) == get_id_hash(production_priv_key_id)){
+		print("id isn't in cache, encrypting whole" + id_breakdown(id_), P_WARN);
 		data_id_t *id =
 			PTR_ID(id_, );
 		if(id != nullptr){
@@ -1042,17 +1071,6 @@ std::vector<uint8_t> id_api::export_id(
 				export_flags,
 				peer_flags);
 		}
-	}
-	std::vector<uint8_t> retval =
-		id_api::cache::get_id(
-			id_,
-			extra & (~ID_EXTRA_COMPRESS));
-	if(retval.size() == 0){
-		id_disk_api::load(id_);
-		retval =
-			id_api::cache::get_id(
-				id_,
-				extra);
 	}
 	if(retval.size() == 0){
 		print("unable to load ID", P_NOTE);

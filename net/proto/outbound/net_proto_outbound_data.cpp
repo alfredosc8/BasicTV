@@ -223,8 +223,12 @@ void net_proto_handle_request_send(T request_ptr){
 	  that 100 percent of the requests are processed and no reply means
 	  they don't have it
 	 */
-	if(get_time_microseconds()-request_ptr->get_request_time() > 10*1000*1000){
-		print("type request is over ten seconds old, deleting", P_NOTE);
+	const uint64_t request_micro_s = 
+		settings::get_setting_unsigned_def(
+			"net_proto_type_request_timeout_micro_s",
+			60*1000*1000); // don't set too high
+	if(get_time_microseconds()-request_ptr->get_request_time() > request_micro_s){
+		print("type request has expired, deleting", P_NOTE);
 		id_api::destroy(request_ptr->id.get_id());
 		return;
 	}

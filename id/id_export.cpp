@@ -54,7 +54,6 @@ std::vector<uint8_t> data_id_t::export_data(
 		std::raise(SIGINT);
 		print("can't export somebody else's modified data", P_ERR);
 	}
-	ASSERT((get_id_type(id) == TYPE_ENCRYPT_PUB_KEY_T) == !(extra & ID_EXTRA_ENCRYPT), P_ERR);
 	retval.push_back(0); // current_extra
 	// ID_EXPORT(current_extra, retval);
 	ID_EXPORT(id, retval);
@@ -169,5 +168,7 @@ std::vector<uint8_t> data_id_t::export_data(
 	if(extra & ID_EXTRA_ENCRYPT){
 		retval = id_api::raw::encrypt(retval);
 	}
+	id_api::cache::add_data(
+		retval);
 	return retval;
 }
