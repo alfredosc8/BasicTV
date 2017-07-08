@@ -213,6 +213,12 @@ void net_proto::request::del_slow_routine_type(std::string type){
 void net_proto::request::add_id(id_t_ id){
 	// could probably speed this up
 	for(uint64_t i = 0;i < id_request_buffer.size();i++){
+		if(id == id_request_buffer[i]){
+			print("requesting ID already in request vector, should implement some form of QoS", P_SPAM);
+			return;
+		}
+	}
+	for(uint64_t i = 0;i < id_request_buffer.size();i++){
 		if(get_id_hash(id) == get_id_hash(id_request_buffer[i])){
 			id_request_buffer.insert(
 				id_request_buffer.begin()+i,

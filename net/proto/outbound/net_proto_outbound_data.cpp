@@ -247,10 +247,11 @@ void net_proto_handle_request_send(T request_ptr){
 	}
 }
 
-#define NET_PROTO_HANDLE_REQUEST_HANDLER(type)	\
-	std::vector<id_t_> request_vector =	\
-		id_api::cache::get(		\
+#define NET_PROTO_HANDLE_REQUEST_HANDLER(type)			\
+	std::vector<id_t_> request_vector =			\
+		id_api::cache::get(				\
 			#type);					\
+	P_V(request_vector.size(), P_NOTE);			\
 	for(uint64_t i = 0;i < request_vector.size();i++){	\
 		net_proto_handle_request_send(			\
 			PTR_DATA(request_vector[i],		\

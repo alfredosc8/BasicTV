@@ -75,12 +75,12 @@ void check_finite_execution_modes(
 void check_iteration_modifiers(){
 	try{
 		// should standardize 1 and true
-		if(settings::get_setting("slow_iterate") == "1"){
+		if(settings::get_setting("slow_iterate") == "true"){
 			sleep_ms(1000);
 		}
 	}catch(...){}
 	try{
-		if(settings::get_setting("prove_iterate") == "1"){
+		if(settings::get_setting("prove_iterate") == "true"){
 			std::cout << "iterated" << std::endl;
 		}
 	}catch(...){}
