@@ -105,6 +105,8 @@ namespace id_api{
 		std::vector<uint8_t> get_id(
 			id_t_ id_,
 			uint8_t state);
+
+		std::string breakdown();
 	}
 	namespace linked_list{
 		// next and previous are in the id itself, no interdependency

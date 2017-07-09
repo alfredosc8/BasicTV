@@ -12,8 +12,7 @@ static uint64_t last_print_micro_s = 0;
 
 static void print_stats(uint64_t avg_iter_time){
 	const uint64_t print_stat_freq =
-		settings::get_setting_unsigned_def(
-			"print_stat_freq", 60)*1000000;
+		0;
 	uint64_t cur_time_micro_s =
 		get_time_microseconds();
 	if(cur_time_micro_s-last_print_micro_s > print_stat_freq){
@@ -28,11 +27,8 @@ static void print_stats(uint64_t avg_iter_time){
 		std::string avg_iter_time_ =
 			"Average Iteration Frequency: " + std::to_string(1/((long double)((long double)avg_iter_time/(long double)1000000)));
 		print("Routine Stats\n" +
-		      NEW_TAB_LINE(network_socket_count) +
-		      NEW_TAB_LINE(network_peer_count) +
-		      NEW_TAB_LINE(channel_count) +
-		      NEW_TAB_LINE(item_count) +
-		      NEW_TAB_LINE(avg_iter_time_), P_NOTE);
+		      id_api::cache::breakdown() + 
+		      avg_iter_time_, P_NOTE);
 		last_print_micro_s =
 			cur_time_micro_s;
 	}

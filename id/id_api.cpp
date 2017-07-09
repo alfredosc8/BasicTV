@@ -1107,3 +1107,25 @@ bool encrypt_blacklist_type(type_t_ type_){
 		encrypt_blacklist.end(),
 		type_) != encrypt_blacklist.end();
 }
+
+/*
+  Printable string containing the sizes of each type in an array or loaded
+  into the program cache
+ */
+
+std::string id_api::cache::breakdown(){
+	std::string retval;
+	for(uint64_t i = 0;i < type_cache.size();i++){
+		try{
+			retval +=
+				convert::type::from(
+					type_cache[i].second) +
+				" " +
+				std::to_string(type_cache[i].first.size()) +
+				"\n";
+		}catch(...){
+			print("error in computing cache breakdown", P_WARN);
+		}
+	}
+	return retval;
+}
