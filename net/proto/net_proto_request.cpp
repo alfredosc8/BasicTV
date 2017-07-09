@@ -26,6 +26,7 @@ static std::vector<id_t_> id_request_buffer;
 static std::vector<std::pair<id_t_, int64_t> > linked_list_request_buffer;
 
 net_proto_request_bare_t::net_proto_request_bare_t(){
+	update_request_time();
 }
 
 net_proto_request_bare_t::~net_proto_request_bare_t(){}
@@ -218,6 +219,30 @@ void net_proto::request::add_id(id_t_ id){
 			return;
 		}
 	}
+	/*
+	  As it stands right now, if there is one ID request in existence, then
+	  we just assume that it's going to the right place and that lower level
+	  code can handle copying that over to other interfaces as well.
+	 */
+	std::vector<id_t_> id_request_vector =
+		id_api::cache::get(
+			TYPE_NET_PROTO_ID_REQUEST_T);
+	for(uint64_t i = 0;i < id_request_vector.size();i++){
+		net_proto_id_request_t *id_request_ptr =
+			PTR_DATA(id_request_vector[i],
+				 net_proto_id_request_t);
+		CONTINUE_IF_NULL(id_request_ptr, P_WARN);
+		std::vector<id_t_> id_request_id_vector =
+			id_request_ptr->get_ids();
+		if(std::find(id_request_id_vector.begin(),
+			     id_request_id_vector.end(),
+			     id) != id_request_vector.end()){
+			print("ID already exists as a net_proto_id_request_t, "
+			      "safely assume that all redundancy is put in "
+			      "place by the creator", P_NOTE);
+			return;
+		}
+	}
 	for(uint64_t i = 0;i < id_request_buffer.size();i++){
 		if(get_id_hash(id) == get_id_hash(id_request_buffer[i])){
 			id_request_buffer.insert(
@@ -370,7 +395,9 @@ static void net_proto_create_id_request_loop(){
 				std::vector<id_t_>({id_request_buffer[i]}),
 				preferable_peer_id));
 	}
-	// print("sending " + std::to_string(id_peer_pair.size()) + " requests, totalling " + std::to_string(id_request_buffer.size()) + " IDs", P_SPAM);
+	if(id_peer_pair.size() != 0){
+		print("sending " + std::to_string(id_peer_pair.size()) + " requests, totalling " + std::to_string(id_request_buffer.size()) + " IDs", P_NOTE);
+	}
 	id_request_buffer.clear();
 	const id_t_ self_peer_id =
 		net_proto::peer::get_self_as_peer();
@@ -419,7 +446,7 @@ template
 void net_proto_request_cleanup(T request_ptr,
 			       uint64_t timestamp_micro_s){
 	ASSERT(request_ptr != nullptr, P_ERR);
-	if(request_ptr->get_request_time()+request_ptr->get_ttl_micro_s() >= timestamp_micro_s){
+	if(request_ptr->get_request_time()+request_ptr->get_ttl_micro_s() <= timestamp_micro_s){
 		print("request has expired, deleting", P_NOTE);
 		id_api::destroy(request_ptr->id.get_id());
 	}

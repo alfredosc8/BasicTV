@@ -162,6 +162,10 @@ public:
 	void set_lowest_global_flag_level(uint8_t network_rules,
 					  uint8_t export_rules,
 					  uint8_t peer_rules);
+
+	void get_highest_global_flag_level(uint8_t *network_rules,
+					  uint8_t *export_rules,
+					  uint8_t *peer_rules);
 };
 
 typedef uint16_t transport_i_t;

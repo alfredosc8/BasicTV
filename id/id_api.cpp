@@ -519,8 +519,31 @@ static bool id_api_should_write_to_disk_mod_inc(id_t_ id_){
 
 // TODO: should probably keep this more updated
 
+static bool id_api_should_write_to_disk_export_flags(id_t_ id){
+	data_id_t *id_ptr =
+		PTR_ID(id, );
+	if(id_ptr != nullptr){
+		uint8_t export_rules = 0;
+		id_ptr->get_highest_global_flag_level(
+			nullptr,
+			&export_rules,
+			nullptr);
+		return export_rules > ID_DATA_EXPORT_RULE_NEVER;
+	}
+	// can't export to disk if we can't access it now anyways...
+	return false;
+}
+
+// TODO: would make more sense to pass by pointer here
+
+static bool id_api_should_write_to_disk(id_t_ id){
+	return id_api_should_write_to_disk_mod_inc(id) &&
+		id_api_should_write_to_disk_export_flags(id);
+}
+
 void id_api::destroy(id_t_ id){	
-	if(id_api_should_write_to_disk_mod_inc(id) == true &&
+	if(id_api_should_write_to_disk_mod_inc(id) &&
+	   id_api_should_write_to_disk_export_flags(id) &&
 	   settings::get_setting("export_data") == "true"){
 		id_disk_api::save(id);
 	}
@@ -1060,7 +1083,7 @@ std::vector<uint8_t> id_api::export_id(
 				cache_extra);
 	} // assuming faster reads than encryption, should be accurate
 	if(retval.size() == 0 && get_id_hash(id_) == get_id_hash(production_priv_key_id)){
-		print("id isn't in cache, encrypting whole" + id_breakdown(id_), P_WARN);
+		print("id isn't in cache, exporting whole" + id_breakdown(id_), P_WARN);
 		data_id_t *id =
 			PTR_ID(id_, );
 		if(id != nullptr){

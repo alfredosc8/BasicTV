@@ -243,6 +243,38 @@ void data_id_t::set_lowest_global_flag_level(uint8_t network_rules,
 	}
 }
 
+/*
+  Sanity check to see if it makes sense to export a piece of data
+ */
+
+void data_id_t::get_highest_global_flag_level(uint8_t *network_rules,
+					      uint8_t *export_rules,
+					      uint8_t *peer_rules){
+	uint8_t network_rules_tmp = 0;
+	uint8_t export_rules_tmp = 0;
+	uint8_t peer_rules_tmp = 0;
+	for(uint64_t i = 0;i < data_vector.size();i++){
+		if(data_vector[i].get_network_rules() > network_rules_tmp){
+			network_rules_tmp = data_vector[i].get_network_rules();
+		}
+		if(data_vector[i].get_export_rules() > export_rules_tmp){
+			export_rules_tmp = data_vector[i].get_export_rules();
+		}
+		if(data_vector[i].get_peer_rules() > peer_rules_tmp){
+			peer_rules_tmp = data_vector[i].get_peer_rules();
+		}
+	}
+	if(network_rules != nullptr){
+		*network_rules = network_rules_tmp;
+	}
+	if(export_rules != nullptr){
+		*export_rules = export_rules_tmp;
+	}
+	if(peer_rules != nullptr){
+		*peer_rules = peer_rules_tmp;
+	}
+}
+
 std::string id_breakdown(id_t_ id_){
 	return " (" + convert::array::id::to_hex(id_) +
 		" of type " +

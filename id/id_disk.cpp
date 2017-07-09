@@ -132,7 +132,9 @@ void id_disk_api::load(std::vector<id_t_> ids){
  */
 
 void id_disk_api::save(id_t_ id){
-	if(PTR_ID(id, ) == nullptr){
+	data_id_t *id_ptr =
+		PTR_ID(id, );
+	if(id_ptr == nullptr){
 		print("ID to export doesn't exist in memory, aborting", P_WARN);
 		return;
 	}

@@ -84,13 +84,15 @@ static bool net_proto_valid_request_to_fill(T request){
 		request->get_origin_peer_id();
 	const id_t_ destination_peer_id =
 		request->get_destination_peer_id();
-	if(origin_peer_id == net_proto::peer::get_self_as_peer()){
-		return false;
-	}
-	if(destination_peer_id != net_proto::peer::get_self_as_peer()){
-		return false;
-	}
-	return true;
+	const bool origin_id_ok =
+		origin_peer_id != net_proto::peer::get_self_as_peer();
+	const bool destination_id_ok =
+		destination_peer_id == net_proto::peer::get_self_as_peer();
+	ASSERT(origin_peer_id != ID_BLANK_ID, P_ERR);
+	ASSERT(destination_peer_id != ID_BLANK_ID, P_ERR);
+	P_V(origin_id_ok, P_DEBUG);
+	P_V(destination_id_ok, P_DEBUG);
+	return origin_id_ok && destination_id_ok;
 }
 
 template<typename T>
@@ -99,25 +101,26 @@ static bool net_proto_valid_request_to_send(T request){
 		request->get_origin_peer_id();
 	const id_t_ destination_peer_id =
 		request->get_destination_peer_id();
-	if(origin_peer_id != net_proto::peer::get_self_as_peer()){
-		return false;
-	}
-	if(destination_peer_id == net_proto::peer::get_self_as_peer()){
-		return false;
-	}
-	return true;
+	const bool origin_id_ok =
+		origin_peer_id == net_proto::peer::get_self_as_peer();
+	const bool destination_id_ok =
+		destination_peer_id != net_proto::peer::get_self_as_peer();	
+	ASSERT(origin_peer_id != ID_BLANK_ID, P_ERR);
+	ASSERT(destination_peer_id != ID_BLANK_ID, P_ERR);
+	P_V(origin_id_ok, P_DEBUG);
+	P_V(destination_id_ok, P_DEBUG);
+	return origin_id_ok && destination_id_ok;
 }
 
 static void net_proto_fill_type_requests(){
 	std::vector<id_t_> net_proto_type_requests =
-	 	id_api::cache::get("net_proto_type_request_t");
+	 	id_api::cache::get(
+			TYPE_NET_PROTO_TYPE_REQUEST_T);
 	for(uint64_t i = 0;i < net_proto_type_requests.size();i++){
 	 	net_proto_type_request_t *proto_type_request =
 	 		PTR_DATA(net_proto_type_requests[i],
 	 			 net_proto_type_request_t);
-	 	if(proto_type_request == nullptr){
-	 		continue;
-	 	}
+		CONTINUE_IF_NULL(proto_type_request, P_DEBUG);
 		if(net_proto_valid_request_to_fill(proto_type_request)){
 			print("filling a valid type request " + id_breakdown(net_proto_type_requests[i]) + "for type " + convert::type::from(proto_type_request->get_type()), P_DEBUG);
 			const std::vector<id_t_> raw_id_vector =
@@ -228,7 +231,10 @@ void net_proto_handle_request_send(T request_ptr){
 			"net_proto_type_request_timeout_micro_s",
 			60*1000*1000); // don't set too high
 	if(get_time_microseconds()-request_ptr->get_request_time() > request_micro_s){
-		print("type request has expired, deleting", P_NOTE);
+		P_V(get_time_microseconds(), P_DEBUG);
+		P_V(request_ptr->get_request_time(), P_DEBUG);
+		P_V(request_micro_s, P_DEBUG);
+		print("type request has expired, deleting", P_DEBUG);
 		id_api::destroy(request_ptr->id.get_id());
 		return;
 	}
@@ -255,7 +261,7 @@ void net_proto_handle_request_send(T request_ptr){
 	std::vector<id_t_> request_vector =			\
 		id_api::cache::get(				\
 			#type);					\
-	P_V(request_vector.size(), P_NOTE);			\
+	P_V(request_vector.size(), P_SPAM);			\
 	for(uint64_t i = 0;i < request_vector.size();i++){	\
 		net_proto_handle_request_send(			\
 			PTR_DATA(request_vector[i],		\

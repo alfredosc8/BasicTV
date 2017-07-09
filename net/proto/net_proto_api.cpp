@@ -117,18 +117,14 @@ id_t_ net_proto::peer::random_peer_id(){
 	std::vector<id_t_> proto_peer_vector =
 		id_api::cache::get(
 			TYPE_NET_PROTO_PEER_T);
-	if(proto_peer_vector.size() >= 2){
-		std::random_shuffle(
-			proto_peer_vector.begin(),
-			proto_peer_vector.begin()+2);
-		for(uint64_t i = 0;i < 2;i++){
-			if(proto_peer_vector[i] !=
-			   net_proto::peer::get_self_as_peer()){
-				return proto_peer_vector[i];
-			}
+	std::random_shuffle(
+		proto_peer_vector.begin(),
+		proto_peer_vector.end());
+	for(uint64_t i = 0;i < proto_peer_vector.size();i++){
+		if(proto_peer_vector[i] !=
+		   net_proto::peer::get_self_as_peer()){
+			return proto_peer_vector[i];
 		}
-	}else{
-		P_V(proto_peer_vector.size(), P_VAR);
 	}
 	//print("no other peers detected, cannot return a valid peer id", P_WARN);
 	return ID_BLANK_ID;
@@ -165,19 +161,19 @@ void net_proto::socket::connect(id_t_ peer_id_, uint32_t min){
 	net_proto_peer_t *proto_peer_ptr =
 		PTR_DATA(peer_id_,
 			 net_proto_peer_t);
-	if(proto_peer_ptr == nullptr){
-		print("cannot connect to a null peer" + id_breakdown(peer_id_), P_WARN);
-	}	
+	PRINT_IF_NULL(proto_peer_ptr, P_UNABLE);
 	net_interface_ip_address_t *ip_address_ptr =
 		PTR_DATA(proto_peer_ptr->get_address_id(),
 			 net_interface_ip_address_t);
-	PRINT_IF_NULL(ip_address_ptr, P_WARN);
+	PRINT_IF_NULL(ip_address_ptr, P_UNABLE);
 	const int64_t sockets_to_open =
 		min-all_proto_socket_of_peer(peer_id_).size();
 	for(int64_t i = 0;i < sockets_to_open;i++){
 		net_proto_generate_con_req(peer_id_);
 	}
-	print("created " + std::to_string(sockets_to_open) + " sockets to a peer " + net_proto::peer::get_breakdown(peer_id_), P_DEBUG);
+	if(sockets_to_open != 0){
+		print("created " + std::to_string(sockets_to_open) + " sockets to a peer " + net_proto::peer::get_breakdown(peer_id_), P_DEBUG);
+	}
 }
 
 

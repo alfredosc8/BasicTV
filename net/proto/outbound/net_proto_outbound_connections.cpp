@@ -65,10 +65,11 @@ static void net_proto_initiate_direct_tcp(
 			delete proto_socket_ptr;
 			proto_socket_ptr = nullptr;
 		}
-		if(socket_ptr != nullptr){
-			delete socket_ptr;
-			socket_ptr = nullptr;
-		}
+		// proto_socket deletes the socket by default
+		// if(socket_ptr != nullptr){
+		// 	delete socket_ptr;
+		// 	socket_ptr = nullptr;
+		// }
 	}
 }
 
