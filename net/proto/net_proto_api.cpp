@@ -156,6 +156,28 @@ static id_t_ net_proto_generate_con_req(id_t_ peer_id){
   when that part of the program is developed enough
  */
 
+static uint64_t all_con_req_to_peer(id_t_ peer_id_){
+	uint64_t retval = 0;
+	std::vector<id_t_> con_req_vector =
+		id_api::cache::get(
+			TYPE_NET_PROTO_CON_REQ_T);
+	for(uint64_t i = 0;i < con_req_vector.size();i++){
+		net_proto_con_req_t *con_req_ptr =
+			PTR_DATA(con_req_vector[i],
+				 net_proto_con_req_t);
+		CONTINUE_IF_NULL(con_req_ptr, P_WARN);
+		id_t_ second_peer_id = ID_BLANK_ID;
+		con_req_ptr->get_peer_ids(
+			   nullptr, // from 
+			   &second_peer_id, // to
+			   nullptr);
+		if(second_peer_id == peer_id_){// intermediary if applicable
+			retval++;
+		}
+	}
+	return retval;
+}
+
 void net_proto::socket::connect(id_t_ peer_id_, uint32_t min){
 	std::vector<id_t_> retval;
 	net_proto_peer_t *proto_peer_ptr =
@@ -166,13 +188,19 @@ void net_proto::socket::connect(id_t_ peer_id_, uint32_t min){
 		PTR_DATA(proto_peer_ptr->get_address_id(),
 			 net_interface_ip_address_t);
 	PRINT_IF_NULL(ip_address_ptr, P_UNABLE);
+	const uint64_t sockets_open =
+		all_proto_socket_of_peer(peer_id_).size();
+	const uint64_t pending_con_req =
+		all_con_req_to_peer(peer_id_);
 	const int64_t sockets_to_open =
-		min-all_proto_socket_of_peer(peer_id_).size();
+		min-sockets_open-pending_con_req;
 	for(int64_t i = 0;i < sockets_to_open;i++){
 		net_proto_generate_con_req(peer_id_);
 	}
 	if(sockets_to_open != 0){
-		print("created " + std::to_string(sockets_to_open) + " sockets to a peer " + net_proto::peer::get_breakdown(peer_id_), P_DEBUG);
+		// if we only need one socket open, an initial connection should
+		// make that work fine
+		print("created " + std::to_string(sockets_to_open) + " con req to a peer " + net_proto::peer::get_breakdown(peer_id_), P_DEBUG);
 	}
 }
 

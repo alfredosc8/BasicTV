@@ -281,6 +281,13 @@ void net_proto_socket_t::load_blocks(){
 			      convert::type::from(
 				      get_id_type(
 					      inbound_id)), P_DEBUG);
+			if(get_id_type(inbound_id) != TYPE_NET_PROTO_ID_REQUEST_T &&
+			   get_id_type(inbound_id) != TYPE_NET_PROTO_TYPE_REQUEST_T &&
+			   get_id_type(inbound_id) != TYPE_NET_PROTO_LINKED_LIST_REQUEST_T &&
+			   get_id_type(inbound_id) != TYPE_NET_PROTO_CON_REQ_T){
+				net_proto::request::del_id(
+					inbound_id);
+			} // All requests for data are on a push
 			block_buffer.erase(
 				block_buffer.begin()+i);
 			i--;
@@ -299,4 +306,4 @@ void net_proto_socket_t::update(){
 	update_block_buffer();
 	load_blocks();
 	check_state();
-}
+ }

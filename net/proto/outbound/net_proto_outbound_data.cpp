@@ -90,8 +90,8 @@ static bool net_proto_valid_request_to_fill(T request){
 		destination_peer_id == net_proto::peer::get_self_as_peer();
 	ASSERT(origin_peer_id != ID_BLANK_ID, P_ERR);
 	ASSERT(destination_peer_id != ID_BLANK_ID, P_ERR);
-	P_V(origin_id_ok, P_DEBUG);
-	P_V(destination_id_ok, P_DEBUG);
+	// P_V(origin_id_ok, P_DEBUG);
+	// P_V(destination_id_ok, P_DEBUG);
 	return origin_id_ok && destination_id_ok;
 }
 
@@ -107,8 +107,8 @@ static bool net_proto_valid_request_to_send(T request){
 		destination_peer_id != net_proto::peer::get_self_as_peer();	
 	ASSERT(origin_peer_id != ID_BLANK_ID, P_ERR);
 	ASSERT(destination_peer_id != ID_BLANK_ID, P_ERR);
-	P_V(origin_id_ok, P_DEBUG);
-	P_V(destination_id_ok, P_DEBUG);
+	// P_V(origin_id_ok, P_DEBUG);
+	// P_V(destination_id_ok, P_DEBUG);
 	return origin_id_ok && destination_id_ok;
 }
 

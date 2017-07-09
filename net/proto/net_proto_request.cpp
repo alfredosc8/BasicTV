@@ -296,7 +296,7 @@ void net_proto::request::add_id_linked_list(id_t_ id, int64_t length){
 void net_proto::request::del_id(id_t_ id){
 	std::vector<id_t_> id_request_vector =
 		id_api::cache::get(
-			"net_proto_id_request_t");
+			TYPE_NET_PROTO_ID_REQUEST_T);
 	for(uint64_t i = 0;i < id_request_vector.size();i++){
 		net_proto_id_request_t *id_request =
 			PTR_DATA(id_request_vector[i],
@@ -314,12 +314,18 @@ void net_proto::request::del_id(id_t_ id){
 		if(id_ptr != id_vector.end()){
 			id_vector.erase(
 				id_ptr);
-			id_request->set_ids(
-				id_vector);
+			if(id_vector.size() == 0){
+				delete id_request;
+				id_request = nullptr;
+			}else{
+				id_request->set_ids(
+					id_vector);
+			}
 			return;
 		}
 	}
-	print("cannot delete request for ID I didn't request", P_ERR);
+	// This is defined behavior, but only in the beginning...
+	print("cannot delete request for ID I didn't request", P_WARN);
 }
 
 static void net_proto_routine_request_create(
