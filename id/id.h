@@ -106,7 +106,7 @@ public:
 
 type_t_ get_id_type(id_t_ id); // tacky
 
-#define ADD_DATA_1D_DEF(datatype, str, fl_ag, size_mul) void add_data_##str(datatype *ptr_, uint32_t max_size_elem_, uint8_t flags_ = 0, uint8_t network_rules_ = ID_DATA_NETWORK_RULE_PUBLIC, uint8_t export_rules_ = ID_DATA_EXPORT_RULE_ALWAYS, uint8_t peer_rules_ = ID_DATA_PEER_RULE_ALWAYS){add_data(ptr_, {(uint32_t)size_mul*max_size_elem_}, flags_ | fl_ag, network_rules_, export_rules_, peer_rules_);}
+#define ADD_DATA_1D_DEF(datatype, str, fl_ag) void add_data_##str(datatype *ptr_, uint32_t max_size_elem_, uint8_t flags_ = 0, uint8_t network_rules_ = ID_DATA_NETWORK_RULE_PUBLIC, uint8_t export_rules_ = ID_DATA_EXPORT_RULE_ALWAYS, uint8_t peer_rules_ = ID_DATA_PEER_RULE_ALWAYS){add_data(ptr_, {max_size_elem_}, flags_ | fl_ag, network_rules_, export_rules_, peer_rules_);}
 #define ADD_DATA_2D_DEF(datatype, str, fl_ag) void add_data_##str(datatype *ptr_, uint32_t max_size_elem_, uint32_t max_size_elem__, uint8_t flags_ = 0, uint8_t network_rules_ = ID_DATA_NETWORK_RULE_PUBLIC, uint8_t export_rules_ = ID_DATA_EXPORT_RULE_ALWAYS, uint8_t peer_rules_ = ID_DATA_PEER_RULE_ALWAYS){add_data(ptr_, {max_size_elem_, max_size_elem__}, flags_ | fl_ag, network_rules_, export_rules_, peer_rules_);}
 
 typedef std::pair<std::vector<id_t_>, std::vector<id_t_> > linked_list_data_t;
@@ -145,12 +145,12 @@ public:
 	void mod_inc(){modification_incrementor++;}
 	mod_inc_t_ get_mod_inc(){return modification_incrementor;}
 	// TODO: should enforce casting
-	ADD_DATA_1D_DEF(std::vector<uint8_t>, one_byte_vector, ID_DATA_BYTE_VECTOR, 1);
+	ADD_DATA_1D_DEF(std::vector<uint8_t>, one_byte_vector, ID_DATA_BYTE_VECTOR);
 	ADD_DATA_2D_DEF(std::vector<std::vector<uint8_t> >, one_byte_vector_vector, ID_DATA_BYTE_VECTOR_VECTOR);
-	ADD_DATA_1D_DEF(std::vector<uint64_t>, eight_byte_vector, ID_DATA_EIGHT_BYTE_VECTOR, 1);
-	ADD_DATA_1D_DEF(std::vector<id_t_>, id_vector, ID_DATA_ID_VECTOR, 1);
-	ADD_DATA_1D_DEF(id_t_, id, ID_DATA_ID, sizeof(id_t_));
-	ADD_DATA_1D_DEF(void, raw, 0, 1);
+	ADD_DATA_1D_DEF(std::vector<uint64_t>, eight_byte_vector, ID_DATA_EIGHT_BYTE_VECTOR);
+	ADD_DATA_1D_DEF(std::vector<id_t_>, id_vector, ID_DATA_ID_VECTOR);
+	ADD_DATA_1D_DEF(id_t_, id, ID_DATA_ID);
+	ADD_DATA_1D_DEF(void, raw, 0);
 	// export and import data
 	// default on export is unencrypted and uncompressed, but is compressed
 	// and encrypted when it is loaded into the cache (so always, currently,

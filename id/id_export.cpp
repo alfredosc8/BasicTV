@@ -16,13 +16,14 @@ static void id_export_raw(std::vector<uint8_t> tmp, std::vector<uint8_t> *vector
 static bool should_export(std::pair<uint8_t, uint8_t> network_flags,
 			  std::pair<uint8_t, uint8_t> export_flags,
 			  std::pair<uint8_t, uint8_t> peer_flags){
-	bool network_allows = (network_flags.second >= network_flags.first || network_flags.second == ID_DATA_RULE_UNDEF);
-	bool export_allows = (export_flags.second >= export_flags.first || export_flags.second == ID_DATA_RULE_UNDEF);
-	bool peer_allows = (peer_flags.second >= peer_flags.first || peer_flags.second == ID_DATA_RULE_UNDEF);
-	P_V(network_allows, P_SPAM);
-	P_V(export_allows, P_SPAM);
-	P_V(peer_allows, P_SPAM);
-	return network_allows && export_allows && peer_allows;
+	// bool network_allows = (network_flags.second >= network_flags.first || network_flags.second == ID_DATA_RULE_UNDEF);
+	// bool export_allows = (export_flags.second >= export_flags.first || export_flags.second == ID_DATA_RULE_UNDEF);
+	// bool peer_allows = (peer_flags.second >= peer_flags.first || peer_flags.second == ID_DATA_RULE_UNDEF);
+	// P_V(network_allows, P_SPAM);
+	// P_V(export_allows, P_SPAM);
+	// P_V(peer_allows, P_SPAM);
+	// return network_allows && export_allows && peer_allows;
+	return true;
 }
 
 //#define ID_EXPORT(var, list) id_export_raw((uint8_t*)&var, sizeof(var), &list)
@@ -142,12 +143,16 @@ std::vector<uint8_t> data_id_t::export_data(
 					(uint8_t*)(*vector)[c].data()+trans_size_tmp);
 			}
 		}else{
+			uint64_t length = data_vector[i].get_length();
+			if(data_vector[i].get_flags() & ID_DATA_ID){
+				length *= sizeof(id_t_);
+			}
 			P_V(data_vector[i].get_length(), P_SPAM);
 			data_to_export =
 				std::vector<uint8_t>(
 					(uint8_t*)data_vector[i].get_ptr(),
 					(uint8_t*)data_vector[i].get_ptr()+
-					data_vector[i].get_length());
+					length);
 		}
 		if(data_to_export.size() == 0){
 			continue;

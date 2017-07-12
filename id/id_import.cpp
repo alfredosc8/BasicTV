@@ -113,6 +113,9 @@ static void id_import_raw(
 		}
 	}else{
 		print("using a simple read", P_SPAM);
+		if(flags & ID_DATA_ID){
+			ASSERT(size%sizeof(id_t_) == 0, P_ERR);
+		}
 		P_V(size, P_VAR);
 		memset(var, 0, size);
 		id_import_raw_real(
@@ -180,12 +183,15 @@ void data_id_t::import_data(std::vector<uint8_t> data){
 			print("cannot write to nullptr entry", P_WARN);
 			return;
 		}
-		if(unlikely(trans_size > data.size())){
-			print("fetched size is greater than working data", P_ERR);
-			return;
-		}else if(unlikely(trans_size > data_vector[trans_i].get_length_vector().at(0))){
-			print("fetched size is greater than the local version", P_ERR);
-			return;
+		// IDs are exempt ATM because i'm lazy
+		if((data_vector[trans_i].get_flags() & ID_DATA_ID) == 0){
+			if(trans_size > data.size()){
+				print("fetched size is greater than working data", P_ERR);
+				return;
+			}else if(unlikely(trans_size > data_vector[trans_i].get_length_vector().at(0))){
+				print("fetched size is greater than the local version", P_ERR);
+				return;
+			}
 		}
 		id_import_raw(
 			reinterpret_cast<uint8_t*>(data_vector[trans_i].get_ptr()),

@@ -947,6 +947,7 @@ static void generic_fetch(uint8_t *ptr, uint64_t start, uint64_t size, uint8_t *
 
 void id_api::add_data(std::vector<uint8_t> data){
 	// just add to cache, it's fine...
+	id_api::array::add_data(data);
 	id_api::cache::add_data(data);
 }
 

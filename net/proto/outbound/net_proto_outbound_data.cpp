@@ -8,7 +8,7 @@
 #include "../../../id/id_api.h"
 
 /*
-  TODO: requests use a lot of timeouts, so try and move away from that
+  TODO: requests use a lot of constants, so try and move away from that
  */
 
 static void net_proto_send_logic(std::vector<id_t_> id_vector,
@@ -82,6 +82,8 @@ static std::vector<id_t_> remove_ids_from_vector(std::vector<id_t_> first,
   too complicated.
 
   All checks go into these two functions: ownership, ID mismatch, etc.
+
+  A request that is filled is destroyed afterwards
  */
 
 template<typename T>
@@ -94,19 +96,19 @@ static bool net_proto_valid_request_to_fill(T request){
 		origin_peer_id != net_proto::peer::get_self_as_peer();
 	const bool destination_id_ok =
 		destination_peer_id == net_proto::peer::get_self_as_peer();
-	const bool time_ok =
-		get_time_microseconds()-request->get_request_time() < 15*1000*1000;
 	const bool not_owner =
 		get_id_hash(request->id.get_id()) !=
 		get_id_hash(production_priv_key_id);
 	ASSERT(origin_peer_id != ID_BLANK_ID, P_ERR);
 	ASSERT(destination_peer_id != ID_BLANK_ID, P_ERR);
 	ASSERT(request->get_request_time() != 0, P_ERR);
-	return time_ok && not_owner && origin_id_ok && destination_id_ok;
+	return not_owner && origin_id_ok && destination_id_ok;
 }
 
 template<typename T>
-static bool net_proto_valid_request_to_send(T request){
+static bool net_proto_valid_request_to_send(
+	T request,
+	uint64_t frequency_micro_s){
 	const id_t_ origin_peer_id =
 		request->get_origin_peer_id();
 	const id_t_ destination_peer_id =
@@ -119,12 +121,10 @@ static bool net_proto_valid_request_to_send(T request){
 		get_id_hash(request->id.get_id()) ==
 		get_id_hash(production_priv_key_id);
 	const bool time_ok =
-		get_time_microseconds()-request->get_broadcast_time_micro_s() < 10*1000*1000;
+		get_time_microseconds()-request->get_broadcast_time_micro_s() > frequency_micro_s;
 	ASSERT(origin_peer_id != ID_BLANK_ID, P_ERR);
 	ASSERT(destination_peer_id != ID_BLANK_ID, P_ERR);
 	ASSERT(request->get_request_time() != 0, P_ERR);
-	// P_V(origin_id_ok, P_DEBUG);
-	// P_V(destination_id_ok, P_DEBUG);
 	return time_ok && is_owner && origin_id_ok && destination_id_ok;
 }
 
@@ -165,6 +165,8 @@ static void net_proto_fill_type_requests(){
 					print("couldn't send type request", P_WARN);
 				}
 			}
+			id_api::destroy(net_proto_type_requests[i]);
+			proto_type_request = nullptr;
 		}
 	}
 }
@@ -172,7 +174,7 @@ static void net_proto_fill_type_requests(){
 
 static void net_proto_fill_id_requests(){
 	std::vector<id_t_> net_proto_id_requests =
-	 	id_api::cache::get("net_proto_id_request_t");
+	 	id_api::cache::get(TYPE_NET_PROTO_ID_REQUEST_T);
 	for(uint64_t i = 0;i < net_proto_id_requests.size();i++){
 	 	net_proto_id_request_t *proto_id_request =
 	 		PTR_DATA(net_proto_id_requests[i],
@@ -181,14 +183,16 @@ static void net_proto_fill_id_requests(){
 	 		continue;
 	 	}
 		if(net_proto_valid_request_to_fill(proto_id_request)){
+			print("filling ID request" + id_breakdown(net_proto_id_requests[i]), P_NOTE);
 			const std::vector<id_t_> id_vector =
 				proto_id_request->get_ids();
 			try{
 				net_proto_send_logic(
 					id_vector,
 					proto_id_request->get_origin_peer_id());
-				id_api::destroy(net_proto_id_requests[i]);
 			}catch(...){}
+			id_api::destroy(net_proto_id_requests[i]);
+			proto_id_request = nullptr;
 		}
 	}
 }
@@ -215,10 +219,10 @@ static void net_proto_fill_linked_list_requests(){
 				net_proto_send_logic(
 					std::vector<id_t_>({curr_id}),
 					origin_id);
-				if(proto_linked_list_request->get_curr_length() == 0){
-					id_api::destroy(net_proto_linked_list_requests[i]);
-				}
 			}catch(...){}
+			if(proto_linked_list_request->get_curr_length() == 0){
+				id_api::destroy(net_proto_linked_list_requests[i]);
+			}
 		}
 	}
 }
@@ -231,20 +235,18 @@ void net_proto_handle_request_send(T request_ptr){
 	}
 	const id_t_ destination_peer_id =
 		request_ptr->get_destination_peer_id();
-	if(net_proto_valid_request_to_send(request_ptr)){
-		try{
-			net_proto_send_logic(
-				std::vector<id_t_>({request_ptr->id.get_id()}),
-				destination_peer_id);
-			request_ptr->update_request_time();
-			print("sent request to peer" + net_proto::peer::get_breakdown(
-				      destination_peer_id), P_DEBUG);
-		}catch(...){
-			print("couldn't send request to peer, probably no available socket", P_DEBUG);
-			net_proto::socket::connect(
-				destination_peer_id,
-				1);
-		}
+	try{
+		net_proto_send_logic(
+			std::vector<id_t_>({request_ptr->id.get_id()}),
+			destination_peer_id);
+		request_ptr->update_request_time();
+		print("sent request to peer" + net_proto::peer::get_breakdown(
+			      destination_peer_id), P_DEBUG);
+	}catch(...){
+		print("couldn't send request to peer, probably no available socket", P_DEBUG);
+		net_proto::socket::connect(
+			destination_peer_id,
+			1);
 	}
 }
 
@@ -258,10 +260,11 @@ void net_proto_handle_request_send(T request_ptr){
 	std::vector<id_t_> request_vector =			\
 		id_api::cache::get(				\
 			#type);					\
-	P_V(request_vector.size(), P_SPAM);			\
 	for(uint64_t i = 0;i < request_vector.size();i++){	\
 		type *ptr = PTR_DATA(request_vector[i], type);	\
-		if(net_proto_valid_request_to_send(ptr)){	\
+		if(net_proto_valid_request_to_send(		\
+			   ptr,					\
+			   timeout_micro_s)){			\
 			net_proto_handle_request_send(		\
 				ptr);				\
 			ptr->update_broadcast_time_micro_s();	\
