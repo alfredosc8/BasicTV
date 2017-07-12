@@ -148,7 +148,7 @@ void id_api::array::del(id_t_ id){
 	}
 	print("cannot find ID in list", P_WARN);
 }
-
+	
 #define CHECK_TYPE(a)					\
 	if(convert::type::from(type) == #a){		\
 		print("importing data", P_SPAM);	\
@@ -165,7 +165,7 @@ void id_api::array::del(id_t_ id){
 			}				\
 		}					\
 	}						\
-	
+
 /*
   General purpose reader, returns the ID of the new information.
   The only current use of the return value is for associating sockets with
@@ -610,32 +610,41 @@ void id_api::destroy(id_t_ id){
 }
 
 void id_api::destroy_all_data(){
-	std::vector<data_id_t*> list_tmp =
-		id_list;
+	std::vector<id_t_> list_tmp =
+		id_api::get_all();
 	for(uint64_t i = 0;i < list_tmp.size();i++){
-		if(list_tmp[i]->get_type_byte() == TYPE_ENCRYPT_PRIV_KEY_T ||
-		   list_tmp[i]->get_type_byte() == TYPE_ENCRYPT_PUB_KEY_T ||
-		   list_tmp[i]->get_type_byte() == TYPE_ID_DISK_INDEX_T){
+		data_id_t *tmp =
+			PTR_ID(list_tmp[i], );
+		if(tmp == nullptr){
+			// type destructors can delete other types
 			continue;
 		}
-		P_V(list_tmp[i]->get_type_byte(), P_VAR);
-		destroy(list_tmp[i]->get_id());
-		list_tmp[i] = nullptr;
+		if(tmp->get_type_byte() == TYPE_ENCRYPT_PRIV_KEY_T ||
+		   tmp->get_type_byte() == TYPE_ENCRYPT_PUB_KEY_T ||
+		   tmp->get_type_byte() == TYPE_ID_DISK_INDEX_T){
+			continue;
+		}
+		P_V(tmp->get_type_byte(), P_VAR);
+		destroy(tmp->get_id());
+		tmp = nullptr;
 	}
 	/*
 	  TODO: This works for now, but I need to create a system that allows
 	  exporting of disk information (shouldn't be hard)
 	 */
 	for(uint64_t i = 0;i < list_tmp.size();i++){
-		if(list_tmp[i] == nullptr){
+		data_id_t *tmp =
+			PTR_ID(list_tmp[i], );
+		if(tmp == nullptr){
+			// type destructors can delete other types
 			continue;
 		}
-		if(list_tmp[i]->get_type_byte() == TYPE_ID_DISK_INDEX_T ||
-		   list_tmp[i]->get_id() == production_priv_key_id){
+		if(tmp->get_type_byte() == TYPE_ID_DISK_INDEX_T ||
+		   tmp->get_id() == production_priv_key_id){
 			continue;
 		}
-		destroy(list_tmp[i]->get_id());
-		list_tmp[i] = nullptr;
+		destroy(tmp->get_id());
+		tmp = nullptr;
 	}
 	destroy(production_priv_key_id);
 }
@@ -1128,4 +1137,59 @@ std::string id_api::cache::breakdown(){
 		}
 	}
 	return retval;
+}
+
+#define ID_SHIFT(x) vector_pos += sizeof(x)
+#define ID_IMPORT(x) memcpy(&x, data.data()+vector_pos, sizeof(x));vector_pos += sizeof(x)
+
+#pragma warning("strip_to_lowest_rules removed a lot of sanity checks for clarity, should REALLY re-add");
+
+std::vector<uint8_t> id_api::raw::strip_to_lowest_rules(
+	std::vector<uint8_t> data,
+	uint8_t network_rules,
+	uint8_t export_rules,
+	uint8_t peer_rules){
+
+	uint32_t vector_pos = 0;
+	id_t_ trans_id = ID_BLANK_ID;
+	uint8_t extra =
+		data[0];
+	ASSERT((0b11111100 & extra) == 0, P_ERR);
+	if(extra & ID_EXTRA_ENCRYPT){
+		print("try and optimize code so strip_to_rules doesn't have to handle encryption", P_WARN);
+		data = id_api::raw::decrypt(data);
+	}
+	if(extra & ID_EXTRA_COMPRESS){
+		print("try and optimize code so strip_to_rules doesn't have to handle encryption", P_WARN);
+		data = id_api::raw::decompress(data);
+	}
+	mod_inc_t_ modification_incrementor = 0;
+	ID_SHIFT(extra); // just to remove it
+	ID_SHIFT(trans_id);
+	ID_SHIFT(modification_incrementor);
+
+	transport_i_t trans_i = 0;
+	transport_size_t trans_size = 0;
+	uint8_t network_rules_tmp = 0;
+	uint8_t export_rules_tmp = 0;
+	uint8_t peer_rules_tmp = 0;
+	while(data.size() > sizeof(transport_i_t) + sizeof(transport_size_t)){
+		ID_SHIFT(trans_i);
+		ID_IMPORT(network_rules_tmp);
+		ID_IMPORT(export_rules_tmp);
+		ID_IMPORT(peer_rules_tmp);
+		ID_IMPORT(trans_size);
+		const bool network_allows = (network_rules_tmp >= network_rules || network_rules == ID_DATA_RULE_UNDEF);
+		const bool export_allows = (export_rules_tmp >= export_rules || export_rules == ID_DATA_RULE_UNDEF);
+		const bool peer_allows = (peer_rules_tmp >= peer_rules || peer_rules == ID_DATA_RULE_UNDEF);
+		if(!(network_allows &&
+		     export_allows &&
+		     peer_allows)){
+			data.erase(
+				data.begin()+vector_pos,
+				data.begin()+vector_pos+trans_size);
+			vector_pos -= trans_size;
+		}
+	}
+	return data;
 }

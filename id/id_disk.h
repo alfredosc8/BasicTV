@@ -6,6 +6,11 @@
 #include "../main.h"
 
 /*
+  I'm rewriting all of the ID loading/management system inside
+  id_tier.*, so this file is here to gracefully convert
+ */
+
+/*
   This is bound to a certain directory (or other means of storage), and is
   responsible for keeping track of the state of all IDs inside of that
   folder. This should work well, assuming rebuilds happen on restarts and

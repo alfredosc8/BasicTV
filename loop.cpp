@@ -12,7 +12,8 @@ static uint64_t last_print_micro_s = 0;
 
 static void print_stats(uint64_t avg_iter_time){
 	const uint64_t print_stat_freq =
-		0;
+		settings::get_setting_unsigned_def(
+			"print_stats_freq", 30)*1000*1000;
 	uint64_t cur_time_micro_s =
 		get_time_microseconds();
 	if(cur_time_micro_s-last_print_micro_s > print_stat_freq){

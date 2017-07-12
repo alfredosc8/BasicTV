@@ -20,9 +20,10 @@ std::vector<uint8_t> compressor::compress(std::vector<uint8_t> data,
 		print("type variable passed, but not used", P_SPAM);
 	}
 	std::vector<uint8_t> retval = 
-		compressor::zstd::to(data,
-				     compression_level,
-				     0);
+		compressor::zstd::to(
+			data,
+			compression_level,
+			0);
 	retval.insert(
 		retval.begin(),
 		COMPRESS_ZSTD);

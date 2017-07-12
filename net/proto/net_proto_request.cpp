@@ -5,6 +5,11 @@
 
 #include "../../settings.h"
 
+/*
+  This file is responsible for creation and destruction of all requests
+
+  Broadcasting of them is handled inside of outbound/net_proto_outbound_data.cpp
+ */
 
 // routine request jargon
 static uint64_t last_request_fast_time_micro_s = 0;
@@ -25,9 +30,7 @@ static std::vector<uint8_t> routine_request_slow_vector = {
 static std::vector<id_t_> id_request_buffer;
 static std::vector<std::pair<id_t_, int64_t> > linked_list_request_buffer;
 
-net_proto_request_bare_t::net_proto_request_bare_t(){
-	update_request_time();
-}
+net_proto_request_bare_t::net_proto_request_bare_t(){}
 
 net_proto_request_bare_t::~net_proto_request_bare_t(){}
 
@@ -53,8 +56,14 @@ void net_proto_request_bare_t::set_destination_peer_id(id_t_ destination_peer_id
 	destination_peer_id = destination_peer_id_;
 }
 
+// When it was last modified
 void net_proto_request_bare_t::update_request_time(){
 	request_time = get_time_microseconds();
+}
+
+// When it was last broadcast
+void net_proto_request_bare_t::update_broadcast_time_micro_s(){
+	broadcast_time_micro_s = get_time_microseconds();
 }
 
 net_proto_request_set_t::net_proto_request_set_t(){}
@@ -79,7 +88,6 @@ void net_proto_request_set_t::set_ids(std::vector<id_t_> ids_){
 				id_ptr->get_mod_inc());
 		}
 	}
-	update_request_time();
 }
 
 std::vector<id_t_> net_proto_request_set_t::get_ids(){
@@ -168,7 +176,6 @@ void net_proto_type_request_t::update_type(type_t_ type_){
 		id_api::cache::get(
 			convert::type::from(
 				type_)));
-	update_request_time();
 }
 
 // TODO: combine this file and routine_requests
@@ -362,6 +369,7 @@ static void net_proto_routine_request_create(
 					net_proto::peer::random_peer_id());
 				type_request->set_origin_peer_id(
 					net_proto::peer::get_self_as_peer());
+				type_request->update_request_time();
 			}
  		}
 		*last_request_time_micro_s = time_micro_s;
@@ -371,11 +379,11 @@ static void net_proto_routine_request_create(
 static void net_proto_routine_request_loop(){
  	net_proto_routine_request_create(
  		routine_request_fast_vector,
-		1*1000*1000,
+		15*1000*1000,
  		&last_request_fast_time_micro_s);
  	net_proto_routine_request_create(
  		routine_request_slow_vector,
-		1*1000*1000,
+		60*1000*1000,
  		&last_request_slow_time_micro_s);
 }
 
@@ -388,7 +396,8 @@ static void net_proto_create_id_request_loop(){
 		if(preferable_peer_id == ID_BLANK_ID){
 			print("preferable_peer_id is blank", P_ERR);
 		}
-		ASSERT(preferable_peer_id != net_proto::peer::get_self_as_peer(), P_ERR);
+		// This means we don't have any other peers whatsoever (probably)
+		ASSERT(preferable_peer_id != net_proto::peer::get_self_as_peer(), P_WARN);
 		for(uint64_t c = 0;c < id_peer_pair.size();c++){
 			if(id_peer_pair[c].second == preferable_peer_id){
 				id_peer_pair[c].first.push_back(
@@ -419,6 +428,7 @@ static void net_proto_create_id_request_loop(){
 				self_peer_id);
 			id_request_ptr->set_destination_peer_id(
 				id_peer_pair[i].second);
+			id_request_ptr->update_request_time();
 		}catch(...){
 			print("failed to create net_proto_id_request_t", P_WARN);
 			// not sure how this would happen...
@@ -447,34 +457,38 @@ static void net_proto_simple_request_loop(){
 	//net_proto_create_linked_list_request_loop();
 }
 
-template
-<typename T>
-void net_proto_request_cleanup(T request_ptr,
-			       uint64_t timestamp_micro_s){
-	ASSERT(request_ptr != nullptr, P_ERR);
-	if(request_ptr->get_request_time()+request_ptr->get_ttl_micro_s() <= timestamp_micro_s){
-		print("request has expired, deleting", P_NOTE);
-		id_api::destroy(request_ptr->id.get_id());
+
+template <typename T>
+bool net_proto_obsolete_request(T request, uint64_t timeout_micro_s){
+	ASSERT(request != nullptr, P_ERR);
+	const uint64_t time_micro_s =
+		get_time_microseconds();
+	if(timeout_micro_s > 15*1000*1000){
+		print("timeout_micro_s is larger than the defined sane maximum, might cause some memory bloat", P_WARN);
+		// continue it anyways
 	}
+	const bool timeout =
+		time_micro_s-request->get_request_time() > timeout_micro_s;
+	return timeout;
 }
 
-#define NET_PROTO_REQUEST_CLEANUP_CREATOR(type)			\
-	if(true){						\
-		std::vector<id_t_> vector =			\
-			id_api::cache::get(#type);		\
-		for(uint64_t i = 0;i < vector.size();i++){	\
-			try{					\
-				net_proto_request_cleanup(	\
-					PTR_DATA(vector[i],	\
-						 type),		\
-					timestamp_micro_s);	\
-			}catch(...){}				\
-		}						\
-	}							\
-
+#define NET_PROTO_REQUEST_CLEANUP_CREATOR(type)				\
+	if(true){							\
+		std::vector<id_t_> vector =				\
+			id_api::cache::get(#type);			\
+		for(uint64_t i = 0;i < vector.size();i++){		\
+			try{						\
+				if(net_proto_obsolete_request(		\
+					   PTR_DATA(vector[i],		\
+						    type),		\
+					   15*1000*1000)){		\
+					id_api::destroy(vector[i]);	\
+				}					\
+			}catch(...){}					\
+		}							\
+	}								\
+	
 static void net_proto_all_request_cleanup(){
-	const uint64_t timestamp_micro_s =
-		get_time_microseconds();
 	NET_PROTO_REQUEST_CLEANUP_CREATOR(net_proto_id_request_t);
 	NET_PROTO_REQUEST_CLEANUP_CREATOR(net_proto_type_request_t);
 	NET_PROTO_REQUEST_CLEANUP_CREATOR(net_proto_linked_list_request_t);
@@ -482,7 +496,7 @@ static void net_proto_all_request_cleanup(){
 
 
 void net_proto_requests_loop(){
+	net_proto_all_request_cleanup();
 	net_proto_routine_request_loop();
 	net_proto_simple_request_loop();
-	net_proto_all_request_cleanup();
 }

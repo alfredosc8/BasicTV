@@ -7,6 +7,10 @@
 #include "../../../settings.h"
 #include "../../../id/id_api.h"
 
+/*
+  TODO: requests use a lot of timeouts, so try and move away from that
+ */
+
 static void net_proto_send_logic(std::vector<id_t_> id_vector,
 				 id_t_ net_proto_peer_id){
 	if(net_proto_peer_id == net_proto::peer::get_self_as_peer()){
@@ -38,7 +42,7 @@ static void net_proto_send_logic(std::vector<id_t_> id_vector,
 			PTR_DATA(optimal_proto_socket_id,
 				 net_proto_socket_t);
 		if(proto_socket == nullptr){
-			print("proto_socket is a nullptr", P_ERR);
+			print("cannot establish connection to peer", P_UNABLE);
 		}
 	}
 	for(uint64_t i = 0;i < id_vector.size();i++){
@@ -76,6 +80,8 @@ static std::vector<id_t_> remove_ids_from_vector(std::vector<id_t_> first,
 /*
   Fill request functions are different enough to make generics and abstractions
   too complicated.
+
+  All checks go into these two functions: ownership, ID mismatch, etc.
  */
 
 template<typename T>
@@ -88,11 +94,15 @@ static bool net_proto_valid_request_to_fill(T request){
 		origin_peer_id != net_proto::peer::get_self_as_peer();
 	const bool destination_id_ok =
 		destination_peer_id == net_proto::peer::get_self_as_peer();
+	const bool time_ok =
+		get_time_microseconds()-request->get_request_time() < 15*1000*1000;
+	const bool not_owner =
+		get_id_hash(request->id.get_id()) !=
+		get_id_hash(production_priv_key_id);
 	ASSERT(origin_peer_id != ID_BLANK_ID, P_ERR);
 	ASSERT(destination_peer_id != ID_BLANK_ID, P_ERR);
-	// P_V(origin_id_ok, P_DEBUG);
-	// P_V(destination_id_ok, P_DEBUG);
-	return origin_id_ok && destination_id_ok;
+	ASSERT(request->get_request_time() != 0, P_ERR);
+	return time_ok && not_owner && origin_id_ok && destination_id_ok;
 }
 
 template<typename T>
@@ -104,12 +114,18 @@ static bool net_proto_valid_request_to_send(T request){
 	const bool origin_id_ok =
 		origin_peer_id == net_proto::peer::get_self_as_peer();
 	const bool destination_id_ok =
-		destination_peer_id != net_proto::peer::get_self_as_peer();	
+		destination_peer_id != net_proto::peer::get_self_as_peer();
+	const bool is_owner =
+		get_id_hash(request->id.get_id()) ==
+		get_id_hash(production_priv_key_id);
+	const bool time_ok =
+		get_time_microseconds()-request->get_broadcast_time_micro_s() < 10*1000*1000;
 	ASSERT(origin_peer_id != ID_BLANK_ID, P_ERR);
 	ASSERT(destination_peer_id != ID_BLANK_ID, P_ERR);
+	ASSERT(request->get_request_time() != 0, P_ERR);
 	// P_V(origin_id_ok, P_DEBUG);
 	// P_V(destination_id_ok, P_DEBUG);
-	return origin_id_ok && destination_id_ok;
+	return time_ok && is_owner && origin_id_ok && destination_id_ok;
 }
 
 static void net_proto_fill_type_requests(){
@@ -145,8 +161,6 @@ static void net_proto_fill_type_requests(){
 					net_proto_send_logic(
 						real_payload,
 						proto_type_request->get_origin_peer_id());
-					id_api::destroy(net_proto_type_requests[i]);
-					proto_type_request = nullptr;
 				}catch(...){
 					print("couldn't send type request", P_WARN);
 				}
@@ -209,33 +223,10 @@ static void net_proto_fill_linked_list_requests(){
 	}
 }
 
-/*
-  General rule of thumb is the code can be as tacky as it can be SO LONG AS
-  all of the tacky code can be represented on the screen, in one file, at one
-  time.
- */
-
 template <typename T>
 void net_proto_handle_request_send(T request_ptr){
 	if(request_ptr == nullptr){
 		print("request_ptr is a nullptr", P_NOTE);
-		return;
-	}
-	/*
-	  Until I can hammer out formal responses and the sort, let's assume
-	  that 100 percent of the requests are processed and no reply means
-	  they don't have it
-	 */
-	const uint64_t request_micro_s = 
-		settings::get_setting_unsigned_def(
-			"net_proto_type_request_timeout_micro_s",
-			60*1000*1000); // don't set too high
-	if(get_time_microseconds()-request_ptr->get_request_time() > request_micro_s){
-		P_V(get_time_microseconds(), P_DEBUG);
-		P_V(request_ptr->get_request_time(), P_DEBUG);
-		P_V(request_micro_s, P_DEBUG);
-		print("type request has expired, deleting", P_DEBUG);
-		id_api::destroy(request_ptr->id.get_id());
 		return;
 	}
 	const id_t_ destination_peer_id =
@@ -257,26 +248,47 @@ void net_proto_handle_request_send(T request_ptr){
 	}
 }
 
+/*
+  TODO: Find a better way to bind individual type timeouts with the function
+  calls (local constant variable that's referenced in the function should work
+  fine)
+ */
+
 #define NET_PROTO_HANDLE_REQUEST_HANDLER(type)			\
 	std::vector<id_t_> request_vector =			\
 		id_api::cache::get(				\
 			#type);					\
 	P_V(request_vector.size(), P_SPAM);			\
 	for(uint64_t i = 0;i < request_vector.size();i++){	\
-		net_proto_handle_request_send(			\
-			PTR_DATA(request_vector[i],		\
-				 type));			\
-	}							\
-	
+		type *ptr = PTR_DATA(request_vector[i], type);	\
+		if(net_proto_valid_request_to_send(ptr)){	\
+			net_proto_handle_request_send(		\
+				ptr);				\
+			ptr->update_broadcast_time_micro_s();	\
+		}						\
+	}							
+
 static void net_proto_send_type_requests(){
+	const uint64_t timeout_micro_s =
+		settings::get_setting_unsigned_def(
+			"net_proto_type_request_timeout_micro_s",
+			15*1000*1000);
 	NET_PROTO_HANDLE_REQUEST_HANDLER(net_proto_type_request_t);
 }
 
 static void net_proto_send_id_requests(){
+	const uint64_t timeout_micro_s =
+		settings::get_setting_unsigned_def(
+			"net_proto_id_request_timeout_micro_s",
+			15*1000*1000);
 	NET_PROTO_HANDLE_REQUEST_HANDLER(net_proto_id_request_t);
 }
 
 static void net_proto_send_linked_list_requests(){
+	const uint64_t timeout_micro_s =
+		settings::get_setting_unsigned_def(
+			"net_proto_linked_list_request_timeout_micro_s",
+			15*1000*1000);
 	NET_PROTO_HANDLE_REQUEST_HANDLER(net_proto_linked_list_request_t);
 }
 

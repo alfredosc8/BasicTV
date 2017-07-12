@@ -246,4 +246,6 @@ extern void set_id_type(id_t_ *id, type_t_ type);
 			
 std::string id_breakdown(id_t_ id_);
 
+#define IS_OWNER(id) (id == get_id_hash(production_priv_key_id))
+
 #endif

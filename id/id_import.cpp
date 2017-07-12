@@ -159,8 +159,14 @@ void data_id_t::import_data(std::vector<uint8_t> data){
 	set_id(trans_id);
 	transport_i_t trans_i = 0;
 	transport_size_t trans_size = 0;
+	uint8_t network_rules_tmp = 0;
+	uint8_t export_rules_tmp = 0;
+	uint8_t peer_rules_tmp = 0;
 	while(data.size() > sizeof(transport_i_t) + sizeof(transport_size_t)){
 		ID_IMPORT(trans_i);
+		ID_IMPORT(network_rules_tmp);
+		ID_IMPORT(export_rules_tmp);
+		ID_IMPORT(peer_rules_tmp);
 		ID_IMPORT(trans_size);
 		P_V(trans_i, P_SPAM);
 		P_V(trans_size, P_SPAM);
@@ -186,5 +192,12 @@ void data_id_t::import_data(std::vector<uint8_t> data){
 			data_vector[trans_i].get_flags(),
 			trans_size,
 			&data);
+		// only update ID rules if we made it this far
+		data_vector[trans_i].set_network_rules(
+			network_rules_tmp);
+		data_vector[trans_i].set_export_rules(
+			export_rules_tmp);
+		data_vector[trans_i].set_peer_rules(
+			peer_rules_tmp);
 	}
 }

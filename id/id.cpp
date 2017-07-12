@@ -102,6 +102,7 @@ data_id_t::data_id_t(void *ptr_, type_t_ type_){
 	init_list_all_data();
 	id_api::array::add(this);
 	id_api::cache::add(id, type_);
+	// id_tier_mem_list_id(this);
 }
 
 data_id_t::~data_id_t(){

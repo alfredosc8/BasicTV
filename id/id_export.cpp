@@ -12,13 +12,13 @@ static void id_export_raw(std::vector<uint8_t> tmp, std::vector<uint8_t> *vector
 }
 
 
-// first half is the datum (local), second half are passed parameters
+// pretty sure I had that backwards for a while...
 static bool should_export(std::pair<uint8_t, uint8_t> network_flags,
 			  std::pair<uint8_t, uint8_t> export_flags,
 			  std::pair<uint8_t, uint8_t> peer_flags){
-	bool network_allows = (network_flags.second <= network_flags.first || network_flags.second == ID_DATA_RULE_UNDEF);
-	bool export_allows = (export_flags.second <= export_flags.first || export_flags.second == ID_DATA_RULE_UNDEF);
-	bool peer_allows = (peer_flags.second <= peer_flags.first || peer_flags.second == ID_DATA_RULE_UNDEF);
+	bool network_allows = (network_flags.second >= network_flags.first || network_flags.second == ID_DATA_RULE_UNDEF);
+	bool export_allows = (export_flags.second >= export_flags.first || export_flags.second == ID_DATA_RULE_UNDEF);
+	bool peer_allows = (peer_flags.second >= peer_flags.first || peer_flags.second == ID_DATA_RULE_UNDEF);
 	P_V(network_allows, P_SPAM);
 	P_V(export_allows, P_SPAM);
 	P_V(peer_allows, P_SPAM);
@@ -154,9 +154,19 @@ std::vector<uint8_t> data_id_t::export_data(
 		}
 		transport_i_t trans_i = i; // size fixing
 		transport_size_t trans_size = data_to_export.size();
-		//P_V(trans_i, P_SPAM);
-		P_V(trans_size, P_SPAM);
+		uint8_t network_rules_tmp =
+			data_vector[i].get_network_rules();
+		uint8_t export_rules_tmp =
+			data_vector[i].get_export_rules();
+		uint8_t peer_rules_tmp =
+			data_vector[i].get_peer_rules();
+		// P_V(trans_i, P_SPAM);
+		// P_V(trans_size, P_SPAM);
 		ID_EXPORT(trans_i, retval);
+		// splitting this up into three simplifes NBO too
+		ID_EXPORT(network_rules_tmp, retval);
+		ID_EXPORT(export_rules_tmp, retval);
+		ID_EXPORT(peer_rules_tmp, retval);
 		ID_EXPORT(trans_size, retval);
 		id_export_raw(data_to_export, &retval);
 	}

@@ -158,6 +158,12 @@ namespace id_api{
 		extra_t_ fetch_extra(std::vector<uint8_t>);
 		type_t_ fetch_type(std::vector<uint8_t>);
 		mod_inc_t_ fetch_mod_inc(std::vector<uint8_t>);
+
+		std::vector<uint8_t> strip_to_lowest_rules(
+			std::vector<uint8_t> data,
+			uint8_t network_rules,
+			uint8_t export_rules,
+			uint8_t peer_rules);
 	};
 };
 

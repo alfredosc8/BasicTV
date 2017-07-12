@@ -77,30 +77,6 @@ void net_socket_t::send(std::string data){
   buffer and just read from that when recv is called.
  */
 
-static void net_socket_recv_posix_error_checking(int32_t error){
-#ifdef __linux
-	if(error < 0){
-		switch(error){
-		case -ENOTCONN:
-			print("not connected to socket", P_ERR);
-			break;
-#if EAGAIN == EWOULDBLOCK
-		case -EAGAIN:
-#else		       
-		case -EAGAIN:
-		case -EWOULDBLOCK:
-#endif
-			print("something something blocking", P_ERR);
-			break;
-		case -EPERM: // non-blocking socket and no data is received
-			break;
-		default:
-			P_V(error, P_DEBUG);
-		}
-	}
-#endif
-}
-
 std::vector<uint8_t> net_socket_t::recv(uint64_t byte_count, uint64_t flags){
 	// TODO: test to see if the activity() code works
 	uint8_t buffer[512];
