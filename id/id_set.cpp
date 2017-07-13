@@ -155,4 +155,39 @@ std::vector<id_t_> expand_id_set(std::vector<uint8_t> id_set){
 	return retval;
 }
 
+/*
+  Again super slow, but super simple
+
+  Murphy's Law
+ */
+
+std::vector<uint8_t> add_id_to_set(std::vector<uint8_t> id_set, id_t_ id){
+	std::vector<id_t_> out =
+		expand_id_set(id_set);
+	out.push_back(
+		id);
+	return compact_id_set(
+		out);
+}
+
+std::vector<uint8_t> del_id_from_set(std::vector<uint8_t> id_set, id_t_ id){	
+	std::vector<id_t_> out =
+		expand_id_set(id_set);
+	out.push_back(
+		id);
+	for(uint64_t i = 0;i < out.size();i++){
+		if(unlikely(out[i] == id)){
+			out.erase(
+				out.begin()+i);
+			i--;
+		}
+	}
+	return compact_id_set(
+		out);
+}
+
+uint64_t size_of_id_set(std::vector<uint8_t> id_set){
+	return expand_id_set(id_set).size();
+}
+
 #undef ASSERT_LENGTH

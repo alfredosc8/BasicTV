@@ -39,8 +39,8 @@
 
 // legacy
 
-#define PTR_DATA_FAST PTR_DATA
-#define PTR_ID_FAST PTR_ID
+#define PTR_DATA_FAST(id, type) ((type*)id_api::array::ptr_data(id, #type, ID_LOOKUP_FAST))
+#define PTR_ID_FAST(id, type) id_api::array::ptr_id(id, #type, ID_LOOKUP_FAST)
 #define PTR_DATA_MEM PTR_DATA
 #define PTR_ID_MEM PTR_ID
 #define PTR_DATA_PRE PTR_DATA
@@ -48,6 +48,8 @@
 
 #define PTR_DATA(id, type) ((type*)id_api::array::ptr_data(id, #type))
 #define PTR_ID(id, type) (id_api::array::ptr_id(id, #type))
+
+#define EXISTS(id) id_api::exists(id)
 
 #define ID_API_IMPORT_FROM_DISK (1 << 0)
 #define ID_API_IMPORT_FROM_NET (1 << 1)
@@ -65,13 +67,17 @@
 namespace id_api{
 	namespace array{
 		data_id_t *ptr_id(id_t_ id,
-				  std::string type);
+				  std::string type,
+				  uint8_t flags = 0);
 		data_id_t *ptr_id(id_t_ id,
-				  type_t_ type);
+				  type_t_ type,
+				  uint8_t flags = 0);
 		void *ptr_data(id_t_ id,
-			       std::string type);
+			       std::string type,
+			       uint8_t flags = 0);
 		void *ptr_data(id_t_ id,
-			       type_t_ type);
+			       type_t_ type,
+			       uint8_t flags = 0);
 		void add(data_id_t *ptr);
 		void del(id_t_ id); // no type
 		id_t_ add_data(std::vector<uint8_t> data_, bool raw = false);
@@ -147,6 +153,7 @@ namespace id_api{
 		uint8_t peer_flags);
 	void destroy(id_t_ id);
 	void destroy_all_data();
+	void print_id_vector(std::vector<id_t_> vector, uint32_t p_l);
 	namespace raw{
 		// encryption ID is pulled from ID hash
 		std::vector<uint8_t> encrypt(std::vector<uint8_t>);

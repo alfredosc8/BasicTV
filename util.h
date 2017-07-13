@@ -62,6 +62,8 @@
 #define GET_SIZE_VECTOR(data_to_size)\
 	uint64_t get_size_##data_to_size(){return data_to_size.size();}
 
+// GET_SET_ID_VECTOR is in id/id.h for inclusion reasons
+
 #ifdef __GNUC__
 // This can be used somewhere
 #define prefetch(addr, rw, locality) __builtin_prefetch(addr, rw, locality)

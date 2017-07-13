@@ -88,7 +88,8 @@ std::vector<id_t_> id_lookup;
  */
  
 data_id_t *id_api::array::ptr_id(id_t_ id,
-				 std::string type){
+				 std::string type,
+				 uint8_t flags){
 	if(id == ID_BLANK_ID){
 		return nullptr;
 	}
@@ -99,7 +100,6 @@ data_id_t *id_api::array::ptr_id(id_t_ id,
 	for(uint64_t i = 0;i < id_lookup.size();i++){
 		if(id_lookup[i] == id){
 			print("preventing dead-lock with ID request, pretending we don't have it" + id_breakdown(id), P_WARN);
-			std::raise(SIGINT);
 			return nullptr;
 		}
 	}
@@ -112,18 +112,22 @@ data_id_t *id_api::array::ptr_id(id_t_ id,
 	id_lookup.push_back(id);
 	id_disk_api::load(id);
 	LOOKUP_AND_RETURN();
-	net_proto::request::add_id(id);
+	if(!(flags & ID_LOOKUP_FAST)){
+		net_proto::request::add_id(id);
+	}
 	return retval;
 }
 
 data_id_t *id_api::array::ptr_id(id_t_ id,
-				 type_t_ type){
-	return ptr_id(id, convert::type::from(type));
+				 type_t_ type,
+				 uint8_t flags){
+	return ptr_id(id, convert::type::from(type), flags);
 }
 
 void *id_api::array::ptr_data(id_t_ id,
-			      std::string type){
-	data_id_t *id_ptr = ptr_id(id, type);
+			      std::string type,
+			      uint8_t flags){
+	data_id_t *id_ptr = ptr_id(id, type, flags);
 	if(id_ptr == nullptr){
 		return nullptr;
 	}
@@ -131,8 +135,9 @@ void *id_api::array::ptr_data(id_t_ id,
 }
 
 void *id_api::array::ptr_data(id_t_ id,
-			      type_t_ type){
-	return ptr_data(id, convert::type::from(type));
+			      type_t_ type,
+			      uint8_t flags){
+	return ptr_data(id, convert::type::from(type), flags);
 }
 
 void id_api::array::add(data_id_t *ptr){
@@ -1193,4 +1198,10 @@ std::vector<uint8_t> id_api::raw::strip_to_lowest_rules(
 		}
 	}
 	return data;
+}
+
+void id_api::print_id_vector(std::vector<id_t_> id_vector, uint32_t p_l){
+	for(uint64_t i = 0;i < id_vector.size();i++){
+		print(id_breakdown(id_vector[i]), p_l);
+	}
 }

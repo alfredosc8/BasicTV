@@ -67,7 +67,7 @@ static std::vector<id_t_> remove_ids_from_vector(std::vector<id_t_> first,
 						 std::vector<id_t_> second){
 	for(uint64_t i = 0;i < first.size();i++){
 		for(uint64_t c = 0;c < second.size();c++){
-			if(first[i] == second[c]){
+			if(first.at(i) == second.at(c)){
 				first.erase(
 					first.begin()+i);
 				i--;
@@ -102,6 +102,9 @@ static bool net_proto_valid_request_to_fill(T request){
 	ASSERT(origin_peer_id != ID_BLANK_ID, P_ERR);
 	ASSERT(destination_peer_id != ID_BLANK_ID, P_ERR);
 	ASSERT(request->get_request_time() != 0, P_ERR);
+	// P_V(not_owner, P_DEBUG);
+	// P_V(origin_id_ok, P_DEBUG);
+	// P_V(destination_id_ok, P_DEBUG);
 	return not_owner && origin_id_ok && destination_id_ok;
 }
 
@@ -109,6 +112,7 @@ template<typename T>
 static bool net_proto_valid_request_to_send(
 	T request,
 	uint64_t frequency_micro_s){
+	ASSERT(request != nullptr, P_ERR);
 	const id_t_ origin_peer_id =
 		request->get_origin_peer_id();
 	const id_t_ destination_peer_id =
@@ -183,16 +187,21 @@ static void net_proto_fill_id_requests(){
 	 		continue;
 	 	}
 		if(net_proto_valid_request_to_fill(proto_id_request)){
-			print("filling ID request" + id_breakdown(net_proto_id_requests[i]), P_NOTE);
+			print("filling ID request" + id_breakdown(net_proto_id_requests[i]), P_SPAM);
 			const std::vector<id_t_> id_vector =
 				proto_id_request->get_ids();
+			const id_t_ origin_peer_id =
+				proto_id_request->get_origin_peer_id();
+			id_api::destroy(net_proto_id_requests[i]);
+			proto_id_request = nullptr;
+			for(uint64_t i = 0;i < id_vector.size();i++){
+				print("ID request contains " + id_breakdown(id_vector[i]), P_SPAM);
+			}
 			try{
 				net_proto_send_logic(
 					id_vector,
-					proto_id_request->get_origin_peer_id());
+					origin_peer_id);
 			}catch(...){}
-			id_api::destroy(net_proto_id_requests[i]);
-			proto_id_request = nullptr;
 		}
 	}
 }
@@ -239,7 +248,7 @@ void net_proto_handle_request_send(T request_ptr){
 		net_proto_send_logic(
 			std::vector<id_t_>({request_ptr->id.get_id()}),
 			destination_peer_id);
-		request_ptr->update_request_time();
+		request_ptr->update_broadcast_time_micro_s();
 		print("sent request to peer" + net_proto::peer::get_breakdown(
 			      destination_peer_id), P_DEBUG);
 	}catch(...){

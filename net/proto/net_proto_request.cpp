@@ -71,12 +71,11 @@ net_proto_request_set_t::net_proto_request_set_t(){}
 net_proto_request_set_t::~net_proto_request_set_t(){}
 
 void net_proto_request_set_t::list_set_virtual_data(data_id_t *id){
-	id->add_data_id_vector(&ids, 65536);
+	id->add_data_one_byte_vector(&ids, ~0);
 	id->add_data_eight_byte_vector(&mod_inc, 65536);
 }
 
 void net_proto_request_set_t::set_ids(std::vector<id_t_> ids_){
-	ids = ids_;
 	mod_inc.clear();
 	for(uint64_t i = 0;i < ids_.size();i++){
 		data_id_t *id_ptr =
@@ -88,10 +87,11 @@ void net_proto_request_set_t::set_ids(std::vector<id_t_> ids_){
 				id_ptr->get_mod_inc());
 		}
 	}
+	ids = compact_id_set(ids_);
 }
 
 std::vector<id_t_> net_proto_request_set_t::get_ids(){
-	return ids;
+	return expand_id_set(ids);
 }
 
 std::vector<uint64_t> net_proto_request_set_t::get_mod_inc(){
@@ -246,7 +246,7 @@ void net_proto::request::add_id(id_t_ id){
 			     id) != id_request_vector.end()){
 			print("ID already exists as a net_proto_id_request_t, "
 			      "safely assume that all redundancy is put in "
-			      "place by the creator", P_NOTE);
+			      "place by the creator", P_SPAM);
 			return;
 		}
 	}
@@ -430,7 +430,7 @@ static void net_proto_create_id_request_loop(){
 				id_peer_pair[i].second);
 			id_request_ptr->update_request_time();
 		}catch(...){
-			print("failed to create net_proto_id_request_t", P_WARN);
+			print("failed to create net_proto_id_request_t", P_ERR);
 			// not sure how this would happen...
 			id_request_buffer.insert(
 				id_request_buffer.end(),

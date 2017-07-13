@@ -67,7 +67,7 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t> > unescape_vector(
 	       4);
 	escaped_length = NBO_32(escaped_length);
 	std::vector<uint8_t> payload;
-	if(escaped_length <= vector.size()){
+	if(escaped_length <= vector.size()+sizeof(uint32_t)+sizeof(uint8_t)){
 		vector.erase(
 			vector.begin(),
 			vector.begin()+sizeof(uint32_t)+sizeof(uint8_t));

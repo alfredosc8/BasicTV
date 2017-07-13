@@ -2,14 +2,17 @@
 #include "../main.h"
 #include "../util.h"
 
-#define COMPRESS_XZ 1
-#define COMPRESS_ZSTD 2
+#define COMPRESS_NONE 1
+#define COMPRESS_XZ 2
+#define COMPRESS_ZSTD 3
 
 /*
   Regardless of the underlying architecture, the compression_level scale will
   still be from 0-9, but will be using a multiplier to convert to whatever
   scale is used (ZSTD uses 0-22)
  */
+
+// TODO: should re-enable this, but its off for debugging at the moment
 
 std::vector<uint8_t> compressor::compress(std::vector<uint8_t> data,
 					  uint8_t compression_level, 
@@ -19,15 +22,15 @@ std::vector<uint8_t> compressor::compress(std::vector<uint8_t> data,
 		// the types of data, we can work fine without that for now
 		print("type variable passed, but not used", P_SPAM);
 	}
-	std::vector<uint8_t> retval = 
-		compressor::zstd::to(
-			data,
-			compression_level,
-			0);
-	retval.insert(
-		retval.begin(),
-		COMPRESS_ZSTD);
-	return retval;
+	// std::vector<uint8_t> retval = 
+	// 	compressor::xz::to(
+	// 		data,
+	// 		compression_level,
+	// 		0);
+	data.insert(
+		data.begin(),
+		COMPRESS_NONE);
+	return data;
 }
 
 std::vector<uint8_t> compressor::decompress(std::vector<uint8_t> data){
@@ -36,6 +39,10 @@ std::vector<uint8_t> compressor::decompress(std::vector<uint8_t> data){
 	}
 	std::vector<uint8_t> retval;
 	switch(data[0]){
+	case COMPRESS_NONE:
+		retval =
+			std::vector<uint8_t>(data.begin()+1, data.end());
+		break;
 	case COMPRESS_XZ:
 		retval = compressor::xz::from(
 			std::vector<uint8_t>(data.begin()+1, data.end()));

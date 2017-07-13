@@ -1,6 +1,8 @@
 #ifndef NET_INTERFACE_HARDWARE_H
 #define NET_INTERFACE_HARDWARE_H
 
+#include "../../id/id_set.h"
+
 #include "net_interface_medium.h"
 #include "net_interface_packet.h"
 
@@ -36,7 +38,7 @@ private:
 	uint8_t inbound_transport_flags = 0;
 	uint8_t medium = 0;
 	
-	std::vector<id_t_> soft_dev_list;
+	std::vector<uint8_t> soft_dev_list;
 	id_t_ inbound_throughput_number_set_id = ID_BLANK_ID;
 	id_t_ outbound_throughput_number_set_id = ID_BLANK_ID;
 public:
@@ -50,9 +52,9 @@ public:
 	GET_SET(inbound_transport_flags, uint8_t);
 	GET_SET(medium, uint8_t);
 	
-	ADD_DEL_VECTOR(soft_dev_list, id_t_);
-	GET_SIZE_VECTOR(soft_dev_list);
-	GET(soft_dev_list, std::vector<id_t_>);
+	/* ADD_DEL_VECTOR(soft_dev_list, id_t_); */
+	/* GET_SIZE_VECTOR(soft_dev_list); */
+	GET_SET_ID_VECTOR(soft_dev_list);
 };
 
 

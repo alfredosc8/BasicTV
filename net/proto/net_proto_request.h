@@ -38,7 +38,7 @@ public:
 
 struct net_proto_request_set_t : public net_proto_request_bare_t{
 private:
-	std::vector<id_t_> ids;
+	std::vector<uint8_t> ids;
 	std::vector<uint64_t> mod_inc;
 public:
 	net_proto_request_set_t();

@@ -47,10 +47,10 @@ void set_id_type(id_t_ *id, type_t_ type){
 void data_id_t::init_list_all_data(){
 	add_data_id(
 		&id, 1);
-	add_data_id_vector(
+	add_data_one_byte_vector(
 		&(linked_list.first),
 		{ID_MAX_LINKED_LIST_SIZE});
-	add_data_id_vector(
+	add_data_one_byte_vector(
 		&(linked_list.second),
 		{ID_MAX_LINKED_LIST_SIZE});
 }
@@ -280,4 +280,17 @@ std::string id_breakdown(id_t_ id_){
 	return " (" + convert::array::id::to_hex(id_) +
 		" of type " +
 		(id_ == ID_BLANK_ID ? "NOTYPE" : convert::type::from(get_id_type(id_))) + ") ";
+}
+
+std::pair<std::vector<id_t_>, std::vector<id_t_> > data_id_t::get_linked_list(){
+	return std::make_pair(
+		expand_id_set(linked_list.first),
+		expand_id_set(linked_list.second));
+}
+
+void data_id_t::set_linked_list(std::pair<std::vector<id_t_>, std::vector<id_t_> > tmp){
+	linked_list.first =
+		compact_id_set(tmp.first);
+	linked_list.second =
+		compact_id_set(tmp.second);
 }

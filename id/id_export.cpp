@@ -80,19 +80,6 @@ std::vector<uint8_t> data_id_t::export_data(
 					(uint8_t*)vector->data(),
 					(uint8_t*)vector->data()+
 					(sizeof(uint8_t)*vector->size()));
-		}else if(data_vector[i].get_flags() & ID_DATA_ID_VECTOR){
-			//print("reading in an ID vector", P_SPAM);
-			std::vector<id_t_> *vector =
-				(std::vector<id_t_>*)data_vector[i].get_ptr();
-			if(vector->data() == nullptr){
-				//print("vector is empty, skipping", P_SPAM);
-				continue;
-			}
-			data_to_export =
-				std::vector<uint8_t>(
-					(uint8_t*)vector->data(),
-					(uint8_t*)vector->data()+
-					(sizeof(id_t_)*vector->size()));
 		}else if(data_vector[i].get_flags() & ID_DATA_EIGHT_BYTE_VECTOR){
 			//print("reading in a 64-bit vector", P_SPAM);
 			std::vector<uint64_t> *vector =

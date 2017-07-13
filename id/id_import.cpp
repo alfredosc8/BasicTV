@@ -56,20 +56,6 @@ static void id_import_raw(
 			reinterpret_cast<uint8_t*>(local_vector->data()),
 			flags,
 			size);
-	}else if(flags & ID_DATA_ID_VECTOR){
-		print("reading as an ID vector", P_SPAM);
-		std::vector<id_t_> *local_vector =
-			(std::vector<id_t_>*)var;
-		local_vector->clear();
-		local_vector->insert(
-			local_vector->end(),
-			size,
-			ID_BLANK_ID);
-		id_import_raw_real(
-			vector,
-			reinterpret_cast<uint8_t*>(local_vector->data()),
-			flags,
-			size);
 	}else if(flags & ID_DATA_BYTE_VECTOR_VECTOR){
 		print("reading as a byte vector vector", P_SPAM);
 		std::vector<std::vector<uint8_t> > *local_vector =

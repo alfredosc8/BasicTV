@@ -32,8 +32,7 @@ const hash_t_ blank_hash = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 #define ID_DATA_ID (1 << 0)
 #define ID_DATA_BYTE_VECTOR (1 << 1)
 #define ID_DATA_EIGHT_BYTE_VECTOR (1 << 2)
-#define ID_DATA_ID_VECTOR (1 << 3)
-#define ID_DATA_BYTE_VECTOR_VECTOR (1 << 4)
+#define ID_DATA_BYTE_VECTOR_VECTOR (1 << 3)
  
 // might want to be larger (?)
 #define ID_MAX_LINKED_LIST_SIZE 64
@@ -111,6 +110,28 @@ type_t_ get_id_type(id_t_ id); // tacky
 
 typedef std::pair<std::vector<id_t_>, std::vector<id_t_> > linked_list_data_t;
 
+
+/*
+  I'm getting rid of std::vector<id_t_> in transit in favor of a compression
+  scheme which reduces it to std::vector<uint8_t>:
+  1. One less thing that can break
+  2. Most cases where IDs are transmitted are when their hashes match, this
+     compression scheme uses that pretty nicely
+  3. ID vector transmission never worked right in the first place	
+ */
+
+extern std::vector<id_t_> expand_id_set(std::vector<uint8_t>);
+extern std::vector<uint8_t> compact_id_set(std::vector<id_t_>);
+
+#define GET_SET_ID_VECTOR(data_to_set)					\
+	std::vector<id_t_> get_##data_to_set(){return expand_id_set(data_to_set);} \
+	void set_##data_to_set(std::vector<id_t_> tmp){data_to_set = compact_id_set(tmp);} \
+	void set_##data_to_set(std::vector<uint8_t> tmp){data_to_set = tmp;} \
+	void add_##data_to_set(id_t_ tmp){data_to_set = add_id_to_set(data_to_set, tmp);} \
+	void del_##data_to_set(id_t_ tmp){data_to_set = del_id_from_set(data_to_set, tmp);} \
+	uint64_t get_size_##data_to_set(){return size_of_id_set(data_to_set);} \
+
+
 struct data_id_t{
 private:
 	// first 8 bytes UUID, last 32-byte SHA-256 hash
@@ -119,7 +140,7 @@ private:
 	id_t_ encrypt_pub_key_id = ID_BLANK_ID;
 	std::vector<std::vector<uint8_t> > rsa_backlog;
 	std::vector<data_id_ptr_t> data_vector;
-	std::pair<std::vector<id_t_>, std::vector<id_t_> > linked_list;
+	std::pair<std::vector<uint8_t>, std::vector<uint8_t> > linked_list;
 
 	uint64_t last_access_timestamp_micro_s = 0;
 	mod_inc_t_ modification_incrementor = 0;
@@ -137,18 +158,20 @@ public:
 	/*
 	  SHOULD ONLY BE USED TO BOOTSTRAP
 	 */
-	GET_SET(linked_list, linked_list_data_t);
 	void set_id(id_t_ id_);
 	std::string get_type();
 	uint8_t get_type_byte(){return get_id_type(id);}
 	void *get_ptr();
 	void mod_inc(){modification_incrementor++;}
 	mod_inc_t_ get_mod_inc(){return modification_incrementor;}
+
+	std::pair<std::vector<id_t_>, std::vector<id_t_> > get_linked_list();
+	void set_linked_list(std::pair<std::vector<id_t_>, std::vector<id_t_> > tmp);
+	
 	// TODO: should enforce casting
 	ADD_DATA_1D_DEF(std::vector<uint8_t>, one_byte_vector, ID_DATA_BYTE_VECTOR);
 	ADD_DATA_2D_DEF(std::vector<std::vector<uint8_t> >, one_byte_vector_vector, ID_DATA_BYTE_VECTOR_VECTOR);
 	ADD_DATA_1D_DEF(std::vector<uint64_t>, eight_byte_vector, ID_DATA_EIGHT_BYTE_VECTOR);
-	ADD_DATA_1D_DEF(std::vector<id_t_>, id_vector, ID_DATA_ID_VECTOR);
 	ADD_DATA_1D_DEF(id_t_, id, ID_DATA_ID);
 	ADD_DATA_1D_DEF(void, raw, 0);
 	// export and import data

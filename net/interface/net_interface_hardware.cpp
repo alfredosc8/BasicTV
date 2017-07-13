@@ -17,7 +17,7 @@ net_interface_hardware_dev_t::net_interface_hardware_dev_t() : id(this, TYPE_NET
 	SIMPLE_ADD(inbound_transport_flags);
 	SIMPLE_ADD(medium);
 
-	id.add_data_id_vector(&soft_dev_list, ~0);
+	id.add_data_one_byte_vector(&soft_dev_list, ~0);
 	id.add_data_id(&inbound_throughput_number_set_id, 1);
 	id.add_data_id(&outbound_throughput_number_set_id, 1);
 }

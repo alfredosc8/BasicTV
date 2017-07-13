@@ -259,67 +259,42 @@ static void test_id_transport_print_exp(std::vector<uint8_t> exp){
   TODO: rework this to use different types
  */
 
+template <typename T>
+static void unload_nuke_reload(T ptr){
+	if(true){
+		std::vector<uint8_t> data = 
+			(*ptr)->id.export_data(
+				0,
+				0,
+				ID_DATA_NETWORK_RULE_NEVER,
+				ID_DATA_EXPORT_RULE_NEVER,
+				ID_DATA_PEER_RULE_NEVER);
+		delete (*ptr);
+		*ptr = new net_proto_id_request_t; // change this as test_id_transport chanages
+		(*ptr)->id.import_data(
+			data);
+	}
+}
+
 static void test_id_transport(){
-	// wallet_set_ptr->id.set_lowest_global_flag_level(
-	// 	ID_DATA_RULE_UNDEF,
-	// 	ID_DATA_EXPORT_RULE_NEVER,
-	// 	ID_DATA_RULE_UNDEF);
-	// std::string totally_legit_bitcoin_wallet_please_give_me_money =
-	// 	"13dfmkk84rXyHoiZQmuYfTxGYykug1mDEZ";
-	// wallet_set_ptr->add_wallet(
-	// 	std::vector<uint8_t>({'B', 'T', 'C'}),
-	// 	std::vector<uint8_t>(
-	// 		(uint8_t*)&(totally_legit_bitcoin_wallet_please_give_me_money[0]),
-	// 		(uint8_t*)&(totally_legit_bitcoin_wallet_please_give_me_money[0])+
-	// 		totally_legit_bitcoin_wallet_please_give_me_money.size()));
-	// std::vector<uint8_t> payload =
-	// 	wallet_set_ptr->id.export_data(
-	// 		0,
-	// 		ID_EXTRA_COMPRESS | ID_EXTRA_ENCRYPT,
-	// 		ID_DATA_RULE_UNDEF,
-	// 		ID_DATA_EXPORT_RULE_NEVER,
-	// 		ID_DATA_RULE_UNDEF);
-	// id_api::destroy(wallet_set_ptr->id.get_id());
-	// wallet_set_ptr = nullptr;
-	// wallet_set_ptr =
-	// 	PTR_DATA(id_api::array::add_data(payload),
-	// 		 wallet_set_t);
-	// if(wallet_set_ptr == nullptr){
-	// 	print("id transport failed", P_ERR);
-	// }
-	// id_api::destroy(wallet_set_ptr->id.get_id());
-	// wallet_set_ptr = nullptr;
-	net_proto_peer_t *tmp_peer_ptr =
-		new net_proto_peer_t;
-	net_interface_ip_address_t *tmp_ip_address_ptr =
-		new net_interface_ip_address_t;
-	tmp_peer_ptr->set_address_id(
-		tmp_ip_address_ptr->id.get_id());
-	P_V_S(convert::array::id::to_hex(tmp_peer_ptr->id.get_id()), P_NOTE);
-	P_V_S(convert::array::id::to_hex(tmp_peer_ptr->get_address_id()), P_NOTE);
-	id_t_ old_peer_id =
-		tmp_peer_ptr->id.get_id();
-	id_t_ address_id =
-		tmp_peer_ptr->get_address_id();
-	std::vector<uint8_t> payload =
-		tmp_peer_ptr->id.export_data(
-			0,
-			ID_EXTRA_COMPRESS | ID_EXTRA_ENCRYPT,
-			ID_DATA_RULE_UNDEF,
-			ID_DATA_EXPORT_RULE_NEVER,
-			ID_DATA_RULE_UNDEF);
-	// id_api::destroy(tmp_peer_ptr->id.get_id());
-	delete tmp_peer_ptr;
-	tmp_peer_ptr = nullptr;
-	
-	tmp_peer_ptr =
-		PTR_DATA(id_api::array::add_data(payload),
-			 net_proto_peer_t);
-	ASSERT(tmp_peer_ptr != nullptr, P_ERR);
-	P_V_S(convert::array::id::to_hex(tmp_peer_ptr->id.get_id()), P_NOTE);
-	P_V_S(convert::array::id::to_hex(tmp_peer_ptr->get_address_id()), P_NOTE);
-	ASSERT(old_peer_id == tmp_peer_ptr->id.get_id(), P_ERR);
-	ASSERT(address_id == tmp_peer_ptr->get_address_id(), P_ERR);
+	const std::vector<id_t_> old =
+		{production_priv_key_id,
+		 production_priv_key_id,
+		 production_priv_key_id};
+	net_proto_id_request_t *id_request_ptr =
+		new net_proto_id_request_t;
+	id_request_ptr->set_ids(
+		old);
+	id_api::print_id_vector(
+		id_request_ptr->get_ids(),
+		P_DEBUG);
+	unload_nuke_reload(&id_request_ptr);
+	id_api::print_id_vector(
+		id_request_ptr->get_ids(),
+		P_DEBUG);
+	ASSERT(old == id_request_ptr->get_ids(), P_ERR);
+	delete id_request_ptr;
+	id_request_ptr = nullptr;
 }
 
 /*
