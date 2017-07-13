@@ -143,32 +143,34 @@ static void net_proto_fill_type_requests(){
 		CONTINUE_IF_NULL(proto_type_request, P_DEBUG);
 		if(net_proto_valid_request_to_fill(proto_type_request)){
 			print("filling a valid type request " + id_breakdown(net_proto_type_requests[i]) + "for type " + convert::type::from(proto_type_request->get_type()), P_DEBUG);
-			const std::vector<id_t_> raw_id_vector =
-				proto_type_request->get_ids();
-			const std::vector<id_t_> type_vector =
-				id_api::cache::get(
-					proto_type_request->get_type());
-			const std::vector<id_t_> real_payload =
-				remove_ids_from_vector(
-					type_vector,
-					raw_id_vector);
-			P_V_S(convert::type::from(proto_type_request->get_type()), P_VAR);
-			P_V(type_vector.size(), P_VAR);
-			P_V(raw_id_vector.size(), P_VAR);
-			P_V(real_payload.size(), P_VAR);
-			if(real_payload.size() == 0){
-				print("we don't have any new data to send out, "
-				      "not sending anything (should probably have "
-				      "some sort of response for not finding it)", P_DEBUG);
-			}else{
-				try{
-					net_proto_send_logic(
-						real_payload,
-						proto_type_request->get_origin_peer_id());
-				}catch(...){
-					print("couldn't send type request", P_WARN);
+			try{
+				const std::vector<id_t_> raw_id_vector =
+					proto_type_request->get_ids();
+				const std::vector<id_t_> type_vector =
+					id_api::cache::get(
+						proto_type_request->get_type());
+				const std::vector<id_t_> real_payload =
+					remove_ids_from_vector(
+						type_vector,
+						raw_id_vector);
+				P_V_S(convert::type::from(proto_type_request->get_type()), P_VAR);
+				P_V(type_vector.size(), P_VAR);
+				P_V(raw_id_vector.size(), P_VAR);
+				P_V(real_payload.size(), P_VAR);
+				if(real_payload.size() == 0){
+					print("we don't have any new data to send out, "
+					      "not sending anything (should probably have "
+					      "some sort of response for not finding it)", P_DEBUG);
+				}else{
+					try{
+						net_proto_send_logic(
+							real_payload,
+							proto_type_request->get_origin_peer_id());
+					}catch(...){
+						print("couldn't send type request", P_WARN);
+					}
 				}
-			}
+			}catch(...){}
 			id_api::destroy(net_proto_type_requests[i]);
 			proto_type_request = nullptr;
 		}
@@ -188,20 +190,22 @@ static void net_proto_fill_id_requests(){
 	 	}
 		if(net_proto_valid_request_to_fill(proto_id_request)){
 			print("filling ID request" + id_breakdown(net_proto_id_requests[i]), P_SPAM);
-			const std::vector<id_t_> id_vector =
-				proto_id_request->get_ids();
-			const id_t_ origin_peer_id =
-				proto_id_request->get_origin_peer_id();
+			try{
+				const std::vector<id_t_> id_vector =
+					proto_id_request->get_ids();
+				const id_t_ origin_peer_id =
+					proto_id_request->get_origin_peer_id();
+				for(uint64_t c = 0;c < id_vector.size();c++){
+					print("ID request contains " + id_breakdown(id_vector[i]), P_SPAM);
+				}
+				try{
+					net_proto_send_logic(
+						id_vector,
+						origin_peer_id);
+				}catch(...){}
+			}catch(...){}
 			id_api::destroy(net_proto_id_requests[i]);
 			proto_id_request = nullptr;
-			for(uint64_t i = 0;i < id_vector.size();i++){
-				print("ID request contains " + id_breakdown(id_vector[i]), P_SPAM);
-			}
-			try{
-				net_proto_send_logic(
-					id_vector,
-					origin_peer_id);
-			}catch(...){}
 		}
 	}
 }

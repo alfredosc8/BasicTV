@@ -264,6 +264,7 @@ std::vector<id_t_> id_api::sort::fingerprint(std::vector<id_t_> tmp){
 static std::vector<id_t_> *get_type_cache_ptr(type_t_ tmp){
 	for(uint64_t i = 0;i < type_cache.size();i++){
 		if(unlikely(type_cache[i].second == tmp)){
+			// P_V(type_cache[i].first.size(), P_SPAM);
 			return &type_cache[i].first;
 		}
 	}

@@ -71,6 +71,7 @@ net_proto_request_set_t::net_proto_request_set_t(){}
 net_proto_request_set_t::~net_proto_request_set_t(){}
 
 void net_proto_request_set_t::list_set_virtual_data(data_id_t *id){
+	// id->add_data_one_byte_vector(&ids, ~0);
 	id->add_data_one_byte_vector(&ids, ~0);
 	id->add_data_eight_byte_vector(&mod_inc, 65536);
 }
@@ -174,8 +175,7 @@ void net_proto_type_request_t::update_type(type_t_ type_){
 	type = type_;
 	set_ids(
 		id_api::cache::get(
-			convert::type::from(
-				type_)));
+			type_));
 }
 
 // TODO: combine this file and routine_requests
@@ -353,12 +353,6 @@ static void net_proto_routine_request_create(
 			if(recv_peer_id == ID_BLANK_ID){
 				print("we have no other peer information whatsoever, not creating any network requests", P_DEBUG);
 			}else{
-				std::vector<id_t_> id_vector =
-					id_api::cache::get(
-						type_vector[i]);
-				std::vector<uint64_t> mod_vector =
-					id_api::bulk_fetch::mod(
-						id_vector);
 				net_proto_type_request_t *type_request =
 					new net_proto_type_request_t;
 				type_request->update_type(

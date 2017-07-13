@@ -293,6 +293,8 @@ static void test_id_transport(){
 		id_request_ptr->get_ids(),
 		P_DEBUG);
 	ASSERT(old == id_request_ptr->get_ids(), P_ERR);
+	id_api::print_id_vector(old, P_NOTE);
+	id_api::print_id_vector(id_request_ptr->get_ids(), P_NOTE);
 	delete id_request_ptr;
 	id_request_ptr = nullptr;
 }
@@ -990,6 +992,7 @@ void test(){
 	RUN_TEST(test_number_cmp);
 	RUN_TEST(test_number_calc);
 	RUN_TEST(test_id_api_raw_fetch);
+	RUN_TEST(test_break_id_transport);
 	test_audio_format(TV_AUDIO_FORMAT_OPUS);
 	RUN_TEST(test_audio_sign_unsign);
 	std::vector<id_t_> extra_id_set =
